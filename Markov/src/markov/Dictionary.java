@@ -2,6 +2,7 @@ package markov;
 
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.SortedSet;
 import java.util.TreeSet;
 
 public class Dictionary implements Iterable<Domain> {
@@ -18,8 +19,16 @@ public class Dictionary implements Iterable<Domain> {
     return data.get(machineName);
   }
   
+  public boolean isCompleteSet(String machineName, String labelName, SortedSet<String> characters) {
+    return get(machineName).get(labelName).isCharSetEqual(characters); 
+  }
+  
   public Iterator<Domain> iterator() {
     return new util.UnmodifiableIterator<Domain>(data.values().iterator());
+  }
+  
+  public Resolver.Atom convert(Predicate.Atom atom) {
+    return new Resolver.Atom(atom.machineName, atom.labelName, get(atom.machineName).get(atom.labelName).indexOf(atom.character));
   }
   
   public static class Builder {

@@ -6,12 +6,14 @@ import java.util.Iterator;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import util.LexicalCompare;
+
 public class Alphabet implements Iterable<String>, Comparable<Alphabet> {
   public final String machineName;  // needed for generating fully qualified labels
   public final String name;  // "machine.name" should uniquely identify an alphabet
 
   private final String prefix;  // "<machine>.<name>." convenience attribute
-  private final ArrayList<String> characters;
+  private final ArrayList<String> characters;  // this is ordered, unique
   
   private Alphabet(String machineName, String name, SortedSet<? extends String> chars) {
 	  this.machineName = machineName;
@@ -35,16 +37,22 @@ public class Alphabet implements Iterable<String>, Comparable<Alphabet> {
     }
     return a2.size() - a1.size();
   }
-    
-  /** Accepts either fully qualified or regular name. */
+  
+  public boolean isCharSetEqual(SortedSet<String> charSet) {
+    return LexicalCompare.areEqual(characters.iterator(), charSet.iterator());
+  }
+  
+  /** Accept only regular name. */
   public boolean hasCharacter(String str) {
-    if (str.startsWith(prefix)) {
-      str = str.substring(prefix.length());
-    }
     int idx = Collections.<String>binarySearch(characters, str);
     return idx >= 0 && idx < characters.size() && characters.get(idx).equals(str);
   }
-  
+
+  public String get(int idx) { return characters.get(idx); }
+  /** If character not contained, output is not specified */
+  public int indexOf(String str) {
+    return Collections.<String>binarySearch(characters, str);
+  }
   public int size() { return characters.size(); }
   
   /** Returns an iterator over the fully qualified label instances */

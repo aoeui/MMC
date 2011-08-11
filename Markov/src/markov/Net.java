@@ -11,13 +11,10 @@ import java.util.TreeSet;
 
 import markov.DecisionTree.Branch;
 import markov.DecisionTree.Terminal;
-import markov.Predicate.And;
 import markov.Predicate.Atom;
+import markov.Predicate.CollectionPredicate;
 import markov.Predicate.Implies;
 import markov.Predicate.Neg;
-import markov.Predicate.Or;
-import markov.Predicate.Value;
-
 import util.Indenter;
 import util.UnmodifiableIterator;
 
@@ -81,16 +78,14 @@ public class Net<T extends Probability<T>> implements Iterable<Machine<T>> {
   }
   
   private void recursePredicateFindMachineNames(Predicate pred, final Set<String> accu) {
-    pred.accept(new Predicate.Visitor() {
-      public void visitAnd(And predicate) {
+    pred.accept(new Predicate.VisitorAdapter() {
+      public void visit(Predicate p) {
+        throw new RuntimeException();
+      }
+      public void visitCollection(CollectionPredicate predicate) {
         for (Predicate p : predicate) {
           recursePredicateFindMachineNames(p, accu);
         }
-      }
-      public void visitOr(Or predicate) {
-        for (Predicate p : predicate) {
-          recursePredicateFindMachineNames(p, accu);
-        }        
       }
       public void visitNeg(Neg predicate) {
         recursePredicateFindMachineNames(predicate.subject, accu);
@@ -102,7 +97,6 @@ public class Net<T extends Probability<T>> implements Iterable<Machine<T>> {
       public void visitAtom(Atom predicate) {
         accu.add(predicate.machineName);
       }
-      public void visitValue(Value predicate) {}
     });
   }
   
