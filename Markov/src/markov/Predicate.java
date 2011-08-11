@@ -2,8 +2,6 @@ package markov;
 
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.TreeMap;
-import java.util.TreeSet;
 import util.UnmodifiableIterator;
 
 public abstract class Predicate {
@@ -68,7 +66,7 @@ public abstract class Predicate {
     }
     public void accept(Visitor v) { v.visitAnd(this); }
     public Resolver reduce(final Dictionary dictionary) {
-
+      return null;
     }
     public String getConnectiveString() { return "/\\"; }
   }
@@ -78,7 +76,7 @@ public abstract class Predicate {
     }
     public void accept(Visitor v) { v.visitOr(this); }
     public Resolver reduce(final Dictionary dictionary) {
-
+      return null;
     }
 
     public String getConnectiveString() { return "\\/"; }
@@ -94,7 +92,7 @@ public abstract class Predicate {
     }
     public void accept(Visitor v) { v.visitImplies(this); }
     public Resolver reduce(Dictionary dictionary) {
-
+      return null;
     }
 
     public String toString() {
@@ -109,7 +107,7 @@ public abstract class Predicate {
     }
     public void accept(Visitor v) { v.visitNeg(this); }
 
-    public Resolver reduce(final Dictionary dictionary) { return subject; }
+    public Resolver reduce(final Dictionary dictionary) { return null; }
     
     public String toString() {
       return "-(" + subject + ")";

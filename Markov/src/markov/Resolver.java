@@ -26,6 +26,7 @@ public abstract class Resolver {
     public void accept(Visitor v) { v.visitAnd(this); }
     
     public Resolver resolve(Dictionary dict, Atom atom) {
+      return null;
     }
   }
 
@@ -38,7 +39,7 @@ public abstract class Resolver {
     
     public void accept(Visitor v) { v.visitOr(this); }
     
-    public Resolver resolve(Dictionary dict, Atom atom) {
+    public Resolver resolve(final Dictionary dict, Atom atom) {
       final HashMap<String,BitSet> atoms = new HashMap<String,BitSet>();
       final Resolver[] shortCircuit = new Resolver[] { null };
       Iterator<Resolver> termIt = terms.iterator();
@@ -54,15 +55,16 @@ public abstract class Resolver {
           public void visitAtom(Atom p) {
             BitSet bits = atoms.get(p.varName);
             if (bits == null) {
-              bits = new BitSet(dict.get(p.machineName).get());
+              bits = new BitSet(dict.get(p.machineName).get(p.labelName).size());
             }
           }
           public void visitValue(Value p) {
             if (p.value) shortCircuit[0] = TRUE;
           }
-        });
-        if (shortCircuit[0] != null) return shortCircuit[0]; 
+        }); 
       }
+      if (shortCircuit[0] != null) return shortCircuit[0];
+      return null;
     }
   }
   
