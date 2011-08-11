@@ -16,7 +16,7 @@
 <!ELEMENT or (predicate,predicate+)>
 <!ELEMENT and (predicate,predicate+)>
 <!ELEMENT neg (predicate)>
-<!ELEMENT implies (predicate)>
+<!ELEMENT implies (predicate,predicate)>
 <!ELEMENT atom (labelPair)>
 <!ATTLIST atom machineName CDATA #REQUIRED>
 <!ELEMENT probability ((instance,pValue)+)>
