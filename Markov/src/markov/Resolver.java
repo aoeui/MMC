@@ -5,6 +5,7 @@ import java.util.BitSet;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import util.UnmodifiableIterator;
 
 public abstract class Resolver {
   public final static Resolver TRUE = Value.TRUE;
@@ -13,10 +14,11 @@ public abstract class Resolver {
   public abstract void accept(Visitor v);
 
   public abstract Resolver resolve(Atom atom);
+
   public boolean isValue() { return false; }
   public boolean getValue() { throw new UnsupportedOperationException(); }
 
-  public static class And extends Resolver {
+  public static class And extends Resolver implements Iterable<Resolver> {
     ArrayList<Resolver> terms;
     
     public And(Collection<Resolver> terms) {
@@ -25,12 +27,137 @@ public abstract class Resolver {
     
     public void accept(Visitor v) { v.visitAnd(this); }
     
+    public Iterator<Resolver> iterator() {
+      return new UnmodifiableIterator<Resolver>(terms.iterator());
+    }
+    
     public Resolver resolve(Atom atom) {
-      return null;
+      AndResolverBuilder rb = new AndResolverBuilder(terms, atom);
+      rb.doResolve();
+      return rb.getRv();
     }
   }
 
-  public static class Or extends Resolver {
+  public static class AndResolverBuilder extends ResolverBuilder {
+    public AndResolverBuilder(ArrayList<Resolver> terms, Atom atom) {
+      super(terms, atom);
+    }
+    
+    public void processTerm(Resolver term) {
+      if (shortCircuit != null) return;
+      
+      term.resolve(markedAtom).accept(new Visitor() {
+        public void visitAnd(And p) {
+          for (Resolver subterm : p) {
+            processTerm(subterm);
+          }
+        }
+        public void visitOr(Or p) {
+          newTerms.add(p);
+        }
+        public void visitAtom(Atom p) {
+          AtomState state = atoms.get(p.alpha.varName);
+          if (state == null) {
+            state = new AtomState(p.alpha);
+          }
+          state.add(p.instance);
+          if (state.cardinality() >= 2) {
+            shortCircuit = FALSE;
+          }
+        }
+        public void visitValue(Value p) {
+          if (!p.value) shortCircuit = FALSE;
+        }
+      });
+    }
+    
+    public Resolver getDefault() { return TRUE; }
+    public Resolver buildFromTerms(Collection<Resolver> terms) {
+      return new And(terms);
+    }
+  }
+  static abstract class ResolverBuilder {
+    ArrayList<Resolver> terms;
+    final Atom markedAtom;
+    
+    final ArrayList<Resolver> newTerms = new ArrayList<Resolver>();
+    final HashMap<String,AtomState> atoms = new HashMap<String,AtomState>();
+    Resolver shortCircuit = null;
+
+    public ResolverBuilder(ArrayList<Resolver> terms, Atom atom) {
+      this.terms = terms;
+      this.markedAtom = atom;
+    }
+    
+    public abstract void processTerm(Resolver term);
+
+    public void doResolve() {
+      Iterator<Resolver> termIt = terms.iterator();
+      while (termIt.hasNext() && shortCircuit == null) {
+        processTerm(termIt.next());
+      }
+    }
+
+    public Resolver getRv() {
+      if (shortCircuit != null) return shortCircuit;
+      for (AtomState state : atoms.values()) {
+        for (Atom a : state) {
+          newTerms.add(a);
+        }
+      }
+      if (newTerms.size() <= 0) {
+        return getDefault();
+      } else if (newTerms.size() == 1) {
+        return newTerms.get(0);
+      } else {
+        return buildFromTerms(newTerms);
+      }
+    }
+    
+    public abstract Resolver getDefault();
+    public abstract Resolver buildFromTerms(Collection<Resolver> terms);
+  }
+
+  static class OrResolverBuilder extends ResolverBuilder {    
+    public OrResolverBuilder(ArrayList<Resolver> terms, Atom atom) {
+      super(terms, atom);
+    }
+
+    public void processTerm(Resolver term) {
+      if (shortCircuit != null) return;
+      
+      term.resolve(markedAtom).accept(new Visitor() {
+        public void visitAnd(And p) {
+          newTerms.add(p);
+        }
+        public void visitOr(Or p) {
+          for (Resolver subterm : p) {
+            processTerm(subterm);
+          }
+        }
+        public void visitAtom(Atom p) {
+          AtomState state = atoms.get(p.alpha.varName);
+          if (state == null) {
+            state = new AtomState(p.alpha);
+          }
+          state.add(p.instance);
+          if (state.isComplete()) {
+            shortCircuit = TRUE;
+          }
+        }
+        public void visitValue(Value p) {
+          if (p.value) shortCircuit = TRUE;
+        }
+      });
+    }
+
+    public Resolver getDefault() { return FALSE; }
+    public Resolver buildFromTerms(Collection<Resolver> terms) {
+      return new Or(terms);
+    }
+  }
+    
+  public static class Or extends Resolver implements Iterable<Resolver> {
     ArrayList<Resolver> terms;
     
     public Or(Collection<Resolver> terms) {
@@ -39,37 +166,12 @@ public abstract class Resolver {
     
     public void accept(Visitor v) { v.visitOr(this); }
     
+    public Iterator<Resolver> iterator() { return new UnmodifiableIterator<Resolver>(terms.iterator()); }
+
     public Resolver resolve(Atom atom) {
-      final ArrayList<Resolver> newTerms = new ArrayList<Resolver>();
-      final HashMap<String,AtomState> atoms = new HashMap<String,AtomState>();
-      final Resolver[] shortCircuit = new Resolver[] { null };
-      Iterator<Resolver> termIt = terms.iterator();
-      while (termIt.hasNext() && shortCircuit[0] == null) {
-        Resolver term = termIt.next().resolve(atom);
-        term.accept(new Visitor() {
-          public void visitAnd(And p) {
-            
-          }
-          public void visitOr(Or p) {
-            
-          }
-          public void visitAtom(Atom p) {
-            AtomState state = atoms.get(p.alpha.varName);
-            if (state == null) {
-              state = new AtomState(p.alpha);
-            }
-            state.add(p.instance);
-            if (state.isComplete()) {
-              shortCircuit[0] = TRUE;
-            }
-          }
-          public void visitValue(Value p) {
-            if (p.value) shortCircuit[0] = TRUE;
-          }
-        }); 
-      }
-      if (shortCircuit[0] != null) return shortCircuit[0];
-      return null;
+      OrResolverBuilder rb = new OrResolverBuilder(terms, atom);
+      rb.doResolve();
+      return rb.getRv();
     }
   }
   
@@ -86,6 +188,8 @@ public abstract class Resolver {
       
       set = new BitSet(N);
     }
+    
+    public int cardinality() { return set.cardinality(); }
     
     public boolean isComplete() {
       return set.cardinality() == N;
