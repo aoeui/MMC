@@ -19,5 +19,6 @@
 <!ELEMENT implies (predicate,predicate)>
 <!ELEMENT atom (labelPair)>
 <!ATTLIST atom machineName CDATA #REQUIRED>
-<!ELEMENT probability ((instance,pValue)+)>
+<!ELEMENT probability ((stateName,pValue)+)>
+<!ELEMENT stateName (#PCDATA)>
 <!ELEMENT pValue (#PCDATA)>

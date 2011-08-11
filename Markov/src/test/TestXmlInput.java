@@ -4,9 +4,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 
 import markov.Predicate;
-import markov.Predicate.*;
-import markov.Probability;
 import markov.FractionProbability;
+import markov.TransitionVector;
+import markov.DecisionTree;
 
 import org.w3c.dom.*;
 import javax.xml.parsers.*;
@@ -97,16 +97,29 @@ public class TestXmlInput {
           }
             
         }
-        else if(decisionTreeXml.getChildNodes().item(1).getNodeName().equals("probability")){
+        else if(decisionTreeXml.getChildNodes().item(1).getNodeName().equals("probability")){  
           Element probabilityXml=(Element)decisionTreeXml.getChildNodes().item(1);
-          System.out.println("instance:"+probabilityXml.getElementsByTagName("instance").item(0).getChildNodes().item(0).getNodeValue() + " ,pValue:" +probabilityXml.getElementsByTagName("pValue").item(0).getChildNodes().item(0).getNodeValue());
-          String[] pValue=probabilityXml.getElementsByTagName("pValue").item(0).getChildNodes().item(0).getNodeValue().split(",");
-          if (pValue.length!=2)
-            System.err.println("pValue input wrong");
-          Long num=Long.parseLong(pValue[0]);
-          Long den=Long.parseLong(pValue[1]);
-          Probability<FractionProbability> probability=new FractionProbability(num,den);
-        }
+          NodeList stateNameXml=probabilityXml.getElementsByTagName("stateName");
+          NodeList pValueXml=probabilityXml.getElementsByTagName("pValue");
+          TransitionVector.Builder<FractionProbability> b=new TransitionVector.Builder<FractionProbability>();
+
+          for (int temp=0; temp<stateNameXml.getLength();temp++){
+            System.out.println("stateName:"+stateNameXml.item(temp).getChildNodes().item(0).getNodeValue()+",pValue:"+pValueXml.item(temp).getChildNodes().item(0).getNodeValue());
+            String[] pValue=pValueXml.item(temp).getChildNodes().item(0).getNodeValue().split(",");
+            String stateName=stateNameXml.item(temp).getChildNodes().item(0).getNodeValue();
+
+            if (pValue.length!=2)
+              System.err.println("pValue input error! Should have format <num>,<den>");
+            Long num=Long.parseLong(pValue[0]);
+            Long den=Long.parseLong(pValue[1]);
+            FractionProbability probability=new FractionProbability(num,den);
+            b.setProbability(stateName, probability);
+
+          }
+        
+          TransitionVector<FractionProbability> transitionVectro=b.build();
+
+          }
         
        
       }
@@ -119,7 +132,7 @@ public class TestXmlInput {
           Element atomLabelVector=(Element) atomXml.getChildNodes().item(1);
           System.out.println("    atom labelVector: [" + atomLabelVector.getAttribute("name")+":"+atomLabelVector.getChildNodes().item(1).getChildNodes().item(0).getNodeValue()+"]");
           // create atom
-          Atom atom=new Atom(atomXml.getAttribute("machineName"),atomLabelVector.getAttribute("name"),atomLabelVector.getChildNodes().item(1).getChildNodes().item(0).getNodeValue());
+          Predicate.Atom atom=new Predicate.Atom(atomXml.getAttribute("machineName"),atomLabelVector.getAttribute("name"),atomLabelVector.getChildNodes().item(1).getChildNodes().item(0).getNodeValue());
           Input=(Predicate)atom;
         }
         
@@ -136,10 +149,10 @@ public class TestXmlInput {
           }
           System.out.println(": "+orAnd.getNodeName()+": predicates #: "+predicates.size());
 
-          CollectionBuilder cBuild=null;
+          Predicate.CollectionBuilder cBuild=null;
           if (predicate.getChildNodes().item(1).getNodeName().equals("or"))
-            cBuild=new CollectionBuilder(Predicate.CollectionType.OR);
-          else cBuild=new CollectionBuilder(Predicate.CollectionType.AND);
+            cBuild=new Predicate.CollectionBuilder(Predicate.CollectionType.OR);
+          else cBuild=new Predicate.CollectionBuilder(Predicate.CollectionType.AND);
           
           // call itself to retrieve the predicate info
           Iterator<Element> itr = predicates.iterator();
@@ -156,7 +169,7 @@ public class TestXmlInput {
           Element pred=(Element) neg.getChildNodes().item(1);
           // call itself to retrieve the predicate info
           getInfoFromPredicate(pred,Input);
-          Input=new Neg(Input);
+          Input=new Predicate.Neg(Input);
 
         }else if (predicate.getChildNodes().item(1).getNodeName().equals("implies")){
           Element antecedentXml=(Element) predicate.getChildNodes().item(1);
@@ -167,7 +180,7 @@ public class TestXmlInput {
           Input=null;
           getInfoFromPredicate(consequentXml,Input);
           Predicate consequent=Input;
-          Input=new Implies(antecedent,consequent);
+          Input=new Predicate.Implies(antecedent,consequent);
         }
        
       }
