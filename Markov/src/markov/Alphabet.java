@@ -12,6 +12,8 @@ public class Alphabet implements Iterable<String>, Comparable<Alphabet> {
   public final String machineName;  // needed for generating fully qualified labels
   public final String name;  // "machine.name" should uniquely identify an alphabet
 
+  public final String varName;
+
   private final String prefix;  // "<machine>.<name>." convenience attribute
   private final ArrayList<String> characters;  // this is ordered, unique
   
@@ -19,6 +21,7 @@ public class Alphabet implements Iterable<String>, Comparable<Alphabet> {
 	  this.machineName = machineName;
 	  this.name = name;
 	  this.prefix = machineName + "." + name + ".";
+	  this.varName = machineName + "." + name;
 	  this.characters = new ArrayList<String>(chars);
   }
   
