@@ -28,7 +28,8 @@ public class Dictionary implements Iterable<Domain> {
   }
   
   public Resolver.Atom convert(Predicate.Atom atom) {
-    return new Resolver.Atom(atom.machineName, atom.labelName, get(atom.machineName).get(atom.labelName).indexOf(atom.character));
+    Alphabet alpha = get(atom.machineName).get(atom.labelName);
+    return new Resolver.Atom(alpha, alpha.indexOf(atom.character));
   }
   
   public static class Builder {
