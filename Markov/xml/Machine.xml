@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE machines SYSTEM "Machine.dtd">
+<machines>
+	<machine name="1020103">
+    	<state name="103020">
+        	<labels>
+				<labelPair name="1030201">
+					<instance>b</instance>
+				</labelPair>
+				<labelPair name="102301">
+					<instance>c</instance>
+				</labelPair>
+			</labels>
+			<decisionTree>
+				<branch>
+					<predicate>
+						<atom machineName="103024">
+							<labelPair name="1030929">
+							  <instance>d</instance>
+							</labelPair>
+						</atom>
+					</predicate>
+					<consequent>
+						<decisionTree>
+							<branch>
+								<predicate>
+									<or>
+										<predicate>
+											<atom machineName="103024">
+												<labelPair name="1030929">
+							  						<instance>d</instance>
+												</labelPair>
+											</atom>
+										</predicate>
+										<predicate>
+											<atom machineName="103022">
+												<labelPair name="1030949">
+								  					<instance>d</instance>
+												</labelPair>
+											</atom>
+										</predicate>
+									</or>
+								</predicate>
+								<consequent>
+									<decisionTree>
+										<probability>
+											<instance>c</instance>
+											<pValue>0.01203</pValue>
+										</probability>
+									</decisionTree>							
+								</consequent>
+							</branch>
+						</decisionTree>
+					</consequent>
+					<alternative>
+						<decisionTree>
+							<branch>
+								<predicate>
+									<atom machineName="103024">
+										<labelPair name="1030929">
+											<instance>d</instance>
+										</labelPair>
+									</atom>
+								</predicate>
+								<consequent>
+									<decisionTree>					
+										<probability>
+											<instance>c</instance>
+											<pValue>0.01203</pValue>
+										</probability>
+									</decisionTree>
+								</consequent>
+							</branch>
+						</decisionTree>
+					</alternative>						
+				</branch>				
+			</decisionTree>
+		</state>
+	</machine>
+</machines>
