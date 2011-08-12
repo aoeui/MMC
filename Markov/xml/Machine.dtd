@@ -9,7 +9,7 @@
 <!ATTLIST labelPair name CDATA #REQUIRED > 
 <!ELEMENT instance (#PCDATA)>
 <!ELEMENT decisionTree (branch|probability)>
-<!ELEMENT branch (predicate,consequent,alternative?)>
+<!ELEMENT branch (predicate,consequent,alternative)>
 <!ELEMENT alternative (decisionTree)>
 <!ELEMENT consequent (decisionTree)>
 <!ELEMENT predicate ((or|and|neg|implies|atom))>

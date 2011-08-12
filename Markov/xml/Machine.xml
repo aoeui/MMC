@@ -53,6 +53,18 @@
 										</probability>
 									</decisionTree>							
 								</consequent>
+								<alternative>
+									<decisionTree>
+										<probability>
+											<stateName>102030</stateName>
+											<pValue>1,4</pValue>
+											<stateName>102034</stateName>
+											<pValue>1,2</pValue>
+											<stateName>102050</stateName>
+											<pValue>1,4</pValue>
+										</probability>
+									</decisionTree>
+								</alternative>
 							</branch>
 						</decisionTree>
 					</consequent>
@@ -76,6 +88,19 @@
 										</probability>
 									</decisionTree>
 								</consequent>
+								<alternative>
+									<decisionTree>
+										<probability>
+											<stateName>102043</stateName>
+											<pValue>1,6</pValue>
+											<stateName>213042</stateName>
+											<pValue>1,3</pValue>
+											<stateName>145093</stateName>
+											<pValue>1,2</pValue>
+										</probability>
+										
+									</decisionTree>
+								</alternative>
 							</branch>
 						</decisionTree>
 					</alternative>						
