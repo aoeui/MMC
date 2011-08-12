@@ -44,8 +44,12 @@
 								<consequent>
 									<decisionTree>
 										<probability>
-											<instance>c</instance>
-											<pValue>0.01203</pValue>
+											<stateName>020230</stateName>
+											<pValue>1,3</pValue>
+											<stateName>02025</stateName>
+											<pValue>1,3</pValue>
+											<stateName>02026</stateName>
+											<pValue>1,3</pValue>											
 										</probability>
 									</decisionTree>							
 								</consequent>
@@ -65,8 +69,10 @@
 								<consequent>
 									<decisionTree>					
 										<probability>
-											<instance>c</instance>
-											<pValue>0.01203</pValue>
+											<stateName>020012</stateName>
+											<pValue>1,2</pValue>
+											<stateName>02032</stateName>
+											<pValue>1,2</pValue>
 										</probability>
 									</decisionTree>
 								</consequent>
