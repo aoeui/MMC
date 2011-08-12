@@ -8,38 +8,38 @@ import util.FilterIterator;
 import util.UnmodifiableIterator;;
 
 public class TransitionVector<T extends Probability<T>>
-    implements Iterable<Map.Entry<State<T>, T>>, Comparable<TransitionVector<T>> {
-  public final Machine<T> machine;
-  private final TreeMap<State<T>,T> map;
+    implements Iterable<Map.Entry<String, T>>, Comparable<TransitionVector<T>> {
+  public final String machineName;
+  private final TreeMap<String,T> map;  // maps state name to probability
   
-  private TransitionVector(Machine<T> machine, TreeMap<State<T>, T> map) {
-    this.machine = machine;
-    this.map = new TreeMap<State<T>,T>(map);
+  private TransitionVector(String machineName, TreeMap<String, T> map) {
+    this.machineName = machineName;
+    this.map = new TreeMap<String,T>(map);
   }
   
   public T getProbability(State<T> state) {
     return map.get(state);
   }
   
-  public Iterator<Map.Entry<State<T>, T>> iterator() {
-    return new UnmodifiableIterator<Map.Entry<State<T>,T>>(map.entrySet().iterator());
+  public Iterator<Map.Entry<String, T>> iterator() {
+    return new UnmodifiableIterator<Map.Entry<String,T>>(map.entrySet().iterator());
   }
   
-  public Iterator<Map.Entry<State<T>, T>> nonZeroIterator() {
-    return new FilterIterator<Map.Entry<State<T>,T>>(map.entrySet().iterator()) {
-      public boolean allowElement(Map.Entry<State<T>, T> entry) {
+  public Iterator<Map.Entry<String, T>> nonZeroIterator() {
+    return new FilterIterator<Map.Entry<String,T>>(map.entrySet().iterator()) {
+      public boolean allowElement(Map.Entry<String, T> entry) {
         return !entry.getValue().isZero();
       }
     };
   }
   
   public int compareTo(TransitionVector<T> other) {
-    Iterator<Map.Entry<State<T>, T>> myIt = nonZeroIterator();
-    Iterator<Map.Entry<State<T>, T>> hisIt = other.nonZeroIterator();
+    Iterator<Map.Entry<String, T>> myIt = nonZeroIterator();
+    Iterator<Map.Entry<String, T>> hisIt = other.nonZeroIterator();
     int rv = 0;
     while (rv == 0 && myIt.hasNext() && hisIt.hasNext()) {
-      Map.Entry<State<T>, T> myEntry = myIt.next();
-      Map.Entry<State<T>, T> hisEntry = hisIt.next();
+      Map.Entry<String, T> myEntry = myIt.next();
+      Map.Entry<String, T> hisEntry = hisIt.next();
       int comp = myEntry.getKey().compareTo(hisEntry.getKey());
       if (comp == 0) {
         rv = myEntry.getValue().compareTo(hisEntry.getValue());
@@ -60,7 +60,7 @@ public class TransitionVector<T extends Probability<T>>
   public boolean equals(Object o) {
     try {
       TransitionVector<?> other = ((TransitionVector<?>)o);
-      if (!other.machine.equals(machine)) return false;
+      if (!other.machineName.equals(machineName)) return false;
       return map.equals(other.map);
     } catch (Exception e) { return false; }
   }
@@ -68,26 +68,26 @@ public class TransitionVector<T extends Probability<T>>
   public String toString() {
     StringBuilder builder = new StringBuilder();
     boolean isFirst = true;
-    for (Map.Entry<State<T>, T> entry : map.entrySet()) {
+    for (Map.Entry<String, T> entry : map.entrySet()) {
       if (isFirst) isFirst = false;
       else {
         builder.append(", ");
       }
-      builder.append("p[").append(entry.getKey().name).append("]=").append(entry.getValue());
+      builder.append("p[").append(entry.getKey()).append("]=").append(entry.getValue());
     }
     return builder.toString();
   }
 
   public static class Builder<T extends Probability<T>> {
-    Machine<T> machine;
-    TreeMap<State<T>,T> map;
+    String machineName;
+    TreeMap<String,T> map;
     
-    public Builder(Machine<T> machine) {
-      this.machine = machine;
-      this.map = new TreeMap<State<T>,T>();
+    public Builder(String machineName) {
+      this.machineName = machineName;
+      this.map = new TreeMap<String,T>();
     }
     
-    public void setProbability(State<T> state, T prob) {
+    public void setProbability(String state, T prob) {
       map.put(state, prob);
     }
     
@@ -99,7 +99,7 @@ public class TransitionVector<T extends Probability<T>>
       }
       if (!sum.isOne()) throw new RuntimeException();
       
-      return new TransitionVector<T>(machine, map);
+      return new TransitionVector<T>(machineName, map);
     }
   }
 }
