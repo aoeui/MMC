@@ -17,7 +17,7 @@ import javax.xml.parsers.*;
 public class TestXmlInput {
 
       public static void main (String args[]) {
-          new TestXmlInput();
+          System.out.println(new TestXmlInput());
       }
       /****** This method can be used in other class to retrieve machines **********/
       public Net<FractionProbability> XmlInput(String fileName) {

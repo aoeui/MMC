@@ -89,7 +89,7 @@ public class LongFraction implements Comparable<LongFraction> {
 
   public String toString() {
     StringBuffer buf = new StringBuffer();
-    buf.append(num).append(" / ").append(den);
+    buf.append(num).append('/').append(den);
     return buf.toString();
   }
 

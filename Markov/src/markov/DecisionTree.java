@@ -35,13 +35,13 @@ public abstract class DecisionTree<T extends Probability<T>> {
     }
     
     public void indent(Indenter indenter) {
-      indenter.print("if (").print(predicate).println(") {\n");
+      indenter.print("if (").print(predicate).print(") {\n");
       indenter.indent();
-      indenter.println(consequent);
+      consequent.indent(indenter);
       indenter.deindent();
-      indenter.println("} else {").indent();
-      indenter.println(alternative);
-      indenter.deindent().println("}");
+      indenter.print("} else {\n").indent();
+      alternative.indent(indenter);
+      indenter.deindent().print("}\n");
     }
   }  
   
@@ -59,7 +59,7 @@ public abstract class DecisionTree<T extends Probability<T>> {
     public boolean isTerminal() { return true; }
     public TransitionVector<T> getTransitionVector() { return vector; }
     public String toString() { return vector.toString(); }
-    public void indent(Indenter indenter) { indenter.print(vector); }
+    public void indent(Indenter indenter) { indenter.println(vector); }
   }
   
   public static interface Visitor<T extends Probability<T>> {

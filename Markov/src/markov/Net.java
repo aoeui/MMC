@@ -151,17 +151,20 @@ public class Net<T extends Probability<T>> implements Iterable<Machine<T>> {
     return indenter.toString();
   }
   public void indent(Indenter indenter) {
-     for (String name : machineTable.keySet()) {
-       indenter.println(machineTable.get(name));
-       indenter.println(dictionary.get(name));
-       indenter.print("neighbors = [");
-       boolean isFirst = true;
-       for (String neighbor : getNeighbors(name)) {
-         if (isFirst) isFirst = false;
-         else indenter.print(", ");
-         indenter.print(neighbor);
-       }
-       indenter.println("]");
-     }
+    boolean isFirstMachine = true;
+    for (String name : machineTable.keySet()) {
+      if (isFirstMachine) isFirstMachine = false;
+      else indenter.println();
+      indenter.print(machineTable.get(name));
+      indenter.println("dictionary:").indent().println(dictionary.get(name)).deindent();
+      indenter.print("neighbors = [");
+      boolean isFirst = true;
+      for (String neighbor : getNeighbors(name)) {
+        if (isFirst) isFirst = false;
+        else indenter.print(", ");
+        indenter.print(neighbor);
+      }
+      indenter.println("]");
+    }
   }
 }
