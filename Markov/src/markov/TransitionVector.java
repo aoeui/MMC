@@ -9,11 +9,9 @@ import util.UnmodifiableIterator;;
 
 public class TransitionVector<T extends Probability<T>>
     implements Iterable<Map.Entry<String, T>>, Comparable<TransitionVector<T>> {
-  public final String machineName;
   private final TreeMap<String,T> map;  // maps state name to probability
   
-  private TransitionVector(String machineName, TreeMap<String, T> map) {
-    this.machineName = machineName;
+  private TransitionVector(TreeMap<String, T> map) {
     this.map = new TreeMap<String,T>(map);
   }
   
@@ -60,7 +58,6 @@ public class TransitionVector<T extends Probability<T>>
   public boolean equals(Object o) {
     try {
       TransitionVector<?> other = ((TransitionVector<?>)o);
-      if (!other.machineName.equals(machineName)) return false;
       return map.equals(other.map);
     } catch (Exception e) { return false; }
   }
@@ -79,11 +76,9 @@ public class TransitionVector<T extends Probability<T>>
   }
 
   public static class Builder<T extends Probability<T>> {
-    String machineName;
     TreeMap<String,T> map;
     
-    public Builder(String machineName) {
-      this.machineName = machineName;
+    public Builder() {
       this.map = new TreeMap<String,T>();
     }
     
@@ -99,7 +94,7 @@ public class TransitionVector<T extends Probability<T>>
       }
       if (!sum.isOne()) throw new RuntimeException();
       
-      return new TransitionVector<T>(machineName, map);
+      return new TransitionVector<T>(map);
     }
   }
 }
