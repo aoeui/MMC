@@ -85,6 +85,7 @@ public class Alphabet implements Iterable<String>, Comparable<Alphabet> {
     public Builder(Machine<?> machine, String name) {
       this.machine = machine;
       this.name = name;
+      this.chars=new TreeSet<String>();
     }
     
     private void addCharacter(String character) {

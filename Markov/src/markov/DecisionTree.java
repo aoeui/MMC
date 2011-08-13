@@ -8,7 +8,7 @@ public abstract class DecisionTree<T extends Probability<T>> {
   
   public abstract void accept(Visitor<T> visitor);
 
-  static class Branch<T extends Probability<T>> extends DecisionTree<T> {
+  static public class Branch<T extends Probability<T>> extends DecisionTree<T> {
     public final Predicate predicate;
     public final DecisionTree<T> consequent;
     public final DecisionTree<T> alternative;
@@ -45,7 +45,7 @@ public abstract class DecisionTree<T extends Probability<T>> {
     }
   }  
   
-  static class Terminal<T extends Probability<T>> extends DecisionTree<T> {
+  static public class Terminal<T extends Probability<T>> extends DecisionTree<T> {
     TransitionVector<T> vector;
     
     public Terminal(TransitionVector<T> vector) {
