@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!ELEMENT machines (machine+)>
+<!ELEMENT machine (state+)>
+<!ATTLIST machine name CDATA #REQUIRED >
+<!ELEMENT state (labels, decisionTree)>
+<!ATTLIST state name CDATA #REQUIRED >
+<!ELEMENT labels (labelPair+)>
+<!ELEMENT labelPair (instance)>
+<!ATTLIST labelPair name CDATA #REQUIRED > 
+<!ELEMENT instance (#PCDATA)>
+<!ELEMENT decisionTree (branch|probability)>
+<!ELEMENT branch (predicate,consequent,alternative?)>
+<!ELEMENT alternative (decisionTree)>
+<!ELEMENT consequent (decisionTree)>
+<!ELEMENT predicate ((or|and|neg|implies|atom))>
+<!ELEMENT or (predicate,predicate+)>
+<!ELEMENT and (predicate,predicate+)>
+<!ELEMENT neg (predicate)>
+<!ELEMENT implies (predicate)>
+<!ELEMENT atom (labelPair)>
+<!ATTLIST atom machineName CDATA #REQUIRED>
+<!ELEMENT probability ((instance,pValue)+)>
+<!ELEMENT pValue (#PCDATA)>
