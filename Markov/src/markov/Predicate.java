@@ -147,7 +147,7 @@ public abstract class Predicate {
     }
     
     public String toString() {
-      return varName + "." + character;
+      return varName + "=" + character;
     }
     
     public int compareTo(Atom other) {
