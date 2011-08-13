@@ -5,12 +5,29 @@ import java.util.Iterator;
 import util.UnmodifiableIterator;
 
 public abstract class Predicate {
-  public enum CollectionType { AND, OR }  
+  public enum CollectionType {
+    AND("/\\"), OR("\\/");
+    
+    public final String str;
+    CollectionType(String str) {
+      this.str = str;
+    }
+    public String toString() { return str; }
+    public CollectionType opposite() {
+      switch (this) {
+      case AND: return OR;
+      case OR: return AND;
+      default: throw new RuntimeException();
+      }
+    }
+  }  
 
   public abstract void accept(Visitor visitor);
 
   /** Turns everything into alternating AND / OR and eliminates NEG */
-  public abstract Resolver reduce(Dictionary dictionary);
+  public Resolver reduce(Dictionary dictionary) {
+    return new Resolver.Builder(this, dictionary).build();
+  }
 
   public static class CollectionBuilder {
     ArrayList<Predicate> terms;
@@ -37,14 +54,16 @@ public abstract class Predicate {
   }
   
   public static abstract class CollectionPredicate extends Predicate implements Iterable<Predicate> {
+    public final CollectionType type;
     ArrayList<Predicate> terms;
-    CollectionPredicate(ArrayList<Predicate> terms) {
+    CollectionPredicate(CollectionType type, ArrayList<Predicate> terms) {
       if (terms.size() < 2) throw new RuntimeException();
+      
+      this.type = type;
       this.terms = new ArrayList<Predicate>(terms);
     }
     public void accept(Visitor v) { v.visitCollection(this); }
     
-    public abstract String getConnectiveString();
     public Iterator<Predicate> iterator() {
       return new UnmodifiableIterator<Predicate>(terms.iterator());
     }
@@ -53,7 +72,7 @@ public abstract class Predicate {
       boolean isFirst = true;
       for (Predicate term : terms) {
         if (isFirst) isFirst = false;
-        else b.append(' ').append(getConnectiveString()).append(' ');
+        else b.append(' ').append(type).append(' ');
         b.append('(').append(term).append(')');
       }
       return b.toString();
@@ -62,24 +81,15 @@ public abstract class Predicate {
 
   public static class And extends CollectionPredicate {
     And(ArrayList<Predicate> clauses) {
-      super(clauses);
+      super(CollectionType.AND, clauses);
     }
     public void accept(Visitor v) { v.visitAnd(this); }
-    public Resolver reduce(final Dictionary dictionary) {
-      return null;
-    }
-    public String getConnectiveString() { return "/\\"; }
   }
   public static class Or extends CollectionPredicate {
     Or(ArrayList<Predicate> terms) {
-      super(terms);
+      super(CollectionType.OR, terms);
     }
     public void accept(Visitor v) { v.visitOr(this); }
-    public Resolver reduce(final Dictionary dictionary) {
-      return null;
-    }
-
-    public String getConnectiveString() { return "\\/"; }
   }
 
   public static class Implies extends Predicate {
@@ -91,8 +101,13 @@ public abstract class Predicate {
       this.consequent = consequent;
     }
     public void accept(Visitor v) { v.visitImplies(this); }
-    public Resolver reduce(Dictionary dictionary) {
-      return null;
+    
+    // Converts to an Or
+    public Predicate convert() {
+      CollectionBuilder builder = new CollectionBuilder(CollectionType.OR);
+      builder.add(new Neg(antecedent));
+      builder.add(consequent);
+      return builder.build();
     }
 
     public String toString() {
@@ -106,8 +121,6 @@ public abstract class Predicate {
       this.subject = subject;
     }
     public void accept(Visitor v) { v.visitNeg(this); }
-
-    public Resolver reduce(final Dictionary dictionary) { return null; }
     
     public String toString() {
       return "-(" + subject + ")";
@@ -128,11 +141,6 @@ public abstract class Predicate {
       this.varName = machineName + "." + labelName;
     }
     public void accept(Visitor v) { v.visitAtom(this); }
-
-    // Atoms are irreducible
-    public Resolver reduce(final Dictionary dictionary) {
-      return dictionary.convert(this);
-    }
 
     public boolean isSameVariable(Atom atom) {
       return varName.equals(atom.varName);
@@ -176,55 +184,3 @@ public abstract class Predicate {
   }
 
 }
-
-/*
-p.accept(new VisitorAdapter() {
-public void visit(Predicate p) {
-  terms.add(p);
-}
-public void visitAnd(And p) {
-  if (type.equals(CollectionType.AND)) {
-    for (Predicate term : p.terms) {
-      add(term);
-    }
-  } else {
-    terms.add(p);
-  }
-}
-public void visitOr(Or p) {
-  if (type.equals(CollectionType.OR)) {
-    for (Predicate term : p.terms) {
-      add(term);
-    }
-  } else {
-    terms.add(p);
-  }
-}
-public void visitAtom(Atom atom) {
-  TreeSet<Atom> instances = atoms.get(atom.varName);
-  if (instances == null) {
-    instances = new TreeSet<Atom>();
-    instances.add(atom);
-    atoms.put(atom.varName, instances);
-  } else if (instances.size() <= 0) {
-    throw new RuntimeException();  // should not be possible
-  } else {
-    switch (type) {
-    case AND:
-      if (!instances.contains(atom)) {
-        terms = null;
-        return;
-      }
-      break;
-    case OR:
-      if (!instances.contains(atom)) {
-        instances.add(atom);
-        // Would like to check if its a complete set, but that requires dictionary!
-      }
-    }
-  }
-}
-public void visitValue(Value v) {
-  if (type.equals(CollectionType.AND) ^ v.isTrue) terms = null;
-}
-}); */

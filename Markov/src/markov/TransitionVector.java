@@ -17,8 +17,8 @@ public class TransitionVector<T extends Probability<T>>
     this.map = new TreeMap<String,T>(map);
   }
   
-  public T getProbability(State<T> state) {
-    return map.get(state);
+  public T getProbability(String stateName) {
+    return map.get(stateName);
   }
   
   public Iterator<Map.Entry<String, T>> iterator() {
