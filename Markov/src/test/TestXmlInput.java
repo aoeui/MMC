@@ -195,12 +195,10 @@ public class TestXmlInput {
         
         else if (predicate.getChildNodes().item(1).getNodeName().equals("or")||predicate.getChildNodes().item(1).getNodeName().equals("and")){
           Element orAnd=(Element) predicate.getChildNodes().item(1);
-          int orAndPredicateCounter=0;
           ArrayList<Element> predicates=new ArrayList<Element>();
 
           for (int temp=0; temp<orAnd.getChildNodes().getLength();temp++){
             if (orAnd.getChildNodes().item(temp).getNodeName().equals("predicate")){
-              orAndPredicateCounter++;
               predicates.add((Element)orAnd.getChildNodes().item(temp));
             }
           }
