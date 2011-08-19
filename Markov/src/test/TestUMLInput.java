@@ -156,57 +156,17 @@ public class TestUMLInput {
   private void parsePredicate(String predicate, BufferedWriter out) throws IOException {
     if (predicate.contains("OR")||predicate.contains("AND")||predicate.contains("NEG")||predicate.contains("IMPLIES")){    
       if (predicate.contains("(")){
-        String pattern="space";
+        String pattern="empty";
         
         int startIdx=predicate.indexOf("(");
-        int bracketNum=1;
+        int bracketNum=1;System.out.println(pattern);
         int endIdx=findPredicate(predicate,bracketNum, startIdx); 
-        
+        System.out.println(pattern);
         //find top logic
-        if(predicate.contains("NEG")){
-          int negIdx=predicate.indexOf("NEG");
-          String temp=predicate.substring(startIdx+1,negIdx);
-          int leftBracketNum=temp.length();
-          temp.replace("(", "");
-          leftBracketNum=leftBracketNum-temp.length();
-          int rightBracketNum=temp.length();
-          temp.replace(")", "");
-          rightBracketNum=rightBracketNum-temp.length();
-          if (leftBracketNum==rightBracketNum) pattern="NEG";
-        }
-        if(predicate.contains("IMPLIES") && !pattern.equals("empty")){
-          int negIdx=predicate.indexOf("IMPLIES");
-          String temp=predicate.substring(startIdx+1,negIdx);
-          int leftBracketNum=temp.length();
-          temp.replace("(", "");
-          leftBracketNum=leftBracketNum-temp.length();
-          int rightBracketNum=temp.length();
-          temp.replace(")", "");
-          rightBracketNum=rightBracketNum-temp.length();
-          if (leftBracketNum==rightBracketNum) pattern="IMPLIES";;
-        }
-        if(predicate.contains("OR") && !pattern.equals("empty")){
-          int negIdx=predicate.indexOf("OR");
-          String temp=predicate.substring(startIdx+1,negIdx);
-          int leftBracketNum=temp.length();
-          temp.replace("(", "");
-          leftBracketNum=leftBracketNum-temp.length();
-          int rightBracketNum=temp.length();
-          temp.replace(")", "");
-          rightBracketNum=rightBracketNum-temp.length();
-          if (leftBracketNum==rightBracketNum) pattern="OR";
-        }
-        if(predicate.contains("AND") && !pattern.equals("empty")) {
-          int negIdx=predicate.indexOf("AND");
-          String temp=predicate.substring(startIdx+1,negIdx);
-          int leftBracketNum=temp.length();
-          temp.replace("(", "");
-          leftBracketNum=leftBracketNum-temp.length();
-          int rightBracketNum=temp.length();
-          temp.replace(")", "");
-          rightBracketNum=rightBracketNum-temp.length();
-          if (leftBracketNum==rightBracketNum) pattern="AND";
-        }
+        pattern=findTopLogic(predicate,startIdx,"IMPLIES",pattern);
+        pattern=findTopLogic(predicate,startIdx,"OR",pattern);
+        pattern=findTopLogic(predicate,startIdx,"AND",pattern);
+        pattern=findTopLogic(predicate,startIdx,"NEG",pattern);
         
         if (pattern.equals("NEG")) {
           int negIdx=predicate.indexOf("NEG");
@@ -274,11 +234,6 @@ public class TestUMLInput {
           
           out.write("</and>\n");
         }
-
-        
-
-        
-           
         
       }
     }else if (predicate.contains("M")){
@@ -290,16 +245,33 @@ public class TestUMLInput {
       out.write("<labelPair name=\""+predicate.substring(idx2+1,idx3)+"\">\n");
       out.write("<instance>"+predicate.substring(idx3+1,idx4)+"</instance>\n");
       out.write("</labelPair>\n</atom>\n");
+    }else{
+      System.err.println("Predicate missmatch!"+predicate);
     }
 //    System.out.println(predicate); 
     
   }
     
   
+  private String findTopLogic(String predicate,int startIdx, String string, String pattern) {
+    if(predicate.contains(string) && pattern.equals("empty")){
+      int idx=predicate.indexOf(string);
+      String temp=predicate.substring(startIdx+1,idx);
+      int leftBracketNum=temp.length();
+      temp=temp.replace("(", "");
+      leftBracketNum=leftBracketNum-temp.length();
+      int rightBracketNum=temp.length();
+      temp=temp.replace(")", "");
+      rightBracketNum=rightBracketNum-temp.length();
+      if (leftBracketNum==rightBracketNum) pattern=string;
+    }
+    return pattern;
+  }
+  
   private int findPredicate(String predicate, int num, int startIdx) {
     int idx=predicate.indexOf(")",startIdx);
     if(idx==-1){
-      System.err.println("Predicate is not valid in UML!");
+      System.err.println("Predicate is not valid in UML!"+predicate);
       return -1;
     }
     num=num-1;    
