@@ -38,7 +38,7 @@ public class Machine<T extends Probability<T>> implements Iterable<State<T>> {
   }
 
   public static class Builder<T extends Probability<T>> {
-    final String name;
+    public final String name;
     TreeMap<String,State<T>> states;
     
     public Builder(String name) {
