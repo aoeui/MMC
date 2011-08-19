@@ -65,7 +65,7 @@ public class TestXmlInput {
 */
               
                   //getDecisionTreeInfo  under state using 3rd under alternative or consequence use 1st of the Elements's childrenNode
-                  DecisionTree<FractionProbability> decisionTree=getDecisionTreeInfo(stateXml);
+                  DecisionTree<FractionProbability> decisionTree=getDecisionTreeInfo(machineBuild.name, stateXml);
               
                   State.Builder<FractionProbability> stateBuild=new State.Builder<FractionProbability>(machineXml.getAttribute("name"),stateXml.getAttribute("name"),decisionTree);
                   
@@ -97,7 +97,7 @@ public class TestXmlInput {
 
       }
       
-      private static DecisionTree<FractionProbability> getDecisionTreeInfo(Element parent){
+      private static DecisionTree<FractionProbability> getDecisionTreeInfo(String machineName, Element parent){
         
         Element decisionTreeXml=null;
         //if DecisionTree is under state use the 4th item of childNodes 
@@ -133,13 +133,13 @@ public class TestXmlInput {
           DecisionTree<FractionProbability> consequent=null;
           DecisionTree<FractionProbability> alternative=null;         
           Element consequentXml = (Element) decisionTreeXml.getChildNodes().item(1).getChildNodes().item(3);
-          consequent = getDecisionTreeInfo (consequentXml);
+          consequent = getDecisionTreeInfo (machineName, consequentXml);
           if (decisionTreeXml.getChildNodes().item(1).getChildNodes().getLength()<6){
             System.err.println("!Missing consequence or alternative");
           } //no alternative
           else {
             Element alternativeXml = (Element) decisionTreeXml.getChildNodes().item(1).getChildNodes().item(5);
-            alternative=getDecisionTreeInfo(alternativeXml);
+            alternative=getDecisionTreeInfo(machineName, alternativeXml);
           }
           if (consequent==null || alternative==null)
             System.err.println("!Consequence or alternative not parsed!");
@@ -152,7 +152,7 @@ public class TestXmlInput {
           Element probabilityXml = (Element)decisionTreeXml.getChildNodes().item(1);
           NodeList stateNameXml = probabilityXml.getElementsByTagName("stateName");
           NodeList pValueXml = probabilityXml.getElementsByTagName("pValue");
-          TransitionVector.Builder<FractionProbability> b=new TransitionVector.Builder<FractionProbability>();
+          TransitionVector.Builder<FractionProbability> b=new TransitionVector.Builder<FractionProbability>(machineName);
 
           for (int temp=0; temp<stateNameXml.getLength();temp++){
    //         System.out.println("  stateName:"+stateNameXml.item(temp).getChildNodes().item(0).getNodeValue()+",pValue:"+pValueXml.item(temp).getChildNodes().item(0).getNodeValue());
