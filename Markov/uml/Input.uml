@@ -3,11 +3,11 @@
   <packagedElement xmi:type="uml:Activity" xmi:id="_Lzu1IMkAEeCFkN1wTgEKcw" name="M1">
     <node xmi:type="uml:OpaqueAction" xmi:id="_QYxtoMkAEeCFkN1wTgEKcw" name="q1" outgoing="_LgSQgMkHEeCdsOVyeGqdOQ" incoming="_zoIL8MkvEeCH2cQR9w_ArQ">
       <body>label1=b;&#xA;label2=c;</body>
-      <body>if M2.1=d then&#xA;    if (M2.2=d OR M2.3=d) then&#xA;      p[1]=1/3, p[2]=2/3&#xA;   else&#xA;      p[2]=1&#xA;    end if&#xA;else&#xA;    if M2.1=e then&#xA;      p[1]=1/2, p[2]=1/2&#xA;    else&#xA;      p[1]=1/4, p[2]=3/4&#xA;    end if&#xA;end if</body>
+      <body>if M2.1=d then&#xA;    if (M2.2=d OR M2.3=d) then&#xA;      p[1]=1/3, p[2]=2/3&#xA;   else&#xA;      p[2]=1&#xA;    end if&#xA;else&#xA;    if ((NEG M2.1=e) AND (M2.1=a IMPLIES M2.1=b)) then&#xA;      p[1]=1/2, p[2]=1/2&#xA;    else&#xA;      p[1]=1/4, p[2]=3/4&#xA;    end if&#xA;end if</body>
     </node>
     <node xmi:type="uml:OpaqueAction" xmi:id="_TlYzkMkAEeCFkN1wTgEKcw" name="q2" outgoing="_zoIL8MkvEeCH2cQR9w_ArQ" incoming="_LgSQgMkHEeCdsOVyeGqdOQ">
       <body>label1=d;&#xA;label2=e;</body>
-      <body>if M2.1=e then&#xA;    if (M2.2=e OR M2.3=d) then&#xA;      p[1]=1/2, p[2]=1/2&#xA;    else&#xA;      p[2]=1&#xA;    end if&#xA;  else&#xA;    if M2.1=f then&#xA;      p[1]=1/4, p[2]=3/4&#xA;    else&#xA;      p[1]=1/6, p[2]=5/6&#xA;    end if&#xA;end if</body>
+      <body>if M2.1=d then&#xA;    if (M2.2=d OR M2.3=d) then&#xA;      p[1]=1/3, p[2]=2/3&#xA;   else&#xA;      p[2]=1&#xA;    end if&#xA;else&#xA;    if (M2.1=e AND M2.1=a AND (M2.1=b OR M2.1=c OR M2.2=c)) then&#xA;      p[1]=1/2, p[2]=1/2&#xA;    else&#xA;      p[1]=1/4, p[2]=3/4&#xA;    end if&#xA;end if</body>
     </node>
     <edge xmi:type="uml:ControlFlow" xmi:id="_LgSQgMkHEeCdsOVyeGqdOQ" name="q1Tq2" source="_QYxtoMkAEeCFkN1wTgEKcw" target="_TlYzkMkAEeCFkN1wTgEKcw"/>
     <edge xmi:type="uml:ControlFlow" xmi:id="_zoIL8MkvEeCH2cQR9w_ArQ" name="q2Tq1" source="_TlYzkMkAEeCFkN1wTgEKcw" target="_QYxtoMkAEeCFkN1wTgEKcw"/>

@@ -20,7 +20,7 @@ public class TestXmlInput {
           System.out.println(new TestXmlInput());
       }
       /****** This method can be used in other class to retrieve machines **********/
-      public Net<FractionProbability> XmlInput(String fileName) {
+      public static Net<FractionProbability> XmlInput(String fileName) {
           try {
 
               //Read in XML file
@@ -39,8 +39,8 @@ public class TestXmlInput {
                 
                 Element machineXml = (Element) machineList.item(i);
                 
-//                System.out.println("-----------------------");
-//                System.out.println("MachineeName : " + machineXml.getAttribute("name") );
+ //               System.out.println("-----------------------");
+ //               System.out.println("MachineeName : " + machineXml.getAttribute("name") );
                 
                 Machine.Builder<FractionProbability> machineBuild = new Machine.Builder<FractionProbability>(machineXml.getAttribute("name"));
                 ArrayList<String> labelName=new ArrayList<String>();
@@ -50,7 +50,7 @@ public class TestXmlInput {
                 for (int j=0; j<stateList.getLength(); j++){
                    
                   Element stateXml = (Element) stateList.item(j);
-//                  System.out.println("  StateName : " + stateXml.getAttribute("name") );
+ //                 System.out.println("  StateName : " + stateXml.getAttribute("name") );
                               
                   NodeList labels=stateXml.getChildNodes().item(1).getChildNodes();
 
@@ -103,12 +103,12 @@ public class TestXmlInput {
         //if DecisionTree is under state use the 4th item of childNodes 
         if (parent.getNodeName().equals("state")){
           decisionTreeXml=(Element)parent.getChildNodes().item(3);
-//          System.out.println(parent.getNodeName()+": DecisionTree: "+ decisionTreeXml.getChildNodes().item(1).getNodeName()+ ": ");
+  //        System.out.println(parent.getNodeName()+": DecisionTree: "+ decisionTreeXml.getChildNodes().item(1).getNodeName()+ ": ");
 
         }//else if DecisionTree is under consequent or alternative use 2nd item of childNodes
         else if(parent.getNodeName().equals("consequent")||parent.getNodeName().equals("alternative")){
          decisionTreeXml=(Element)parent.getChildNodes().item(1);
-//         System.out.println("  "+parent.getNodeName()+": DecisionTree: "+ decisionTreeXml.getChildNodes().item(1).getNodeName()+ ": ");
+  //       System.out.println("  "+parent.getNodeName()+": DecisionTree: "+ decisionTreeXml.getChildNodes().item(1).getNodeName()+ ": ");
 
         }
         
@@ -120,7 +120,7 @@ public class TestXmlInput {
         
         if (decisionTreeXml.getChildNodes().item(1).getNodeName().equals("branch")){
           Element predicateXml=(Element) decisionTreeXml.getChildNodes().item(1).getChildNodes().item(1);
-//          System.out.println("  "+predicateXml.getNodeName()+": ");
+  //        System.out.println("  "+predicateXml.getNodeName()+": ");
             
           //get atom or ... info from predicate
           Predicate predicate=null;
@@ -155,7 +155,7 @@ public class TestXmlInput {
           TransitionVector.Builder<FractionProbability> b=new TransitionVector.Builder<FractionProbability>();
 
           for (int temp=0; temp<stateNameXml.getLength();temp++){
-//            System.out.println("  stateName:"+stateNameXml.item(temp).getChildNodes().item(0).getNodeValue()+",pValue:"+pValueXml.item(temp).getChildNodes().item(0).getNodeValue());
+   //         System.out.println("  stateName:"+stateNameXml.item(temp).getChildNodes().item(0).getNodeValue()+",pValue:"+pValueXml.item(temp).getChildNodes().item(0).getNodeValue());
             String[] pValue=pValueXml.item(temp).getChildNodes().item(0).getNodeValue().split(",");
             String stateName=stateNameXml.item(temp).getChildNodes().item(0).getNodeValue();
 
@@ -183,9 +183,9 @@ public class TestXmlInput {
         //get atom info
         if (predicate.getChildNodes().item(1).getNodeName().equals("atom")){
           Element atomXml=(Element) predicate.getChildNodes().item(1);
-//          System.out.println("    " + atomXml.getNodeName()+": machineName: "+atomXml.getAttribute("machineName"));   
+ //         System.out.println("    " + atomXml.getNodeName()+": machineName: "+atomXml.getAttribute("machineName"));   
           Element atomLabelVector=(Element) atomXml.getChildNodes().item(1);
-//          System.out.println("      atom labelVector: [" + atomLabelVector.getAttribute("name")+":"+atomLabelVector.getChildNodes().item(1).getChildNodes().item(0).getNodeValue()+"]");
+ //         System.out.println("      atom labelVector: [" + atomLabelVector.getAttribute("name")+":"+atomLabelVector.getChildNodes().item(1).getChildNodes().item(0).getNodeValue()+"]");
           // create atom
           Predicate.Atom atom=new Predicate.Atom(atomXml.getAttribute("machineName"),atomLabelVector.getAttribute("name"),atomLabelVector.getChildNodes().item(1).getChildNodes().item(0).getNodeValue());
           Predicate output=(Predicate)atom;
@@ -207,7 +207,7 @@ public class TestXmlInput {
           Predicate.CollectionBuilder cBuild=null;
           if (predicate.getChildNodes().item(1).getNodeName().equals("or"))
             cBuild=new Predicate.CollectionBuilder(Predicate.CollectionType.OR);
-          else if (predicate.getChildNodes().item(1).getNodeName().equals("or"))
+          else if (predicate.getChildNodes().item(1).getNodeName().equals("and"))
             cBuild=new Predicate.CollectionBuilder(Predicate.CollectionType.AND);
           else
             System.err.println("Error cBuild!");
@@ -233,8 +233,9 @@ public class TestXmlInput {
           return output;
 
         }else if (predicate.getChildNodes().item(1).getNodeName().equals("implies")){
-          Element antecedentXml=(Element) predicate.getChildNodes().item(1);
-          Element consequentXml=(Element) predicate.getChildNodes().item(3);
+          Element implies=(Element) predicate.getChildNodes().item(1);
+          Element antecedentXml=(Element) implies.getChildNodes().item(1);
+          Element consequentXml=(Element) implies.getChildNodes().item(3);
           // call itself to retrieve the predicate info
           Predicate antecedent=getInfoFromPredicate(antecedentXml,Input);
           Predicate consequent=getInfoFromPredicate(consequentXml,Input);
