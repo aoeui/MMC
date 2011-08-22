@@ -7,6 +7,7 @@ public abstract class DecisionTree<T extends Probability<T>> {
   public abstract boolean isTerminal();
   
   public abstract void accept(Visitor<T> visitor);
+  public abstract <S> S accept(VisitorRv<T,S> visitor);
 
   public static class Branch<T extends Probability<T>> extends DecisionTree<T> {
     public final Predicate predicate;
@@ -22,6 +23,10 @@ public abstract class DecisionTree<T extends Probability<T>> {
     
     public void accept(Visitor<T> visitor) {
       visitor.visitBranch(this);
+    }
+    
+    public<S> S accept(VisitorRv<T,S> visitor) {
+      return visitor.visitBranch(this);
     }
     
     public String toString() {
@@ -46,7 +51,7 @@ public abstract class DecisionTree<T extends Probability<T>> {
   }  
   
   public static class Terminal<T extends Probability<T>> extends DecisionTree<T> {
-    TransitionVector<T> vector;
+    public final TransitionVector<T> vector;
     
     public Terminal(TransitionVector<T> vector) {
       this.vector = vector;
@@ -55,9 +60,12 @@ public abstract class DecisionTree<T extends Probability<T>> {
     public void accept(Visitor<T> visitor) {
       visitor.visitTerminal(this);
     }
+    
+    public<S> S accept(VisitorRv<T,S> visitor) {
+      return visitor.visitTerminal(this);
+    }
 
     public boolean isTerminal() { return true; }
-    public TransitionVector<T> getTransitionVector() { return vector; }
     public String toString() { return vector.toString(); }
     public void indent(Indenter indenter) { indenter.println(vector); }
   }
@@ -65,6 +73,11 @@ public abstract class DecisionTree<T extends Probability<T>> {
   public static interface Visitor<T extends Probability<T>> {
     void visitTerminal(Terminal<T> t);
     void visitBranch(Branch<T> t);
+  }
+  
+  public static interface VisitorRv<T extends Probability<T>, S> {
+    public S visitTerminal(Terminal<T> t);
+    public S visitBranch(Branch<T> t);
   }
 
   public abstract String toString();

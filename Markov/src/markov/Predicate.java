@@ -5,6 +5,8 @@ import java.util.Iterator;
 import util.UnmodifiableIterator;
 
 public abstract class Predicate {
+  protected abstract String computeString();
+
   public enum CollectionType {
     AND("/\\"), OR("\\/");
     
@@ -20,13 +22,39 @@ public abstract class Predicate {
       default: throw new RuntimeException();
       }
     }
-  }  
+  }
 
   public abstract void accept(Visitor visitor);
 
   /** Turns everything into alternating AND / OR and eliminates NEG */
   public Resolver reduce(Dictionary dictionary) {
     return new Resolver.Builder(this, dictionary).build();
+  }
+  
+  private String stringRepresentation;
+  private boolean hashCodeInitialized = false;
+  private int hashCode;
+
+  public final int hashCode() {
+    if (!hashCodeInitialized) {
+      hashCode = toString().hashCode();
+      hashCodeInitialized = true;
+    }
+    return hashCode;
+  }
+  public final String toString() {
+    if (stringRepresentation == null) {
+      stringRepresentation = computeString();
+    }
+    return stringRepresentation;
+  }
+  // Just a superficial test based on the string representation
+  public boolean equals(Object o) {
+    try {
+      return ((Predicate)o).stringRepresentation.equals(stringRepresentation);
+    } catch (Exception e) {
+      return false;
+    }
   }
 
   public static class CollectionBuilder {
@@ -67,7 +95,7 @@ public abstract class Predicate {
     public Iterator<Predicate> iterator() {
       return new UnmodifiableIterator<Predicate>(terms.iterator());
     }
-    public String toString() {
+    protected String computeString() {
       StringBuilder b = new StringBuilder();
       boolean isFirst = true;
       for (Predicate term : terms) {
@@ -110,7 +138,7 @@ public abstract class Predicate {
       return builder.build();
     }
 
-    public String toString() {
+    protected String computeString() {
       return "(" + antecedent + ") -> (" + consequent + ")";
     }
   }
@@ -122,7 +150,7 @@ public abstract class Predicate {
     }
     public void accept(Visitor v) { v.visitNeg(this); }
     
-    public String toString() {
+    protected String computeString() {
       return "-(" + subject + ")";
     }
   }
@@ -146,7 +174,7 @@ public abstract class Predicate {
       return varName.equals(atom.varName);
     }
     
-    public String toString() {
+    protected String computeString() {
       return varName + "=" + character;
     }
     
@@ -182,5 +210,4 @@ public abstract class Predicate {
     public void visitImplies(Implies p) { visit(p); }
     public void visitAtom(Atom p) { visit(p); }
   }
-
 }
