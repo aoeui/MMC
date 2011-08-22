@@ -11,8 +11,7 @@
 <instance>c</instance>
 </labelPair>
 </labels>
-<decisionTree>
-<branch>
+<decisionTree> <branch>
 <predicate>
 <atom machineName="M2">
 <labelPair name="1">
@@ -133,8 +132,7 @@
 <instance>e</instance>
 </labelPair>
 </labels>
-<decisionTree>
-<branch>
+<decisionTree> <branch>
 <predicate>
 <atom machineName="M2">
 <labelPair name="1">
@@ -270,8 +268,7 @@
 <instance>e</instance>
 </labelPair>
 </labels>
-<decisionTree>
-<branch>
+<decisionTree> <branch>
 <predicate>
 <atom machineName="M1">
 <labelPair name="1">
@@ -369,8 +366,7 @@
 <instance>d</instance>
 </labelPair>
 </labels>
-<decisionTree>
-<branch>
+<decisionTree> <branch>
 <predicate>
 <atom machineName="M1">
 <labelPair name="1">
@@ -468,8 +464,7 @@
 <instance>a</instance>
 </labelPair>
 </labels>
-<decisionTree>
-<branch>
+<decisionTree> <branch>
 <predicate>
 <atom machineName="M1">
 <labelPair name="1">
