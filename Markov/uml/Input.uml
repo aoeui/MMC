@@ -1,33 +1,39 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <uml:Package xmi:version="2.1" xmlns:xmi="http://schema.omg.org/spec/XMI/2.1" xmlns:uml="http://www.eclipse.org/uml2/3.0.0/UML" xmi:id="_ucWEYMj_EeCFkN1wTgEKcw">
-  <packagedElement xmi:type="uml:Activity" xmi:id="_Lzu1IMkAEeCFkN1wTgEKcw" name="M1">
-    <node xmi:type="uml:OpaqueAction" xmi:id="_QYxtoMkAEeCFkN1wTgEKcw" name="q1" outgoing="_LgSQgMkHEeCdsOVyeGqdOQ" incoming="_zoIL8MkvEeCH2cQR9w_ArQ">
-      <body>label1=b;&#xA;label2=c;</body>
-      <body>if M2.1=d then&#xA;    if (M2.2=d OR M2.3=d) then&#xA;      p[1]=1/3, p[2]=2/3&#xA;   else&#xA;      p[2]=1&#xA;    end if&#xA;else&#xA;    if ((NEG M2.1=e) AND (M2.1=a IMPLIES M2.1=b)) then&#xA;      p[1]=1/2, p[2]=1/2&#xA;    else&#xA;      p[1]=1/4, p[2]=3/4&#xA;    end if&#xA;end if</body>
+  <packagedElement xmi:type="uml:Activity" xmi:id="_Lzu1IMkAEeCFkN1wTgEKcw" name="MPatient:ICP">
+    <node xmi:type="uml:OpaqueAction" xmi:id="_QYxtoMkAEeCFkN1wTgEKcw" name="A">
+      <body>labelCost=M;&#xA;labelPatient=G;&#xA;labelICP=A;</body>
+      <body>if MPatient:Lung.Condition=S then&#xA;  p[A]=6/10, p[B]=14/100, p[D]=6/100, p[E]=2/10&#xA;else&#xA;    if MPatient:Lung.Condition=B then&#xA;      p[A]=62/100, p[B]=12/100, p[D]=6/100, p[E]=2/10&#xA;    else&#xA;       p[A]=65/100, p[B]=1/10, p[D]=5/100, p[E]=2/10&#xA;    end if&#xA;end if</body>
     </node>
-    <node xmi:type="uml:OpaqueAction" xmi:id="_TlYzkMkAEeCFkN1wTgEKcw" name="q2" outgoing="_zoIL8MkvEeCH2cQR9w_ArQ" incoming="_LgSQgMkHEeCdsOVyeGqdOQ">
-      <body>label1=d;&#xA;label2=e;</body>
-      <body>if M2.1=d then&#xA;    if (M2.2=d OR M2.3=d) then&#xA;      p[1]=1/3, p[2]=2/3&#xA;   else&#xA;      p[2]=1&#xA;    end if&#xA;else&#xA;    if (M2.1=e AND M2.1=a AND (M2.1=b OR M2.1=c OR M2.2=c)) then&#xA;      p[1]=1/2, p[2]=1/2&#xA;    else&#xA;      p[1]=1/4, p[2]=3/4&#xA;    end if&#xA;end if</body>
+    <node xmi:type="uml:OpaqueAction" xmi:id="_TlYzkMkAEeCFkN1wTgEKcw" name="B">
+      <body>labelCost=H;&#xA;labelPatient=B;&#xA;labelICP=B;</body>
+      <body>if MPatient:Lung.Condition=S then&#xA;  p[B]=52/100, p[C]=3/10, p[D]=18/100&#xA;else&#xA;    if MPatient:Lung.Condition=B then&#xA;      p[B]=51/100, p[C]=33/100, p[D]=16/100&#xA;    else&#xA;         p[B]=5/10, p[C]=35/100, p[D]=15/100&#xA;    end if&#xA;end if</body>
     </node>
-    <edge xmi:type="uml:ControlFlow" xmi:id="_LgSQgMkHEeCdsOVyeGqdOQ" name="q1Tq2" source="_QYxtoMkAEeCFkN1wTgEKcw" target="_TlYzkMkAEeCFkN1wTgEKcw"/>
-    <edge xmi:type="uml:ControlFlow" xmi:id="_zoIL8MkvEeCH2cQR9w_ArQ" name="q2Tq1" source="_TlYzkMkAEeCFkN1wTgEKcw" target="_QYxtoMkAEeCFkN1wTgEKcw"/>
+    <node xmi:type="uml:OpaqueAction" xmi:id="_Ue_60MzfEeCz_KsfIMTs9g" name="C">
+      <body>labelCost=M;&#xA;labelPatient=G;&#xA;labelICP=C;</body>
+      <body>if MPatient:Lung.Condition=S then&#xA;  p[B]=8/100, p[C]=48/100, p[D]=7/100, p[E]=37/100&#xA;else&#xA;    if MPatient:Lung.Condition=B then&#xA;      p[B]=6/100, p[C]=49/100, p[D]=6/100, p[E]=39/100&#xA;    else&#xA;         p[B]=5/100, p[C]=5/10, p[D]=5/100, p[E]=4/10&#xA;    end if&#xA;end if</body>
+    </node>
+    <node xmi:type="uml:OpaqueAction" xmi:id="_VgDIIMzfEeCz_KsfIMTs9g" name="D">
+      <body>labelCost=H;&#xA;labelPatient=NA;&#xA;labelICP=D;</body>
+      <body>p[D]=1</body>
+    </node>
+    <node xmi:type="uml:OpaqueAction" xmi:id="_WeH58MzfEeCz_KsfIMTs9g" name="E">
+      <body>labelCost=L;&#xA;labelPatient=G;&#xA;labelICP=E;</body>
+      <body>p[E]=1</body>
+    </node>
   </packagedElement>
-  <packagedElement xmi:type="uml:Activity" xmi:id="_fWm6sMkHEeCdsOVyeGqdOQ" name="M2">
-    <node xmi:type="uml:OpaqueAction" xmi:id="_vX8QUMkHEeCdsOVyeGqdOQ" name="q1" outgoing="_0dhqEMkHEeCdsOVyeGqdOQ" incoming="_5M3HAMkHEeCdsOVyeGqdOQ _Yn9fIMkMEeCdsOVyeGqdOQ">
-      <body>label1=c;&#xA;label2=b;&#xA;label3=e;</body>
-      <body>if M1.1=d then&#xA;    if (M1.2=d OR M1.2=d) then&#xA;      p[1]=1/3, p[2]=2/3&#xA;   else&#xA;      p[2]=1&#xA;    end if&#xA;else&#xA;    if M1.1=e then&#xA;      p[1]=1/2, p[2]=1/2&#xA;    else&#xA;      p[1]=1/4, p[2]=3/4&#xA;    end if&#xA;end if</body>
+  <packagedElement xmi:type="uml:Activity" xmi:id="_fWm6sMkHEeCdsOVyeGqdOQ" name="MPatient:Lung">
+    <node xmi:type="uml:OpaqueAction" xmi:id="_vX8QUMkHEeCdsOVyeGqdOQ" name="Severe">
+      <body>labelCondition=S;</body>
+      <body>p[Bad]=45/100, p[Severe]=5/10, p[Fine]=5/100</body>
     </node>
-    <node xmi:type="uml:OpaqueAction" xmi:id="_wapDcMkHEeCdsOVyeGqdOQ" name="q2" outgoing="_3N11kMkHEeCdsOVyeGqdOQ _5M3HAMkHEeCdsOVyeGqdOQ" incoming="_0dhqEMkHEeCdsOVyeGqdOQ">
-      <body>label1=a;&#xA;label2=c;&#xA;label3=d;</body>
-      <body>if M1.1=e then&#xA;    if (M1.2=f OR M1.2=e) then&#xA;      p[1]=1/3, p[2]=2/3&#xA;   else&#xA;      p[2]=1&#xA;    end if&#xA;else&#xA;    if M1.1=a then&#xA;      p[1]=1/2, p[3]=1/2&#xA;    else&#xA;      p[3]=1/4, p[2]=3/4&#xA;    end if&#xA;end if</body>
+    <node xmi:type="uml:OpaqueAction" xmi:id="_xwVrEMkHEeCdsOVyeGqdOQ" name="Fine">
+      <body>labelCondition=F;</body>
+      <body>p[Bad]=15/100, p[Severe]=5/100, p[Fine]=8/10</body>
     </node>
-    <node xmi:type="uml:OpaqueAction" xmi:id="_xwVrEMkHEeCdsOVyeGqdOQ" name="q3" outgoing="_Yn9fIMkMEeCdsOVyeGqdOQ" incoming="_3N11kMkHEeCdsOVyeGqdOQ">
-      <body>label1=b;&#xA;label2=c;&#xA;label3=a;</body>
-      <body>if M1.1=d then&#xA;    if (M1.2=d OR M1.2=e) then&#xA;      p[1]=1/3, p[3]=2/3&#xA;   else&#xA;      p[1]=1&#xA;    end if&#xA;else&#xA;    if M1.1=e then&#xA;      p[3]=1/2, p[1]=1/2&#xA;    else&#xA;      p[1]=1/4, p[3]=3/4&#xA;    end if&#xA;end if</body>
+    <node xmi:type="uml:OpaqueAction" xmi:id="_wapDcMkHEeCdsOVyeGqdOQ" name="Bad">
+      <body>labelCondition=B;</body>
+      <body>p[Bad]=55/100, p[Severe]=3/10, p[Fine]=15/100</body>
     </node>
-    <edge xmi:type="uml:ControlFlow" xmi:id="_0dhqEMkHEeCdsOVyeGqdOQ" name="q1Tq2" source="_vX8QUMkHEeCdsOVyeGqdOQ" target="_wapDcMkHEeCdsOVyeGqdOQ"/>
-    <edge xmi:type="uml:ControlFlow" xmi:id="_3N11kMkHEeCdsOVyeGqdOQ" name="q2Tq3" source="_wapDcMkHEeCdsOVyeGqdOQ" target="_xwVrEMkHEeCdsOVyeGqdOQ"/>
-    <edge xmi:type="uml:ControlFlow" xmi:id="_5M3HAMkHEeCdsOVyeGqdOQ" name="q2Tq1" source="_wapDcMkHEeCdsOVyeGqdOQ" target="_vX8QUMkHEeCdsOVyeGqdOQ"/>
-    <edge xmi:type="uml:ControlFlow" xmi:id="_Yn9fIMkMEeCdsOVyeGqdOQ" name="q3Tq1" source="_xwVrEMkHEeCdsOVyeGqdOQ" target="_vX8QUMkHEeCdsOVyeGqdOQ"/>
   </packagedElement>
 </uml:Package>

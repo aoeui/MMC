@@ -57,7 +57,7 @@ xmlns:uml="http://www.eclipse.org/uml2/3.0.0/UML">
 			<xsl:attribute name="name">
 				<xsl:variable name="subString_"><xsl:value-of select="substring-before($string,'=')"/>
 				</xsl:variable>					
-				<xsl:number value="$subString_"/>
+				<xsl:value-of select="$subString_"/>
 			</xsl:attribute>
 			<xsl:element name="instance">
 				<xsl:variable name="instance_"><xsl:value-of select="substring-after($string,'=')"></xsl:value-of></xsl:variable>
