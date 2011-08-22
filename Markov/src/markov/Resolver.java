@@ -15,7 +15,7 @@ public abstract class Resolver {
   
   public abstract void accept(Visitor v);
 
-  public abstract Resolver resolve(Atom atom);
+  public abstract Resolver restrict(Atom atom);
 
   public boolean isValue() { return false; }
   public boolean getValue() { throw new UnsupportedOperationException(); }
@@ -33,11 +33,11 @@ public abstract class Resolver {
       return new UnmodifiableIterator<Resolver>(terms.iterator());
     }
     
-    public Resolver resolve(Atom atom) {
+    public Resolver restrict(Atom atom) {
       ArrayList<Resolver> newTerms = new ArrayList<Resolver>();
       boolean containsNew = false;
       for (Resolver term : terms) {
-        Resolver newTerm = term.resolve(atom);
+        Resolver newTerm = term.restrict(atom);
         newTerms.add(newTerm);
         if (newTerm != term) {
           containsNew = true;
@@ -113,8 +113,8 @@ public abstract class Resolver {
     
     public void accept(Visitor v) { v.visitAtom(this); }
 
-    public Resolver resolve(Atom atom) {
-      if (atom.alpha.varName.equals(alpha.varName)) {
+    public Resolver restrict(Atom atom) {
+      if (atom.alpha.name.equals(alpha.name)) {
         return instance == atom.instance ? TRUE : FALSE;
       }
       return this;
@@ -141,7 +141,7 @@ public abstract class Resolver {
     
     public void accept(Visitor v) { v.visitValue(this); }
     
-    public Resolver resolve(Atom atom) { return this; }
+    public Resolver restrict(Atom atom) { return this; }
     public boolean isValue() { return true; }
     public boolean getValue() { return value; }
   }
@@ -234,10 +234,10 @@ public abstract class Resolver {
           }
         }
         public void visitAtom(Atom p) {
-          AtomState state = atoms.get(p.alpha.varName);
+          AtomState state = atoms.get(p.alpha.name);
           if (state == null) {
             state = new AtomState(p.alpha);
-            atoms.put(p.alpha.varName, state);
+            atoms.put(p.alpha.name, state);
           }
           state.add(p.instance);
           switch (type) {

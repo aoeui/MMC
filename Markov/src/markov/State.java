@@ -14,6 +14,7 @@ public class State<T extends Probability<T>> implements Comparable<State<?>> {
   DecisionTree<T> transitionFunction;
 
   private State(String m, String name, Map<String,String> labelVector, DecisionTree<T> transitionFunction) {
+    if (name.contains(Machine.SCOPE_OPERATOR)) throw new RuntimeException();
     this.machineName = m;
     this.name = name;
     this.labelVector = new TreeMap<String,String>(labelVector);
@@ -104,6 +105,7 @@ public class State<T extends Probability<T>> implements Comparable<State<?>> {
     }
 
     public void setLabel(String name, String instance) {
+      if (name.contains(Machine.SCOPE_OPERATOR) || instance.contains(Machine.SCOPE_OPERATOR)) throw new RuntimeException();
       labelVector.put(name,instance);
     }
     

@@ -10,24 +10,25 @@ import util.LexicalCompare;
 
 public class Alphabet implements Iterable<String>, Comparable<Alphabet> {
   public final String machineName;  // needed for generating fully qualified labels
-  public final String name;  // "machine.name" should uniquely identify an alphabet
+  public final String domainName;  // domain name
 
-  public final String varName;
+  public final String name;  // unique identifier for this alphabet
 
-  private final String prefix;  // "<machine>.<name>." convenience attribute
+  private final String prefix;  // "<machine>.<domain>." convenience attribute
   private final ArrayList<String> characters;  // this is ordered, unique
   
-  private Alphabet(String machineName, String name, SortedSet<? extends String> chars) {
+  private Alphabet(String machineName, String domainName, SortedSet<? extends String> chars) {
+    if (machineName.contains(Machine.SCOPE_OPERATOR) || domainName.contains(Machine.SCOPE_OPERATOR)) throw new RuntimeException();
 	  this.machineName = machineName;
-	  this.name = name;
-	  this.prefix = machineName + "." + name + ".";
-	  this.varName = machineName + "." + name;
+	  this.domainName = domainName;
+	  this.prefix = machineName + "." + domainName + ".";
+	  this.name = machineName + "." + domainName;
 	  this.characters = new ArrayList<String>(chars);
   }
   
   public int compareTo(Alphabet b) {
     int rv = machineName.compareTo(b.machineName);
-    if (rv == 0) rv = name.compareTo(b.name);
+    if (rv == 0) rv = domainName.compareTo(b.domainName);
     // Alphabets should be equal if machine.name is equal
     assert(rv == 0 ? compareAlphabets(characters, b.characters) == 0 : true);
     return rv;
@@ -79,12 +80,12 @@ public class Alphabet implements Iterable<String>, Comparable<Alphabet> {
   
   public static class Builder {
     Machine<?> machine;
-    String name;
+    String domainName;
     TreeSet<String> chars;
     
     public Builder(Machine<?> machine, String name) {
       this.machine = machine;
-      this.name = name;
+      this.domainName = name;
       this.chars=new TreeSet<String>();
     }
     
@@ -94,15 +95,15 @@ public class Alphabet implements Iterable<String>, Comparable<Alphabet> {
     
     public Alphabet build() {
       for (State<?> state : machine) {
-        addCharacter(state.getLabel(name));
+        addCharacter(state.getLabel(domainName));
       }
-      return new Alphabet(machine.name, name, chars);
+      return new Alphabet(machine.name, domainName, chars);
     }
   }
   
   public String toString() {
     StringBuilder builder = new StringBuilder();
-    builder.append(machineName + "." + name + "->{");
+    builder.append(machineName + "." + domainName + "->{");
     boolean isFirst = true;
     for (String str : characters) {
       if (isFirst) { isFirst = false; }

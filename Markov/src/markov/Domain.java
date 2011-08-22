@@ -15,7 +15,7 @@ public class Domain implements Comparable<Domain> {
     this.machineName = machineName;
     data = new HashMap<String,Alphabet>();
     for (Alphabet alpha : alphabets) {
-      data.put(alpha.name, alpha);
+      data.put(alpha.domainName, alpha);
     }
   }
   

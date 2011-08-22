@@ -7,10 +7,12 @@ import util.UnmodifiableIterator;
 
 public class Machine<T extends Probability<T>> implements Iterable<State<T>> {
   public final static String MULTIPLY_STRING = " (X) ";
+  public final static String SCOPE_OPERATOR = ".";
   public final String name;
   TreeMap<String, State<T>> states;
 
   private Machine(String name, TreeMap<String, State<T>> states) {
+    if (name.contains(SCOPE_OPERATOR)) throw new RuntimeException("Machine name cannot contain " + SCOPE_OPERATOR);
     this.name = name;
     this.states = states;
   }
