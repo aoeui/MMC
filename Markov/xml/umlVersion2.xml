@@ -1,119 +1,76 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE machines SYSTEM "Machine.dtd">
 <machines>
-  <machine name="M1">
-<state name="q1">
+  <machine name="MPatient:ICP">
+<state name="A">
 <labels>
-<labelPair name="1">
-<instance>b</instance>
+<labelPair name="Cost">
+<instance>M</instance>
 </labelPair>
-<labelPair name="2">
-<instance>c</instance>
+<labelPair name="Patient">
+<instance>G</instance>
+</labelPair>
+<labelPair name="ICP">
+<instance>A</instance>
 </labelPair>
 </labels>
 <decisionTree> <branch>
 <predicate>
-<atom machineName="M2">
-<labelPair name="1">
-<instance>d</instance>
+<atom machineName="MPatient:Lung">
+<labelPair name="Condition">
+<instance>S</instance>
 </labelPair>
 </atom>
 </predicate>
 <consequent>
 <decisionTree>
-<branch>
-<predicate>
-<or>
-<predicate>
-<atom machineName="M2">
-<labelPair name="2">
-<instance>d</instance>
-</labelPair>
-</atom>
-</predicate>
-<predicate>
-<atom machineName="M2">
-<labelPair name="3">
-<instance>d</instance>
-</labelPair>
-</atom>
-</predicate>
-</or>
-</predicate>
-<consequent>
-<decisionTree>
 <probability>
-<stateName>1</stateName>
-<pValue>1,3</pValue>
-<stateName>2</stateName>
-<pValue>2,3</pValue>
+<stateName>A</stateName>
+<pValue>6,10</pValue>
+<stateName>B</stateName>
+<pValue>14,100</pValue>
+<stateName>D</stateName>
+<pValue>6,100</pValue>
+<stateName>E</stateName>
+<pValue>2,10</pValue>
 </probability>
-</decisionTree>
-</consequent>
-<alternative>
-<decisionTree>
-<probability>
-<stateName>2</stateName>
-<pValue>1,1</pValue>
-</probability>
-</decisionTree>
-</alternative>
-</branch>
 </decisionTree>
 </consequent>
 <alternative>
 <decisionTree>
 <branch>
 <predicate>
-<and>
-<predicate>
-<neg>
-<predicate>
-<atom machineName="M2">
-<labelPair name="1">
-<instance>e</instance>
+<atom machineName="MPatient:Lung">
+<labelPair name="Condition">
+<instance>B</instance>
 </labelPair>
 </atom>
-</predicate>
-</neg>
-</predicate>
-<predicate>
-<implies>
-<predicate>
-<atom machineName="M2">
-<labelPair name="1">
-<instance>a</instance>
-</labelPair>
-</atom>
-</predicate>
-<predicate>
-<atom machineName="M2">
-<labelPair name="1">
-<instance>b</instance>
-</labelPair>
-</atom>
-</predicate>
-</implies>
-</predicate>
-</and>
 </predicate>
 <consequent>
 <decisionTree>
 <probability>
-<stateName>1</stateName>
-<pValue>1,2</pValue>
-<stateName>2</stateName>
-<pValue>1,2</pValue>
+<stateName>A</stateName>
+<pValue>62,100</pValue>
+<stateName>B</stateName>
+<pValue>12,100</pValue>
+<stateName>D</stateName>
+<pValue>6,100</pValue>
+<stateName>E</stateName>
+<pValue>2,10</pValue>
 </probability>
 </decisionTree>
 </consequent>
 <alternative>
 <decisionTree>
 <probability>
-<stateName>1</stateName>
-<pValue>1,4</pValue>
-<stateName>2</stateName>
-<pValue>3,4</pValue>
+<stateName>A</stateName>
+<pValue>65,100</pValue>
+<stateName>B</stateName>
+<pValue>1,10</pValue>
+<stateName>D</stateName>
+<pValue>5,100</pValue>
+<stateName>E</stateName>
+<pValue>2,10</pValue>
 </probability>
 </decisionTree>
 </alternative>
@@ -123,431 +80,240 @@
 </branch>
 </decisionTree>
 </state>
-<state name="q2">
+<state name="B">
 <labels>
-<labelPair name="1">
-<instance>d</instance>
+<labelPair name="Cost">
+<instance>H</instance>
 </labelPair>
-<labelPair name="2">
-<instance>e</instance>
+<labelPair name="Patient">
+<instance>B</instance>
+</labelPair>
+<labelPair name="ICP">
+<instance>B</instance>
 </labelPair>
 </labels>
 <decisionTree> <branch>
 <predicate>
-<atom machineName="M2">
-<labelPair name="1">
-<instance>d</instance>
+<atom machineName="MPatient:Lung">
+<labelPair name="Condition">
+<instance>S</instance>
 </labelPair>
 </atom>
-</predicate>
-<consequent>
-<decisionTree>
-<branch>
-<predicate>
-<or>
-<predicate>
-<atom machineName="M2">
-<labelPair name="2">
-<instance>d</instance>
-</labelPair>
-</atom>
-</predicate>
-<predicate>
-<atom machineName="M2">
-<labelPair name="3">
-<instance>d</instance>
-</labelPair>
-</atom>
-</predicate>
-</or>
 </predicate>
 <consequent>
 <decisionTree>
 <probability>
-<stateName>1</stateName>
-<pValue>1,3</pValue>
-<stateName>2</stateName>
-<pValue>2,3</pValue>
+<stateName>B</stateName>
+<pValue>52,100</pValue>
+<stateName>C</stateName>
+<pValue>3,10</pValue>
+<stateName>D</stateName>
+<pValue>18,100</pValue>
+</probability>
+</decisionTree>
+</consequent>
+<alternative>
+<decisionTree>
+<branch>
+<predicate>
+<atom machineName="MPatient:Lung">
+<labelPair name="Condition">
+<instance>B</instance>
+</labelPair>
+</atom>
+</predicate>
+<consequent>
+<decisionTree>
+<probability>
+<stateName>B</stateName>
+<pValue>51,100</pValue>
+<stateName>C</stateName>
+<pValue>33,100</pValue>
+<stateName>D</stateName>
+<pValue>16,100</pValue>
 </probability>
 </decisionTree>
 </consequent>
 <alternative>
 <decisionTree>
 <probability>
-<stateName>2</stateName>
+<stateName>B</stateName>
+<pValue>5,10</pValue>
+<stateName>C</stateName>
+<pValue>35,100</pValue>
+<stateName>D</stateName>
+<pValue>15,100</pValue>
+</probability>
+</decisionTree>
+</alternative>
+</branch>
+</decisionTree>
+</alternative>
+</branch>
+</decisionTree>
+</state>
+<state name="C">
+<labels>
+<labelPair name="Cost">
+<instance>M</instance>
+</labelPair>
+<labelPair name="Patient">
+<instance>G</instance>
+</labelPair>
+<labelPair name="ICP">
+<instance>C</instance>
+</labelPair>
+</labels>
+<decisionTree> <branch>
+<predicate>
+<atom machineName="MPatient:Lung">
+<labelPair name="Condition">
+<instance>S</instance>
+</labelPair>
+</atom>
+</predicate>
+<consequent>
+<decisionTree>
+<probability>
+<stateName>B</stateName>
+<pValue>8,100</pValue>
+<stateName>C</stateName>
+<pValue>48,100</pValue>
+<stateName>D</stateName>
+<pValue>7,100</pValue>
+<stateName>E</stateName>
+<pValue>37,100</pValue>
+</probability>
+</decisionTree>
+</consequent>
+<alternative>
+<decisionTree>
+<branch>
+<predicate>
+<atom machineName="MPatient:Lung">
+<labelPair name="Condition">
+<instance>B</instance>
+</labelPair>
+</atom>
+</predicate>
+<consequent>
+<decisionTree>
+<probability>
+<stateName>B</stateName>
+<pValue>6,100</pValue>
+<stateName>C</stateName>
+<pValue>49,100</pValue>
+<stateName>D</stateName>
+<pValue>6,100</pValue>
+<stateName>E</stateName>
+<pValue>39,100</pValue>
+</probability>
+</decisionTree>
+</consequent>
+<alternative>
+<decisionTree>
+<probability>
+<stateName>B</stateName>
+<pValue>5,100</pValue>
+<stateName>C</stateName>
+<pValue>5,10</pValue>
+<stateName>D</stateName>
+<pValue>5,100</pValue>
+<stateName>E</stateName>
+<pValue>4,10</pValue>
+</probability>
+</decisionTree>
+</alternative>
+</branch>
+</decisionTree>
+</alternative>
+</branch>
+</decisionTree>
+</state>
+<state name="D">
+<labels>
+<labelPair name="Cost">
+<instance>H</instance>
+</labelPair>
+<labelPair name="Patient">
+<instance>NA</instance>
+</labelPair>
+<labelPair name="ICP">
+<instance>D</instance>
+</labelPair>
+</labels>
+<decisionTree> <probability>
+<stateName>D</stateName>
 <pValue>1,1</pValue>
 </probability>
 </decisionTree>
-</alternative>
-</branch>
-</decisionTree>
-</consequent>
-<alternative>
-<decisionTree>
-<branch>
-<predicate>
-<and>
-<predicate>
-<atom machineName="M2">
-<labelPair name="1">
-<instance>e</instance>
+</state>
+<state name="E">
+<labels>
+<labelPair name="Cost">
+<instance>L</instance>
 </labelPair>
-</atom>
-</predicate>
-<predicate>
-<atom machineName="M2">
-<labelPair name="1">
-<instance>a</instance>
+<labelPair name="Patient">
+<instance>G</instance>
 </labelPair>
-</atom>
-</predicate>
-<predicate>
-<or>
-<predicate>
-<atom machineName="M2">
-<labelPair name="1">
-<instance>b</instance>
+<labelPair name="ICP">
+<instance>E</instance>
 </labelPair>
-</atom>
-</predicate>
-<predicate>
-<atom machineName="M2">
-<labelPair name="1">
-<instance>c</instance>
-</labelPair>
-</atom>
-</predicate>
-<predicate>
-<atom machineName="M2">
-<labelPair name="2">
-<instance>c</instance>
-</labelPair>
-</atom>
-</predicate>
-</or>
-</predicate>
-</and>
-</predicate>
-<consequent>
-<decisionTree>
-<probability>
-<stateName>1</stateName>
-<pValue>1,2</pValue>
-<stateName>2</stateName>
-<pValue>1,2</pValue>
+</labels>
+<decisionTree> <probability>
+<stateName>E</stateName>
+<pValue>1,1</pValue>
 </probability>
-</decisionTree>
-</consequent>
-<alternative>
-<decisionTree>
-<probability>
-<stateName>1</stateName>
-<pValue>1,4</pValue>
-<stateName>2</stateName>
-<pValue>3,4</pValue>
-</probability>
-</decisionTree>
-</alternative>
-</branch>
-</decisionTree>
-</alternative>
-</branch>
 </decisionTree>
 </state>
 </machine>
-  <machine name="M2">
-<state name="q1">
+  <machine name="MPatient:Lung">
+<state name="Severe">
 <labels>
-<labelPair name="1">
-<instance>c</instance>
-</labelPair>
-<labelPair name="2">
-<instance>b</instance>
-</labelPair>
-<labelPair name="3">
-<instance>e</instance>
+<labelPair name="Condition">
+<instance>S</instance>
 </labelPair>
 </labels>
-<decisionTree> <branch>
-<predicate>
-<atom machineName="M1">
-<labelPair name="1">
-<instance>d</instance>
-</labelPair>
-</atom>
-</predicate>
-<consequent>
-<decisionTree>
-<branch>
-<predicate>
-<or>
-<predicate>
-<atom machineName="M1">
-<labelPair name="2">
-<instance>d</instance>
-</labelPair>
-</atom>
-</predicate>
-<predicate>
-<atom machineName="M1">
-<labelPair name="2">
-<instance>d</instance>
-</labelPair>
-</atom>
-</predicate>
-</or>
-</predicate>
-<consequent>
-<decisionTree>
-<probability>
-<stateName>1</stateName>
-<pValue>1,3</pValue>
-<stateName>2</stateName>
-<pValue>2,3</pValue>
+<decisionTree> <probability>
+<stateName>Bad</stateName>
+<pValue>45,100</pValue>
+<stateName>Severe</stateName>
+<pValue>5,10</pValue>
+<stateName>Fine</stateName>
+<pValue>5,100</pValue>
 </probability>
-</decisionTree>
-</consequent>
-<alternative>
-<decisionTree>
-<probability>
-<stateName>2</stateName>
-<pValue>1,1</pValue>
-</probability>
-</decisionTree>
-</alternative>
-</branch>
-</decisionTree>
-</consequent>
-<alternative>
-<decisionTree>
-<branch>
-<predicate>
-<atom machineName="M1">
-<labelPair name="1">
-<instance>e</instance>
-</labelPair>
-</atom>
-</predicate>
-<consequent>
-<decisionTree>
-<probability>
-<stateName>1</stateName>
-<pValue>1,2</pValue>
-<stateName>2</stateName>
-<pValue>1,2</pValue>
-</probability>
-</decisionTree>
-</consequent>
-<alternative>
-<decisionTree>
-<probability>
-<stateName>1</stateName>
-<pValue>1,4</pValue>
-<stateName>2</stateName>
-<pValue>3,4</pValue>
-</probability>
-</decisionTree>
-</alternative>
-</branch>
-</decisionTree>
-</alternative>
-</branch>
 </decisionTree>
 </state>
-<state name="q2">
+<state name="Fine">
 <labels>
-<labelPair name="1">
-<instance>a</instance>
-</labelPair>
-<labelPair name="2">
-<instance>c</instance>
-</labelPair>
-<labelPair name="3">
-<instance>d</instance>
+<labelPair name="Condition">
+<instance>F</instance>
 </labelPair>
 </labels>
-<decisionTree> <branch>
-<predicate>
-<atom machineName="M1">
-<labelPair name="1">
-<instance>e</instance>
-</labelPair>
-</atom>
-</predicate>
-<consequent>
-<decisionTree>
-<branch>
-<predicate>
-<or>
-<predicate>
-<atom machineName="M1">
-<labelPair name="2">
-<instance>f</instance>
-</labelPair>
-</atom>
-</predicate>
-<predicate>
-<atom machineName="M1">
-<labelPair name="2">
-<instance>e</instance>
-</labelPair>
-</atom>
-</predicate>
-</or>
-</predicate>
-<consequent>
-<decisionTree>
-<probability>
-<stateName>1</stateName>
-<pValue>1,3</pValue>
-<stateName>2</stateName>
-<pValue>2,3</pValue>
+<decisionTree> <probability>
+<stateName>Bad</stateName>
+<pValue>15,100</pValue>
+<stateName>Severe</stateName>
+<pValue>5,100</pValue>
+<stateName>Fine</stateName>
+<pValue>8,10</pValue>
 </probability>
-</decisionTree>
-</consequent>
-<alternative>
-<decisionTree>
-<probability>
-<stateName>2</stateName>
-<pValue>1,1</pValue>
-</probability>
-</decisionTree>
-</alternative>
-</branch>
-</decisionTree>
-</consequent>
-<alternative>
-<decisionTree>
-<branch>
-<predicate>
-<atom machineName="M1">
-<labelPair name="1">
-<instance>a</instance>
-</labelPair>
-</atom>
-</predicate>
-<consequent>
-<decisionTree>
-<probability>
-<stateName>1</stateName>
-<pValue>1,2</pValue>
-<stateName>3</stateName>
-<pValue>1,2</pValue>
-</probability>
-</decisionTree>
-</consequent>
-<alternative>
-<decisionTree>
-<probability>
-<stateName>3</stateName>
-<pValue>1,4</pValue>
-<stateName>2</stateName>
-<pValue>3,4</pValue>
-</probability>
-</decisionTree>
-</alternative>
-</branch>
-</decisionTree>
-</alternative>
-</branch>
 </decisionTree>
 </state>
-<state name="q3">
+<state name="Bad">
 <labels>
-<labelPair name="1">
-<instance>b</instance>
-</labelPair>
-<labelPair name="2">
-<instance>c</instance>
-</labelPair>
-<labelPair name="3">
-<instance>a</instance>
+<labelPair name="Condition">
+<instance>B</instance>
 </labelPair>
 </labels>
-<decisionTree> <branch>
-<predicate>
-<atom machineName="M1">
-<labelPair name="1">
-<instance>d</instance>
-</labelPair>
-</atom>
-</predicate>
-<consequent>
-<decisionTree>
-<branch>
-<predicate>
-<or>
-<predicate>
-<atom machineName="M1">
-<labelPair name="2">
-<instance>d</instance>
-</labelPair>
-</atom>
-</predicate>
-<predicate>
-<atom machineName="M1">
-<labelPair name="2">
-<instance>e</instance>
-</labelPair>
-</atom>
-</predicate>
-</or>
-</predicate>
-<consequent>
-<decisionTree>
-<probability>
-<stateName>1</stateName>
-<pValue>1,3</pValue>
-<stateName>3</stateName>
-<pValue>2,3</pValue>
+<decisionTree> <probability>
+<stateName>Bad</stateName>
+<pValue>55,100</pValue>
+<stateName>Severe</stateName>
+<pValue>3,10</pValue>
+<stateName>Fine</stateName>
+<pValue>15,100</pValue>
 </probability>
-</decisionTree>
-</consequent>
-<alternative>
-<decisionTree>
-<probability>
-<stateName>1</stateName>
-<pValue>1,1</pValue>
-</probability>
-</decisionTree>
-</alternative>
-</branch>
-</decisionTree>
-</consequent>
-<alternative>
-<decisionTree>
-<branch>
-<predicate>
-<atom machineName="M1">
-<labelPair name="1">
-<instance>e</instance>
-</labelPair>
-</atom>
-</predicate>
-<consequent>
-<decisionTree>
-<probability>
-<stateName>3</stateName>
-<pValue>1,2</pValue>
-<stateName>1</stateName>
-<pValue>1,2</pValue>
-</probability>
-</decisionTree>
-</consequent>
-<alternative>
-<decisionTree>
-<probability>
-<stateName>1</stateName>
-<pValue>1,4</pValue>
-<stateName>3</stateName>
-<pValue>3,4</pValue>
-</probability>
-</decisionTree>
-</alternative>
-</branch>
-</decisionTree>
-</alternative>
-</branch>
 </decisionTree>
 </state>
 </machine>

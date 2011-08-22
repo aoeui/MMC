@@ -51,9 +51,9 @@ public class TestUMLInput {
       while ((temp=in.readLine())!=null){
         if (!temp.contains("decisionTree") && !withInDecisionTree){
           out.write(temp+"\n");
-        }else if(temp.contains("<decisionTree>")){
+        }else if(temp.contains("<decisionTree>") && !temp.contains("</decisionTree>")){
           withInDecisionTree=true;
-        }else if(temp.contains("</decisionTree>")&& withInDecisionTree){
+        }else if((temp.contains("</decisionTree>")&& withInDecisionTree) || (temp.contains("<decisionTree>") && temp.contains("</decisionTree>"))){
           withInDecisionTree=false;
           Element decisionTreeXml;
           out.write("<decisionTree>\n");
@@ -63,7 +63,9 @@ public class TestUMLInput {
           out.write("</decisionTree>\n");
           
           decisionTreeCounter++;
+        }else{ //skip the lines
         }
+        
       }
       outFile.write(out.toString());
 
@@ -134,6 +136,8 @@ public class TestUMLInput {
       out.write("<probability>\n");
       parseProbability(decisionTree,out);
       out.write("</probability>\n");
+    }else{
+      System.err.println("Error in DecisionTree!");
     }
     
       
