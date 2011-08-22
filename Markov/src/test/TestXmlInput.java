@@ -19,6 +19,14 @@ public class TestXmlInput {
       public static void main (String args[]) {
           System.out.println(new TestXmlInput());
       }
+      
+      
+      public TestXmlInput() {
+        
+        XmlInput("xml/umlVersion2.xml");
+       
+      }
+      
       /****** This method can be used in other class to retrieve machines **********/
       public static Net<FractionProbability> XmlInput(String fileName) {
           try {
@@ -246,12 +254,7 @@ public class TestXmlInput {
         }
        
       }
-      
-      public TestXmlInput() {
-        
-        XmlInput("xml/Machine.xml");
-       
-      }
+
 
 
 }
