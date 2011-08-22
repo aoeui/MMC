@@ -5,6 +5,7 @@ import java.io.BufferedWriter;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.StringWriter;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -35,7 +36,8 @@ public class TestUMLInput {
 
       doc.getDocumentElement().normalize();
       FileWriter fstream = new FileWriter(outputFile);
-      BufferedWriter out = new BufferedWriter(fstream);
+      BufferedWriter outFile = new BufferedWriter(fstream);
+      StringWriter out=new StringWriter();
       
       out.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + "<!DOCTYPE machines SYSTEM \"Machine.dtd\">\n");
       FileReader finput = new FileReader(fileName);
@@ -63,15 +65,22 @@ public class TestUMLInput {
           decisionTreeCounter++;
         }
       }
-      
+      outFile.write(out.toString());
 
-      out.close();
+      outFile.close();
     }catch(Exception e) {
       e.printStackTrace();
     }
   }
   
-  private void parseDecisionTree(String decisionTree, BufferedWriter out) throws IOException {
+  public static String decisionTreeXslParser(String input) throws IOException{
+    StringWriter out=new StringWriter();
+    parseDecisionTree(input,out);
+    return out.toString();
+  }
+  
+ 
+  private static void parseDecisionTree(String decisionTree, StringWriter out) throws IOException {
     if(decisionTree.contains("if")){
       out.write("<branch>\n");
       int startIfIdx=decisionTree.indexOf("if");
@@ -126,11 +135,12 @@ public class TestUMLInput {
       parseProbability(decisionTree,out);
       out.write("</probability>\n");
     }
+    
       
     
   }
   
-  private void parseProbability(String probability, BufferedWriter out) throws IOException {
+  private static void parseProbability(String probability, StringWriter out) throws IOException {
     String[] temp=probability.split("p");
     for (int i=0;i<temp.length;i++){
       if(temp[i].contains("[")){
@@ -153,15 +163,15 @@ public class TestUMLInput {
       }
     }
   }
-  private void parsePredicate(String predicate, BufferedWriter out) throws IOException {
+  private static void parsePredicate(String predicate, StringWriter out) throws IOException {
     if (predicate.contains("OR")||predicate.contains("AND")||predicate.contains("NEG")||predicate.contains("IMPLIES")){    
       if (predicate.contains("(")){
         String pattern="empty";
         
         int startIdx=predicate.indexOf("(");
-        int bracketNum=1;System.out.println(pattern);
+        int bracketNum=1;
         int endIdx=findPredicate(predicate,bracketNum, startIdx); 
-        System.out.println(pattern);
+//        System.out.println(pattern);
         //find top logic
         pattern=findTopLogic(predicate,startIdx,"IMPLIES",pattern);
         pattern=findTopLogic(predicate,startIdx,"OR",pattern);
@@ -241,7 +251,7 @@ public class TestUMLInput {
       int idx2=predicate.indexOf('.');
       int idx3=predicate.indexOf('=');
       int idx4=(predicate.lastIndexOf(' ')>0)? predicate.lastIndexOf(' '):predicate.length();
-      out.write("<atom machineName=\""+predicate.substring(idx1+1,idx2)+"\">\n");
+      out.write("<atom machineName=\""+predicate.substring(idx1,idx2)+"\">\n");
       out.write("<labelPair name=\""+predicate.substring(idx2+1,idx3)+"\">\n");
       out.write("<instance>"+predicate.substring(idx3+1,idx4)+"</instance>\n");
       out.write("</labelPair>\n</atom>\n");
@@ -253,7 +263,7 @@ public class TestUMLInput {
   }
     
   
-  private String findTopLogic(String predicate,int startIdx, String string, String pattern) {
+  private static String findTopLogic(String predicate,int startIdx, String string, String pattern) {
     if(predicate.contains(string) && pattern.equals("empty")){
       int idx=predicate.indexOf(string);
       String temp=predicate.substring(startIdx+1,idx);
@@ -268,7 +278,7 @@ public class TestUMLInput {
     return pattern;
   }
   
-  private int findPredicate(String predicate, int num, int startIdx) {
+  private static int findPredicate(String predicate, int num, int startIdx) {
     int idx=predicate.indexOf(")",startIdx);
     if(idx==-1){
       System.err.println("Predicate is not valid in UML!"+predicate);
@@ -293,7 +303,7 @@ public class TestUMLInput {
   }
   
   /****** Find the "end if" corresponding to the "if" at the start  *********/
-  private int findEndOfBranchIdx(String decisionTree, int ifNum, int startIfIdx) {
+  private static int findEndOfBranchIdx(String decisionTree, int ifNum, int startIfIdx) {
     int endIfIdx=decisionTree.indexOf("end if",startIfIdx);
     if(endIfIdx==-1){
       System.err.println("DecisionTree is not valid in UML!");
@@ -318,7 +328,7 @@ public class TestUMLInput {
   }
   
   /****This is almost same as finding "end if", but when compute ifNum, one needs to take take care of "end if".******/
-  private int findElseIdx(String decisionTree, int ifNum, int startIfIdx){
+  private static int findElseIdx(String decisionTree, int ifNum, int startIfIdx){
     int elseIdx=decisionTree.indexOf("else",startIfIdx);
 //    System.out.print("ifNum:"+ifNum+" startIfIdx:"+startIfIdx+" elseIdx:"+elseIdx+" length:"+decisionTree.length()+"->");
     if(elseIdx==-1){
@@ -341,5 +351,6 @@ public class TestUMLInput {
     }
     
   }
+  
   
 }

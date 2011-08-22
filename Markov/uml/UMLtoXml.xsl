@@ -2,8 +2,12 @@
 <xsl:stylesheet version="1.0"
 xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
 xmlns:xmi="http://schema.omg.org/spec/XMI/2.1"
-xmlns:uml="http://www.eclipse.org/uml2/3.0.0/UML">
-<xsl:output method="xml" indent="yes"/>
+xmlns:uml="http://www.eclipse.org/uml2/3.0.0/UML"
+xmlns:parse="test.TestUMLInput">
+
+<xsl:output method="xml" encoding="UTF-8" indent="yes"
+doctype-system="Machine.dtd"/>
+
 
 <xsl:template match="/">
 	<xsl:element name="machines">
@@ -43,7 +47,8 @@ xmlns:uml="http://www.eclipse.org/uml2/3.0.0/UML">
 		</xsl:when>
 		<xsl:when test="contains($text,'p[')">
 			<xsl:element name="decisionTree">
-				<xsl:value-of select="$text"/>
+			<xsl:text> </xsl:text>
+				<xsl:value-of select="parse:decisionTreeXslParser($text)" disable-output-escaping="yes"/>
 			</xsl:element>
 		</xsl:when>
 		<xsl:otherwise></xsl:otherwise>
