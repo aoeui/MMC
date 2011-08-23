@@ -1,6 +1,8 @@
 package markov;
 
+import util.Closure;
 import util.Indenter;
+import util.TerminatedIterator;
 
 public abstract class DecisionTree<T extends Probability<T>> {
   public final boolean isBranch() { return !isTerminal(); }
@@ -8,6 +10,31 @@ public abstract class DecisionTree<T extends Probability<T>> {
   
   public abstract void accept(Visitor<T> visitor);
   public abstract <S> S accept(VisitorRv<T,S> visitor);
+  
+  public TerminatedIterator<Predicate> predicateIterator() {
+    return new PredicateIterator<T>(this).iterator();
+  }
+  
+  private static class PredicateIterator<T extends Probability<T>> extends Closure<Predicate> {
+    public final DecisionTree<T> root;
+    
+    public PredicateIterator(DecisionTree<T> root) {
+      this.root = root;
+    }
+    public void init() {
+      recurse(root);
+    }
+    private void recurse(DecisionTree<T> tree) {
+      tree.accept(new Visitor<T>() {
+        public void visitTerminal(Terminal<T> t) { }
+        public void visitBranch(Branch<T> t) {
+          yield(t.predicate);
+          recurse(t.alternative);
+          recurse(t.consequent);
+        }
+      });      
+    }
+  }
 
   public static class Branch<T extends Probability<T>> extends DecisionTree<T> {
     public final Predicate predicate;

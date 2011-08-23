@@ -3,6 +3,8 @@ package markov;
 import java.util.ArrayList;
 import java.util.Iterator;
 import util.UnmodifiableIterator;
+import util.Closure;
+import util.TerminatedIterator;
 
 public abstract class Predicate {
   protected abstract String computeString();
@@ -54,6 +56,45 @@ public abstract class Predicate {
       return ((Predicate)o).stringRepresentation.equals(stringRepresentation);
     } catch (Exception e) {
       return false;
+    }
+  }
+  
+  public TerminatedIterator<Atom> atomIterator() {
+    return new AtomIterator(this).iterator();
+  }
+  
+  private static class AtomIterator extends Closure<Atom> {
+    public final Predicate root;
+    public AtomIterator(Predicate root) {
+      this.root = root;
+    }
+    public void init() {
+      recurse(root);
+    }
+    public void recurse(Predicate pred) {
+      pred.accept(new Visitor() {
+        public void visitCollection(CollectionPredicate predicate) {
+          for (Predicate child : predicate) {
+            recurse(child);
+          }
+        }
+        public void visitAnd(And predicate) {
+          visitCollection(predicate);
+        }
+        public void visitOr(Or predicate) {
+          visitCollection(predicate);
+        }
+        public void visitNeg(Neg predicate) {
+          recurse(predicate.subject);
+        }
+        public void visitImplies(Implies predicate) {
+          recurse(predicate.antecedent);
+          recurse(predicate.consequent);
+        }
+        public void visitAtom(Atom predicate) {
+          yield(predicate);
+        }
+      });
     }
   }
 

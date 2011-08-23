@@ -9,13 +9,8 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.TreeSet;
 
-import markov.DecisionTree.Branch;
-import markov.DecisionTree.Terminal;
-import markov.Predicate.Atom;
-import markov.Predicate.CollectionPredicate;
-import markov.Predicate.Implies;
-import markov.Predicate.Neg;
 import util.Indenter;
+import util.TerminatedIterator;
 import util.UnmodifiableIterator;
 
 public class Net<T extends Probability<T>> implements Iterable<Machine<T>> {
@@ -62,42 +57,14 @@ public class Net<T extends Probability<T>> implements Iterable<Machine<T>> {
   
   private void findReferencedMachineNames(Machine<T> machine, Set<String> accu) {
     for (State<T> state : machine) {
-      recurseTreeFindMachineNames(state.getTransitionFunction(), accu);
-    }
-  }
-  
-  private void recurseTreeFindMachineNames(DecisionTree<T> tree, final Set<String> accu) {
-    tree.accept(new DecisionTree.Visitor<T>() {
-      public void visitTerminal(Terminal<T> t) {}
-      public void visitBranch(Branch<T> t) {
-        recursePredicateFindMachineNames(t.predicate, accu);
-        recurseTreeFindMachineNames(t.consequent, accu);
-        recurseTreeFindMachineNames(t.alternative, accu);
-      }
-    });
-  }
-  
-  private void recursePredicateFindMachineNames(Predicate pred, final Set<String> accu) {
-    pred.accept(new Predicate.VisitorAdapter() {
-      public void visit(Predicate p) {
-        throw new RuntimeException();
-      }
-      public void visitCollection(CollectionPredicate predicate) {
-        for (Predicate p : predicate) {
-          recursePredicateFindMachineNames(p, accu);
+      TerminatedIterator<Predicate> it = state.getTransitionFunction().predicateIterator();
+      while (it.hasNext()) {
+        TerminatedIterator<Predicate.Atom> atomIt = it.next().atomIterator();
+        while (atomIt.hasNext()) {
+          accu.add(atomIt.next().machineName);
         }
       }
-      public void visitNeg(Neg predicate) {
-        recursePredicateFindMachineNames(predicate.subject, accu);
-      }
-      public void visitImplies(Implies predicate) {
-        recursePredicateFindMachineNames(predicate.antecedent, accu);
-        recursePredicateFindMachineNames(predicate.consequent, accu);
-      }
-      public void visitAtom(Atom predicate) {
-        accu.add(predicate.machineName);
-      }
-    });
+    }
   }
   
   public boolean isConnected(String m1, String m2) {
