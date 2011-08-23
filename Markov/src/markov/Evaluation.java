@@ -2,16 +2,20 @@ package markov;
 
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.TreeSet;
 
 import util.Stack;
+import util.TerminatedIterator;
 
 /** This class evaluates a DecisionTree using restrictions */
-public class Evaluation<T extends Probability<T>> {
-  final Dictionary dictionary;
+public class Evaluation<T extends Probability<T>> implements Iterable<Alphabet> {
+  public final Dictionary dictionary;
   final HashMap<Predicate,Resolver> resolverCache;
 
   public final DecisionTree<T> tree;
   public final Evaluator root;
+  
+  private final TreeSet<Alphabet> alphabets;  // ordered alphabets
 
   public Evaluation(final Dictionary dictionary, DecisionTree<T> tree) {
     this.dictionary = dictionary;
@@ -26,9 +30,19 @@ public class Evaluation<T extends Probability<T>> {
         return new Walker(t, Stack.<Resolver.Atom>emptyInstance(), getResolver(t.predicate));
       }
     });
+    alphabets = new TreeSet<Alphabet>();
+    TerminatedIterator<Predicate.Atom> it = tree.atomIterator();
+    while (it.hasNext()) {
+      Predicate.Atom atom = it.next();
+      alphabets.add(dictionary.get(atom.machineName).get(atom.labelName));
+    }    
   }
   
-  public Resolver getResolver(Predicate p) {
+  public Iterator<Alphabet> iterator() {
+    return alphabets.iterator();
+  }
+  
+  private Resolver getResolver(Predicate p) {
     Resolver rv = resolverCache.get(p);
     if (rv == null) {
       rv = p.reduce(dictionary);
@@ -39,7 +53,7 @@ public class Evaluation<T extends Probability<T>> {
     
   public abstract class Evaluator {
     public abstract boolean isTerminal();
-    public abstract TransitionVector<T> getTransitionVector();
+    public abstract TransitionVector<T> getTransitionVector();  // only valid if isTerminal returns true
     public abstract Evaluator restrict(Predicate.Atom newRestriction);
     public abstract Evaluator restrict(Resolver.Atom newRestriction);
   }

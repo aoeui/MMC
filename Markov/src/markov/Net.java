@@ -57,12 +57,9 @@ public class Net<T extends Probability<T>> implements Iterable<Machine<T>> {
   
   private void findReferencedMachineNames(Machine<T> machine, Set<String> accu) {
     for (State<T> state : machine) {
-      TerminatedIterator<Predicate> it = state.getTransitionFunction().predicateIterator();
+      TerminatedIterator<Predicate.Atom> it = state.getTransitionFunction().atomIterator();
       while (it.hasNext()) {
-        TerminatedIterator<Predicate.Atom> atomIt = it.next().atomIterator();
-        while (atomIt.hasNext()) {
-          accu.add(atomIt.next().machineName);
-        }
+        accu.add(it.next().machineName);
       }
     }
   }

@@ -96,8 +96,14 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
   }
   
   // TODO implement Builder
-  public static class Builder<T extends Comparable<? super T>> {
-    public Builder() {
+  public static class Builder<T extends Comparable<? super T>,S extends Probability<S>> {
+    public final Evaluation<S> eval;
+    public Builder(Evaluation<S> eval) {
+      this.eval = eval;
+    }
+    
+    public void build() {
+      
     }
   }
 }

@@ -1,5 +1,11 @@
 package markov;
 
+import markov.Predicate.And;
+import markov.Predicate.Atom;
+import markov.Predicate.CollectionPredicate;
+import markov.Predicate.Implies;
+import markov.Predicate.Neg;
+import markov.Predicate.Or;
 import util.Closure;
 import util.Indenter;
 import util.TerminatedIterator;
@@ -11,28 +17,53 @@ public abstract class DecisionTree<T extends Probability<T>> {
   public abstract void accept(Visitor<T> visitor);
   public abstract <S> S accept(VisitorRv<T,S> visitor);
   
-  public TerminatedIterator<Predicate> predicateIterator() {
-    return new PredicateIterator<T>(this).iterator();
+  public TerminatedIterator<Predicate.Atom> atomIterator() {
+    return new AtomIterator<T>(this).iterator();
   }
   
-  private static class PredicateIterator<T extends Probability<T>> extends Closure<Predicate> {
+  private static class AtomIterator<T extends Probability<T>> extends Closure<Predicate.Atom> {
     public final DecisionTree<T> root;
     
-    public PredicateIterator(DecisionTree<T> root) {
+    public AtomIterator(DecisionTree<T> root) {
       this.root = root;
     }
     public void init() {
-      recurse(root);
+      recurseDecision(root);
     }
-    private void recurse(DecisionTree<T> tree) {
+    private void recurseDecision(DecisionTree<T> tree) {
       tree.accept(new Visitor<T>() {
         public void visitTerminal(Terminal<T> t) { }
         public void visitBranch(Branch<T> t) {
-          yield(t.predicate);
-          recurse(t.alternative);
-          recurse(t.consequent);
+          recursePredicate(t.predicate);
+          recurseDecision(t.alternative);
+          recurseDecision(t.consequent);
         }
       });      
+    }
+    public void recursePredicate(Predicate pred) {
+      pred.accept(new Predicate.Visitor() {
+        public void visitCollection(CollectionPredicate predicate) {
+          for (Predicate child : predicate) {
+            recursePredicate(child);
+          }
+        }
+        public void visitAnd(And predicate) {
+          visitCollection(predicate);
+        }
+        public void visitOr(Or predicate) {
+          visitCollection(predicate);
+        }
+        public void visitNeg(Neg predicate) {
+          recursePredicate(predicate.subject);
+        }
+        public void visitImplies(Implies predicate) {
+          recursePredicate(predicate.antecedent);
+          recursePredicate(predicate.consequent);
+        }
+        public void visitAtom(Atom predicate) {
+          yield(predicate);
+        }
+      });
     }
   }
 
