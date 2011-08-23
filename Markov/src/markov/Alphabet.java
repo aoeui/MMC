@@ -8,20 +8,18 @@ import java.util.TreeSet;
 
 import util.LexicalCompare;
 
-public class Alphabet implements Iterable<String>, Comparable<Alphabet> {
+public class Alphabet implements Iterable<Resolver.Atom>, Comparable<Alphabet> {
   public final String machineName;  // needed for generating fully qualified labels
   public final String domainName;  // domain name
 
   public final String name;  // unique identifier for this alphabet
 
-  private final String prefix;  // "<machine>.<domain>." convenience attribute
   private final ArrayList<String> characters;  // this is ordered, unique
   
   private Alphabet(String machineName, String domainName, SortedSet<? extends String> chars) {
     if (machineName.contains(Machine.SCOPE_OPERATOR) || domainName.contains(Machine.SCOPE_OPERATOR)) throw new RuntimeException();
 	  this.machineName = machineName;
 	  this.domainName = domainName;
-	  this.prefix = machineName + "." + domainName + ".";
 	  this.name = machineName + "." + domainName;
 	  this.characters = new ArrayList<String>(chars);
   }
@@ -59,22 +57,22 @@ public class Alphabet implements Iterable<String>, Comparable<Alphabet> {
   }
   public int size() { return characters.size(); }
   
-  /** Returns an iterator over the fully qualified label instances */
-  public Iterator<String> iterator() {
-    return new IteratorHelper(characters.iterator());
+  public Iterator<Resolver.Atom> iterator() {
+    return new IteratorHelper();
   }
   
-  class IteratorHelper implements Iterator<String> {
-    Iterator<String> orig;
-    IteratorHelper(Iterator<String> orig) {
-      this.orig = orig;
+  class IteratorHelper implements Iterator<Resolver.Atom> {
+    int idx;
+
+    IteratorHelper() {
+      idx = 0;
     }
     
-    public String next() {
-      return prefix + orig.next();
+    public Resolver.Atom next() {
+      return new Resolver.Atom(Alphabet.this, idx++);
     }
     
-    public boolean hasNext() { return orig.hasNext(); }
+    public boolean hasNext() { return idx < size(); }
     public void remove() { throw new UnsupportedOperationException(); }
   }
   

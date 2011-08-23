@@ -13,6 +13,10 @@ public abstract class Stack<T> implements Iterable<T> {
   public abstract Stack<T> tail();
   public abstract boolean contains(T elt);
   
+  public abstract Stack<T> reverse();
+  
+  protected abstract Stack<T> reverseImpl(Stack<T> stack);
+  
   @SuppressWarnings("unchecked")
   public static <T> Stack<T> emptyInstance() {
     return (Stack<T>)Empty.instance;
@@ -20,7 +24,7 @@ public abstract class Stack<T> implements Iterable<T> {
   
   public Iterator<T> iterator() {
     return new StackIterator<T>(this);
-  }
+  } 
   
   private static class StackIterator<T> implements Iterator<T> {
     Stack<T> stack;
@@ -50,6 +54,9 @@ public abstract class Stack<T> implements Iterable<T> {
     public T head() { throw new UnsupportedOperationException(); }
     public Stack<T> tail() { throw new UnsupportedOperationException(); }
     public boolean contains(T elt) { return false; }
+    
+    public Stack<T> reverse() { return this; }
+    protected Stack<T> reverseImpl(Stack<T> stack) { return stack; }
   }
   
   public static class Element<T> extends Stack<T> {
@@ -65,5 +72,13 @@ public abstract class Stack<T> implements Iterable<T> {
     public Stack<T> tail() { return tail; }
     public boolean isEmpty() { return false; }
     public boolean contains(T elt) { return head.equals(elt) || tail.contains(elt); }
+
+    public Stack<T> reverse() {
+      return reverseImpl(Stack.<T>emptyInstance());
+    }
+    
+    protected Stack<T> reverseImpl(Stack<T> stack) {
+      return reverseImpl(stack.push(head));
+    }
   }
 }
