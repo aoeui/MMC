@@ -1,39 +1,53 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <uml:Package xmi:version="2.1" xmlns:xmi="http://schema.omg.org/spec/XMI/2.1" xmlns:uml="http://www.eclipse.org/uml2/3.0.0/UML" xmi:id="_ucWEYMj_EeCFkN1wTgEKcw">
   <packagedElement xmi:type="uml:Activity" xmi:id="_Lzu1IMkAEeCFkN1wTgEKcw" name="MPatient:ICP">
-    <node xmi:type="uml:OpaqueAction" xmi:id="_QYxtoMkAEeCFkN1wTgEKcw" name="A">
+    <node xmi:type="uml:OpaqueAction" xmi:id="_QYxtoMkAEeCFkN1wTgEKcw" name="A" outgoing="_pnXCQc5sEeC7Dco2PCxVKA _qhmc8M5sEeC7Dco2PCxVKA _rLypcM5sEeC7Dco2PCxVKA">
       <body>labelCost=M;&#xA;labelPatient=G;&#xA;labelICP=A;</body>
       <body>if MPatient:Lung.Condition=S then&#xA;  p[A]=6/10, p[B]=14/100, p[D]=6/100, p[E]=2/10&#xA;else&#xA;    if MPatient:Lung.Condition=B then&#xA;      p[A]=62/100, p[B]=12/100, p[D]=6/100, p[E]=2/10&#xA;    else&#xA;       p[A]=65/100, p[B]=1/10, p[D]=5/100, p[E]=2/10&#xA;    end if&#xA;end if</body>
     </node>
-    <node xmi:type="uml:OpaqueAction" xmi:id="_TlYzkMkAEeCFkN1wTgEKcw" name="B">
+    <node xmi:type="uml:OpaqueAction" xmi:id="_TlYzkMkAEeCFkN1wTgEKcw" name="B" outgoing="_th3I8M5sEeC7Dco2PCxVKA _uQja8M5sEeC7Dco2PCxVKA" incoming="_pnXCQc5sEeC7Dco2PCxVKA _8Tl34M5sEeC7Dco2PCxVKA">
       <body>labelCost=H;&#xA;labelPatient=B;&#xA;labelICP=B;</body>
       <body>if MPatient:Lung.Condition=S then&#xA;  p[B]=52/100, p[C]=3/10, p[D]=18/100&#xA;else&#xA;    if MPatient:Lung.Condition=B then&#xA;      p[B]=51/100, p[C]=33/100, p[D]=16/100&#xA;    else&#xA;         p[B]=5/10, p[C]=35/100, p[D]=15/100&#xA;    end if&#xA;end if</body>
     </node>
-    <node xmi:type="uml:OpaqueAction" xmi:id="_Ue_60MzfEeCz_KsfIMTs9g" name="C">
+    <node xmi:type="uml:OpaqueAction" xmi:id="_Ue_60MzfEeCz_KsfIMTs9g" name="C" outgoing="_8Tl34M5sEeC7Dco2PCxVKA __TUYYM5sEeC7Dco2PCxVKA __71J4M5sEeC7Dco2PCxVKA" incoming="_th3I8M5sEeC7Dco2PCxVKA">
       <body>labelCost=M;&#xA;labelPatient=G;&#xA;labelICP=C;</body>
       <body>if MPatient:Lung.Condition=S then&#xA;  p[B]=8/100, p[C]=48/100, p[D]=7/100, p[E]=37/100&#xA;else&#xA;    if MPatient:Lung.Condition=B then&#xA;      p[B]=6/100, p[C]=49/100, p[D]=6/100, p[E]=39/100&#xA;    else&#xA;         p[B]=5/100, p[C]=5/10, p[D]=5/100, p[E]=4/10&#xA;    end if&#xA;end if</body>
     </node>
-    <node xmi:type="uml:OpaqueAction" xmi:id="_VgDIIMzfEeCz_KsfIMTs9g" name="D">
+    <node xmi:type="uml:OpaqueAction" xmi:id="_VgDIIMzfEeCz_KsfIMTs9g" name="D" incoming="_qhmc8M5sEeC7Dco2PCxVKA _uQja8M5sEeC7Dco2PCxVKA __TUYYM5sEeC7Dco2PCxVKA">
       <body>labelCost=H;&#xA;labelPatient=NA;&#xA;labelICP=D;</body>
       <body>p[D]=1</body>
     </node>
-    <node xmi:type="uml:OpaqueAction" xmi:id="_WeH58MzfEeCz_KsfIMTs9g" name="E">
+    <node xmi:type="uml:OpaqueAction" xmi:id="_WeH58MzfEeCz_KsfIMTs9g" name="E" incoming="_rLypcM5sEeC7Dco2PCxVKA __71J4M5sEeC7Dco2PCxVKA">
       <body>labelCost=L;&#xA;labelPatient=G;&#xA;labelICP=E;</body>
       <body>p[E]=1</body>
     </node>
+    <edge xmi:type="uml:ControlFlow" xmi:id="_pnXCQc5sEeC7Dco2PCxVKA" source="_QYxtoMkAEeCFkN1wTgEKcw" target="_TlYzkMkAEeCFkN1wTgEKcw"/>
+    <edge xmi:type="uml:ControlFlow" xmi:id="_qhmc8M5sEeC7Dco2PCxVKA" source="_QYxtoMkAEeCFkN1wTgEKcw" target="_VgDIIMzfEeCz_KsfIMTs9g"/>
+    <edge xmi:type="uml:ControlFlow" xmi:id="_rLypcM5sEeC7Dco2PCxVKA" source="_QYxtoMkAEeCFkN1wTgEKcw" target="_WeH58MzfEeCz_KsfIMTs9g"/>
+    <edge xmi:type="uml:ControlFlow" xmi:id="_th3I8M5sEeC7Dco2PCxVKA" source="_TlYzkMkAEeCFkN1wTgEKcw" target="_Ue_60MzfEeCz_KsfIMTs9g"/>
+    <edge xmi:type="uml:ControlFlow" xmi:id="_uQja8M5sEeC7Dco2PCxVKA" source="_TlYzkMkAEeCFkN1wTgEKcw" target="_VgDIIMzfEeCz_KsfIMTs9g"/>
+    <edge xmi:type="uml:ControlFlow" xmi:id="_8Tl34M5sEeC7Dco2PCxVKA" source="_Ue_60MzfEeCz_KsfIMTs9g" target="_TlYzkMkAEeCFkN1wTgEKcw"/>
+    <edge xmi:type="uml:ControlFlow" xmi:id="__TUYYM5sEeC7Dco2PCxVKA" source="_Ue_60MzfEeCz_KsfIMTs9g" target="_VgDIIMzfEeCz_KsfIMTs9g"/>
+    <edge xmi:type="uml:ControlFlow" xmi:id="__71J4M5sEeC7Dco2PCxVKA" source="_Ue_60MzfEeCz_KsfIMTs9g" target="_WeH58MzfEeCz_KsfIMTs9g"/>
   </packagedElement>
   <packagedElement xmi:type="uml:Activity" xmi:id="_fWm6sMkHEeCdsOVyeGqdOQ" name="MPatient:Lung">
-    <node xmi:type="uml:OpaqueAction" xmi:id="_vX8QUMkHEeCdsOVyeGqdOQ" name="Severe">
+    <node xmi:type="uml:OpaqueAction" xmi:id="_vX8QUMkHEeCdsOVyeGqdOQ" name="Severe" outgoing="_CDy78M5tEeC7Dco2PCxVKA _EO3FUM5tEeC7Dco2PCxVKA" incoming="_CnZ_UM5tEeC7Dco2PCxVKA _Ho_p4M5tEeC7Dco2PCxVKA">
       <body>labelCondition=S;</body>
       <body>p[Bad]=45/100, p[Severe]=5/10, p[Fine]=5/100</body>
     </node>
-    <node xmi:type="uml:OpaqueAction" xmi:id="_xwVrEMkHEeCdsOVyeGqdOQ" name="Fine">
+    <node xmi:type="uml:OpaqueAction" xmi:id="_xwVrEMkHEeCdsOVyeGqdOQ" name="Fine" outgoing="_G8be0M5tEeC7Dco2PCxVKA _Ho_p4M5tEeC7Dco2PCxVKA" incoming="_DG2UYM5tEeC7Dco2PCxVKA _EO3FUM5tEeC7Dco2PCxVKA">
       <body>labelCondition=F;</body>
       <body>p[Bad]=15/100, p[Severe]=5/100, p[Fine]=8/10</body>
     </node>
-    <node xmi:type="uml:OpaqueAction" xmi:id="_wapDcMkHEeCdsOVyeGqdOQ" name="Bad">
+    <node xmi:type="uml:OpaqueAction" xmi:id="_wapDcMkHEeCdsOVyeGqdOQ" name="Bad" outgoing="_CnZ_UM5tEeC7Dco2PCxVKA _DG2UYM5tEeC7Dco2PCxVKA" incoming="_CDy78M5tEeC7Dco2PCxVKA _G8be0M5tEeC7Dco2PCxVKA">
       <body>labelCondition=B;</body>
       <body>p[Bad]=55/100, p[Severe]=3/10, p[Fine]=15/100</body>
     </node>
+    <edge xmi:type="uml:ControlFlow" xmi:id="_CDy78M5tEeC7Dco2PCxVKA" source="_vX8QUMkHEeCdsOVyeGqdOQ" target="_wapDcMkHEeCdsOVyeGqdOQ"/>
+    <edge xmi:type="uml:ControlFlow" xmi:id="_CnZ_UM5tEeC7Dco2PCxVKA" source="_wapDcMkHEeCdsOVyeGqdOQ" target="_vX8QUMkHEeCdsOVyeGqdOQ"/>
+    <edge xmi:type="uml:ControlFlow" xmi:id="_DG2UYM5tEeC7Dco2PCxVKA" source="_wapDcMkHEeCdsOVyeGqdOQ" target="_xwVrEMkHEeCdsOVyeGqdOQ"/>
+    <edge xmi:type="uml:ControlFlow" xmi:id="_EO3FUM5tEeC7Dco2PCxVKA" source="_vX8QUMkHEeCdsOVyeGqdOQ" target="_xwVrEMkHEeCdsOVyeGqdOQ"/>
+    <edge xmi:type="uml:ControlFlow" xmi:id="_G8be0M5tEeC7Dco2PCxVKA" source="_xwVrEMkHEeCdsOVyeGqdOQ" target="_wapDcMkHEeCdsOVyeGqdOQ"/>
+    <edge xmi:type="uml:ControlFlow" xmi:id="_Ho_p4M5tEeC7Dco2PCxVKA" source="_xwVrEMkHEeCdsOVyeGqdOQ" target="_vX8QUMkHEeCdsOVyeGqdOQ"/>
   </packagedElement>
 </uml:Package>
