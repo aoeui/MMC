@@ -3,6 +3,8 @@ package util;
 import java.util.Iterator;
 
 public abstract class Stack<T> implements Iterable<T> {
+  public final static String DEFAULT_DELIM = ", ";
+
   public abstract boolean isEmpty();
 
   public Stack<T> push(T elt) {
@@ -24,7 +26,15 @@ public abstract class Stack<T> implements Iterable<T> {
   
   public Iterator<T> iterator() {
     return new StackIterator<T>(this);
-  } 
+  }
+  
+  public String toString() {
+    return toString(DEFAULT_DELIM);        
+  }
+  
+  public String toString(String delim) {
+    return Joiner.join(this, delim);
+  }
   
   private static class StackIterator<T> implements Iterator<T> {
     Stack<T> stack;
@@ -45,7 +55,7 @@ public abstract class Stack<T> implements Iterable<T> {
     public void remove() { throw new UnsupportedOperationException(); }
   }
 
-  // This should be a singleton with suppress warnings somehow
+  // Singleton
   public static class Empty<T> extends Stack<T> {
     @SuppressWarnings("rawtypes")
     public final static Empty instance = new Empty();
@@ -78,7 +88,7 @@ public abstract class Stack<T> implements Iterable<T> {
     }
     
     protected Stack<T> reverseImpl(Stack<T> stack) {
-      return reverseImpl(stack.push(head));
+      return tail.reverseImpl(stack.push(head));
     }
   }
 }
