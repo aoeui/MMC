@@ -10,21 +10,21 @@ import util.Stack;
 /* Type parameters
  * T corresponds to terminal values.
  */
-public abstract class Romdd<T extends Probability<T>> implements Comparable<Romdd<T>> {
+public abstract class Romdd<T extends Comparable<? super T>> implements Comparable<Romdd<T>> {
   private Romdd() { }
 
-  public static interface Op<T extends Probability<T>> {
-    public TransitionVector<T> apply(TransitionVector<T> v1, TransitionVector<T> v2);
+  public static interface Op<T extends Comparable<? super T>> {
+    public T apply(T v1, T v2);
   }
 
-  public static <T extends Probability<T>> Romdd<T> apply(Op<T> op, Romdd<T> f, Romdd<T> g) {
+  public static <T extends Comparable<? super T>> Romdd<T> apply(Op<T> op, Romdd<T> f, Romdd<T> g) {
     // TODO implement apply
     return null;
   }
 
   public abstract Romdd<T> restrict(String name, String value);
   
-  public static class Node<T extends Probability<T>> extends Romdd<T> implements Iterable<Romdd<T>> {
+  public static class Node<T extends Comparable<? super T>> extends Romdd<T> implements Iterable<Romdd<T>> {
     public final Alphabet alpha;
     public final String name;  // Name of alphabet
 
@@ -51,6 +51,7 @@ public abstract class Romdd<T extends Probability<T>> implements Comparable<Romd
     public void accept(Visitor<T> visitor) { visitor.visitNode(this); }
 
     public int compareTo(Romdd<T> o) {
+      if (this == o) return 0;
       final int[] rvPtr = new int[] { 0 };
       o.accept(new Visitor<T>() {
         public void visitTerminal(Terminal<T> term) {
@@ -66,10 +67,10 @@ public abstract class Romdd<T extends Probability<T>> implements Comparable<Romd
     }
   }
 
-  public static class Terminal<T extends Probability<T>> extends Romdd<T>{
-    public final TransitionVector<T> output;
+  public static class Terminal<T extends Comparable<? super T>> extends Romdd<T>{
+    public final T output;
     
-    public Terminal(TransitionVector<T> output) {
+    public Terminal(T output) {
       this.output = output;
     }
     
@@ -78,6 +79,7 @@ public abstract class Romdd<T extends Probability<T>> implements Comparable<Romd
     public void accept(Visitor<T> visitor) { visitor.visitTerminal(this); }
 
     public int compareTo(Romdd<T> o) {
+      if (this == o) return 0;
       final int[] rv = new int[] { 0 };
       o.accept(new Visitor<T>() {
         public void visitTerminal(Terminal<T> term) {
@@ -92,7 +94,7 @@ public abstract class Romdd<T extends Probability<T>> implements Comparable<Romd
   }
   
   public abstract void accept(Visitor<T> visitor);
-  public static interface Visitor<T extends Probability<T>> {
+  public static interface Visitor<T extends Comparable<? super T>> {
     public void visitTerminal(Terminal<T> term);
     public void visitNode(Node<T> node);
   }
@@ -117,7 +119,7 @@ public abstract class Romdd<T extends Probability<T>> implements Comparable<Romd
     
     private Romdd<T> recurse(Stack<Alphabet> stack, Evaluation<T>.Evaluator state) {
       if (state.isTerminal()) {
-        Terminal<T> newTerm = new Terminal<T>(state.getTransitionVector());
+        Terminal<T> newTerm = new Terminal<T>(state.getOutput());
         Romdd<T> term = nodes.get(newTerm);
         if (term == null) {
           term = newTerm;

@@ -11,9 +11,9 @@ public class State<T extends Probability<T>> implements Comparable<State<?>> {
   public final String machineName;
   public final String name;
   TreeMap<String,String> labelVector;  // Essentially a vector of (labelName, character) pairs
-  DecisionTree<T> transitionFunction;
+  DecisionTree<TransitionVector<T>> transitionFunction;
 
-  private State(String m, String name, Map<String,String> labelVector, DecisionTree<T> transitionFunction) {
+  private State(String m, String name, Map<String,String> labelVector, DecisionTree<TransitionVector<T>> transitionFunction) {
     if (name.contains(Machine.SCOPE_OPERATOR)) throw new RuntimeException();
     this.machineName = m;
     this.name = name;
@@ -31,7 +31,7 @@ public class State<T extends Probability<T>> implements Comparable<State<?>> {
     return new UnmodifiableIterator<String>(labelVector.keySet().iterator());
   }
 
-  public DecisionTree<T> getTransitionFunction() { return transitionFunction; }
+  public DecisionTree<TransitionVector<T>> getTransitionFunction() { return transitionFunction; }
   
   public int compareLabels(State<?> state) {
     if (!machineName.equals(state.machineName)) throw new RuntimeException();  // incomparable
@@ -95,9 +95,9 @@ public class State<T extends Probability<T>> implements Comparable<State<?>> {
     public final String machineName;
     public final String name;
     TreeMap<String,String> labelVector;  // Essentially a vector of (labelName, character) pairs
-    DecisionTree<T> transitionFunction;
+    DecisionTree<TransitionVector<T>> transitionFunction;
 
-    public Builder(String machineName, String name, DecisionTree<T> transitionFunction) {
+    public Builder(String machineName, String name, DecisionTree<TransitionVector<T>> transitionFunction) {
       this.machineName = machineName;
       this.name = name;
       this.transitionFunction = transitionFunction;

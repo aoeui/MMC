@@ -8,7 +8,7 @@ import util.Stack;
 import util.TerminatedIterator;
 
 /** This class evaluates a DecisionTree using restrictions */
-public class Evaluation<T extends Probability<T>> implements Iterable<Alphabet> {
+public class Evaluation<T extends Comparable<? super T>> implements Iterable<Alphabet> {
   public final Dictionary dictionary;
   final HashMap<Predicate,Resolver> resolverCache;
 
@@ -24,7 +24,7 @@ public class Evaluation<T extends Probability<T>> implements Iterable<Alphabet> 
     this.tree = tree;
     root = tree.accept(new DecisionTree.VisitorRv<T,Evaluator>() {
       public Evaluator visitTerminal(markov.DecisionTree.Terminal<T> t) {
-        return new Terminal(t.vector);
+        return new Terminal(t.output);
       }
       public Evaluator visitBranch(DecisionTree.Branch<T> t) {
         return new Walker(t, Stack.<Resolver.Atom>emptyInstance(), getResolver(t.predicate));
@@ -53,7 +53,7 @@ public class Evaluation<T extends Probability<T>> implements Iterable<Alphabet> 
     
   public abstract class Evaluator {
     public abstract boolean isTerminal();
-    public abstract TransitionVector<T> getTransitionVector();  // only valid if isTerminal returns true
+    public abstract T getOutput();  // only valid if isTerminal returns true
     public abstract Evaluator restrict(Predicate.Atom newRestriction);
     public abstract Evaluator restrict(Resolver.Atom newRestriction);
   }
@@ -91,7 +91,7 @@ public class Evaluation<T extends Probability<T>> implements Iterable<Alphabet> 
     public Evaluator decide(DecisionTree<T> decision, final Stack<Resolver.Atom> restrictions) {
       return decision.accept(new DecisionTree.VisitorRv<T,Evaluator>() {
         public Evaluator visitTerminal(DecisionTree.Terminal<T> t) {
-          return new Terminal(t.vector);
+          return new Terminal(t.output);
         }
         public Evaluator visitBranch(DecisionTree.Branch<T> t) {
           Resolver resolver = getResolver(t.predicate);
@@ -108,18 +108,18 @@ public class Evaluation<T extends Probability<T>> implements Iterable<Alphabet> 
       });
     }
     
-    public TransitionVector<T> getTransitionVector() { throw new UnsupportedOperationException(); }
+    public T getOutput() { throw new UnsupportedOperationException(); }
   }
   
   public class Terminal extends Evaluator {
-    public final TransitionVector<T> vector;
+    public final T output;
     
-    public Terminal(TransitionVector<T> vector) {
-      this.vector = vector;
+    public Terminal(T output) {
+      this.output = output;
     }
 
     public boolean isTerminal() { return true; }
-    public TransitionVector<T> getTransitionVector() { return vector; }
+    public T getOutput() { return output; }
 
     public Evaluator restrict(Predicate.Atom newRestriction) { return this; }
 

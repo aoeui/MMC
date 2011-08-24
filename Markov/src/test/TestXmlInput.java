@@ -73,7 +73,7 @@ public class TestXmlInput {
 */
               
                   //getDecisionTreeInfo  under state using 3rd under alternative or consequence use 1st of the Elements's childrenNode
-                  DecisionTree<FractionProbability> decisionTree=getDecisionTreeInfo(machineBuild.name, stateXml);
+                  DecisionTree<TransitionVector<FractionProbability>> decisionTree=getDecisionTreeInfo(machineBuild.name, stateXml);
               
                   State.Builder<FractionProbability> stateBuild=new State.Builder<FractionProbability>(machineXml.getAttribute("name"),stateXml.getAttribute("name"),decisionTree);
                   
@@ -105,7 +105,7 @@ public class TestXmlInput {
 
       }
       
-      private static DecisionTree<FractionProbability> getDecisionTreeInfo(String machineName, Element parent){
+      private static DecisionTree<TransitionVector<FractionProbability>> getDecisionTreeInfo(String machineName, Element parent){
         
         Element decisionTreeXml=null;
         //if DecisionTree is under state use the 4th item of childNodes 
@@ -138,8 +138,8 @@ public class TestXmlInput {
             System.err.println("!!Predicate not parsed!");
           }
           
-          DecisionTree<FractionProbability> consequent=null;
-          DecisionTree<FractionProbability> alternative=null;         
+          DecisionTree<TransitionVector<FractionProbability>> consequent=null;
+          DecisionTree<TransitionVector<FractionProbability>> alternative=null;         
           Element consequentXml = (Element) decisionTreeXml.getChildNodes().item(1).getChildNodes().item(3);
           consequent = getDecisionTreeInfo (machineName, consequentXml);
           if (decisionTreeXml.getChildNodes().item(1).getChildNodes().getLength()<6){
@@ -152,7 +152,7 @@ public class TestXmlInput {
           if (consequent==null || alternative==null)
             System.err.println("!Consequence or alternative not parsed!");
           
-          DecisionTree.Branch<FractionProbability> branch=new DecisionTree.Branch<FractionProbability>(predicate,consequent,alternative);
+          DecisionTree.Branch<TransitionVector<FractionProbability>> branch=new DecisionTree.Branch<TransitionVector<FractionProbability>>(predicate,consequent,alternative);
           
           return branch;  
         }
@@ -177,7 +177,7 @@ public class TestXmlInput {
           }
         
           TransitionVector<FractionProbability> transitionVector=b.build();
-          DecisionTree.Terminal<FractionProbability> terminal= new DecisionTree.Terminal<FractionProbability>(transitionVector);
+          DecisionTree.Terminal<TransitionVector<FractionProbability>> terminal= new DecisionTree.Terminal<TransitionVector<FractionProbability>>(transitionVector);
           return terminal;
           
         }else{
