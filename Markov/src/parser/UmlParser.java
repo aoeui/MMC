@@ -16,7 +16,8 @@ import java.io.StringWriter;
 
 public class UmlParser {
   
-  /****** main method is not used anymore********/  
+  /****** main method is not used anymore********/
+  //TODO add xsl Xalan into this part to remove dependency on eclipse plunge-in
 /*public static void main (String args[]) {
     System.out.println(new UmlParser());
     
