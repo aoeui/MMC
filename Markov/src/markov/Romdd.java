@@ -81,14 +81,17 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
       return rv;
     }
     
-    public Romdd<T> getTerm(T output) {
-      Terminal<T> newTerminal = new Terminal<T>(output);
-      Romdd<T> terminal = nodeCache.get(newTerminal);
-      if (terminal == null) {
-        nodeCache.put(newTerminal, newTerminal);
-        terminal = newTerminal;
+    public Romdd<T> checkCache(Romdd<T> test) {
+      Romdd<T> rv = nodeCache.get(test);
+      if (rv == null) {
+        nodeCache.put(test, test);
+        rv = test;
       }
-      return terminal;
+      return rv;
+    }
+    
+    public Romdd<T> getTerm(T output) {
+      return checkCache(new Terminal<T>(output));
     }
     
     public Romdd<T> expandLeft(final Node<T> left, final Romdd<T> right) {
@@ -114,17 +117,8 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
           }
         }
       }
-      if (foundDiff) {
-        Romdd<T> newNode = new Node<T>(splitter.alpha, children);  // checking cache
-        Romdd<T> rv = nodeCache.get(newNode);
-        if (rv == null) {
-          rv = newNode;
-          nodeCache.put(rv, rv);
-        }
-        return rv;
-      } else {
-        return protoChild;  // anything returned by recurse has been checked already
-      }
+      return foundDiff ? checkCache(new Node<T>(splitter.alpha, children)) : protoChild;
+      // anything returned by recurse has been checked already
     }
 
     // make sure to check the return value in cache before return
@@ -145,17 +139,7 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
           }
         }
       }
-      if (foundDiff) {
-        Romdd<T> newNode = new Node<T>(left.alpha, children);
-        Romdd<T> rv = nodeCache.get(newNode);
-        if (rv == null) {
-          rv = newNode;
-          nodeCache.put(rv, rv);
-        }
-        return rv;
-      } else {
-        return protoChild;
-      }
+      return foundDiff ? checkCache(new Node<T>(left.alpha, children)) : protoChild;
     }
   }
   
