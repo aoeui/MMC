@@ -8,7 +8,7 @@ import java.util.concurrent.Semaphore;
 /* Threads are top level objects, meaning they can't be gc'd unless they are
    complete. In order to prevent memory leaks, make sure that either the
    iteration terminates OR end() is called after iteration is done. */
-public abstract class Closure<T> implements Runnable,Iterable<T> {
+public abstract class Coroutine<T> implements Runnable,Iterable<T> {
   private final static ExecutorService SERVICE = Executors.newCachedThreadPool();
   // = Executors.newFixedThreadPool(2);  // useful for testing
 
@@ -20,7 +20,7 @@ public abstract class Closure<T> implements Runnable,Iterable<T> {
   private static class KillException extends RuntimeException {
     private static final long serialVersionUID = 1L; }
 
-  public Closure() {
+  public Coroutine() {
     buffer = new LinkedList<T>();
     serverReady = new Semaphore(0);
   }

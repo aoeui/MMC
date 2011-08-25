@@ -6,11 +6,11 @@ import markov.Predicate.CollectionPredicate;
 import markov.Predicate.Implies;
 import markov.Predicate.Neg;
 import markov.Predicate.Or;
-import util.Closure;
+import util.Coroutine;
 import util.Indenter;
 import util.TerminatedIterator;
 
-public abstract class DecisionTree<T extends Probability<T>> {
+public abstract class DecisionTree<T extends Comparable<? super T>> {
   public final boolean isBranch() { return !isTerminal(); }
   public abstract boolean isTerminal();
   
@@ -21,7 +21,7 @@ public abstract class DecisionTree<T extends Probability<T>> {
     return new AtomIterator<T>(this).iterator();
   }
   
-  private static class AtomIterator<T extends Probability<T>> extends Closure<Predicate.Atom> {
+  private static class AtomIterator<T extends Comparable<? super T>> extends Coroutine<Predicate.Atom> {
     public final DecisionTree<T> root;
     
     public AtomIterator(DecisionTree<T> root) {
@@ -67,7 +67,7 @@ public abstract class DecisionTree<T extends Probability<T>> {
     }
   }
 
-  public static class Branch<T extends Probability<T>> extends DecisionTree<T> {
+  public static class Branch<T extends Comparable<? super T>> extends DecisionTree<T> {
     public final Predicate predicate;
     public final DecisionTree<T> consequent;
     public final DecisionTree<T> alternative;
@@ -108,11 +108,11 @@ public abstract class DecisionTree<T extends Probability<T>> {
     }
   }  
   
-  public static class Terminal<T extends Probability<T>> extends DecisionTree<T> {
-    public final TransitionVector<T> vector;
+  public static class Terminal<T extends Comparable<? super T>> extends DecisionTree<T> {
+    public final T output;
     
-    public Terminal(TransitionVector<T> vector) {
-      this.vector = vector;
+    public Terminal(T output) {
+      this.output = output;
     }
     
     public void accept(Visitor<T> visitor) {
@@ -124,16 +124,16 @@ public abstract class DecisionTree<T extends Probability<T>> {
     }
 
     public boolean isTerminal() { return true; }
-    public String toString() { return vector.toString(); }
-    public void indent(Indenter indenter) { indenter.println(vector); }
+    public String toString() { return output.toString(); }
+    public void indent(Indenter indenter) { indenter.println(output); }
   }
   
-  public static interface Visitor<T extends Probability<T>> {
+  public static interface Visitor<T extends Comparable<? super T>> {
     void visitTerminal(Terminal<T> t);
     void visitBranch(Branch<T> t);
   }
   
-  public static interface VisitorRv<T extends Probability<T>, S> {
+  public static interface VisitorRv<T extends Comparable<? super T>, S> {
     public S visitTerminal(Terminal<T> t);
     public S visitBranch(Branch<T> t);
   }

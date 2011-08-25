@@ -4,14 +4,14 @@ import static java.lang.System.out;
 
 import java.util.Random;
 
-import util.Closure;
+import util.Coroutine;
 import util.TerminatedIterator;
 
 public class TestRecursiveIterator {
   public static Random rng = new Random();
 
   public static void main(String[] args) {
-    Closure<Integer> test = new NullTest();
+    Coroutine<Integer> test = new NullTest();
     for (int i : test) {
       out.println("null iterated " + i);
     }
@@ -40,11 +40,11 @@ public class TestRecursiveIterator {
     return count;
   }
   
-  public static class NullTest extends Closure<Integer> {
+  public static class NullTest extends Coroutine<Integer> {
     public void init() {}
   }
 
-  public static class TestIterator extends Closure<Integer> {
+  public static class TestIterator extends Coroutine<Integer> {
     public static int COUNT = 0;
     
     public final int id = COUNT++;
