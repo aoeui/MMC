@@ -57,8 +57,7 @@ public abstract class Stack<T> implements Iterable<T> {
 
   // Singleton
   public static class Empty<T> extends Stack<T> {
-    @SuppressWarnings("unchecked")
-    public final static Empty instance = new Empty();
+    public final static Empty<?> instance = new Empty<Object>();
 
     public boolean isEmpty() { return true; }
     public T head() { throw new UnsupportedOperationException(); }
