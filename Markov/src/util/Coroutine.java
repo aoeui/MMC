@@ -9,7 +9,7 @@ import java.util.concurrent.Semaphore;
    complete. In order to prevent memory leaks, make sure that either the
    iteration terminates OR end() is called after iteration is done. */
 public abstract class Coroutine<T> implements Runnable,Iterable<T> {
-  private final static ExecutorService SERVICE = Executors.newCachedThreadPool();
+  public final static ExecutorService SERVICE = Executors.newCachedThreadPool();
   // = Executors.newFixedThreadPool(2);  // useful for testing
 
   boolean cancelled = false;

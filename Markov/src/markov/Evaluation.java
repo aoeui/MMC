@@ -53,9 +53,9 @@ public class Evaluation<T extends Comparable<? super T>> implements Iterable<Alp
     
   public abstract class Evaluator {
     public abstract boolean isTerminal();
-    public abstract T getOutput();  // only valid if isTerminal returns true
     public abstract Evaluator restrict(Predicate.Atom newRestriction);
     public abstract Evaluator restrict(Resolver.Atom newRestriction);
+    public abstract void accept(Visitor<T> visitor);
   }
 
   /** Note that this is not a static class, it has implicit access to a root Evaluator */
@@ -108,7 +108,7 @@ public class Evaluation<T extends Comparable<? super T>> implements Iterable<Alp
       });
     }
     
-    public T getOutput() { throw new UnsupportedOperationException(); }
+    public void accept(Visitor<T> visitor) { visitor.visitWalker(this); }
   }
   
   public class Terminal extends Evaluator {
@@ -119,10 +119,16 @@ public class Evaluation<T extends Comparable<? super T>> implements Iterable<Alp
     }
 
     public boolean isTerminal() { return true; }
-    public T getOutput() { return output; }
 
     public Evaluator restrict(Predicate.Atom newRestriction) { return this; }
 
     public Evaluator restrict(Resolver.Atom newRestriction) { return this; }
+    
+    public void accept(Visitor<T> visitor) { visitor.visitTerminal(this); }
+  }
+  
+  public static interface Visitor<T extends Comparable<? super T>> {
+    public void visitTerminal(Evaluation<T>.Terminal term);
+    public void visitWalker(Evaluation<T>.Walker walker);
   }
 }

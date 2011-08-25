@@ -15,11 +15,12 @@ public class TestRecursiveIterator {
     for (int i : test) {
       out.println("null iterated " + i);
     }
-    for (int i = 0; i < 100000; i++) {
+    for (int i = 0; i < 100; i++) {
       int rv = runTest();
       out.println("Success (" + rv + ") " + i);
     }
     out.println("Done");
+    util.Coroutine.SERVICE.shutdown();
   }
 
   public static int runTest() {
