@@ -60,22 +60,14 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
                 }
               }
               public void visitTerminal(final Terminal<T> rightTerm) {
-                if (operation.isDominant(rightTerm.output)) {
-                  rvPtr.value = getTerm(rightTerm.output);
-                } else {
-                  rvPtr.value = expandLeft(leftNode, rightTerm);
-                }
+                rvPtr.value = operation.isDominant(rightTerm.output) ? getTerm(rightTerm.output) : expandLeft(leftNode, rightTerm);
               }
             });
           }
           public void visitTerminal(final Terminal<T> leftTerm) {
             right.accept(new Visitor<T>() {
               public void visitNode(final Node<T> rightNode) {
-                if (operation.isDominant(leftTerm.output)) {
-                  rvPtr.value = getTerm(leftTerm.output);
-                } else {
-                  rvPtr.value = expandRight(leftTerm, rightNode);
-                }
+                rvPtr.value = operation.isDominant(leftTerm.output) ? getTerm(leftTerm.output) : expandRight(leftTerm, rightNode); 
               }
               public void visitTerminal(final Terminal<T> rightTerm) {
                 rvPtr.value = getTerm(operation.apply(leftTerm.output, rightTerm.output));
@@ -99,23 +91,71 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
       return terminal;
     }
     
-    // make sure to check the return value in cache before return
-    // Also check that the children are not all equal.
     public Romdd<T> expandLeft(final Node<T> left, final Romdd<T> right) {
-      return null;
+      return expandOne(left, right, true);
     }
-
+    public Romdd<T> expandRight(final Romdd<T> left, final Node<T> right) {
+      return expandOne(right, left, false);
+    }
     // make sure to check the return value in cache before return
     // Also check that the children are not all equal.
-    public Romdd<T> expandRight(final Romdd<T> left, final Node<T> right) {
-      return null;
+    public Romdd<T> expandOne(final Node<T> splitter, final Romdd<T> node, boolean splitterLeft) {
+      ArrayList<Romdd<T>> children = new ArrayList<Romdd<T>>();
+      Romdd<T> protoChild = null;
+      boolean foundDiff = false;
+      for (Romdd<T> child : splitter) {
+        Romdd<T> mix = splitterLeft ? recurse(child, node) : recurse(node, child);
+        children.add(mix);
+        if (!foundDiff) {
+          if (protoChild == null) {
+            protoChild = mix;
+          } else {
+            foundDiff = protoChild.compareTo(mix) != 0;
+          }
+        }
+      }
+      if (foundDiff) {
+        Romdd<T> newNode = new Node<T>(splitter.alpha, children);  // checking cache
+        Romdd<T> rv = nodeCache.get(newNode);
+        if (rv == null) {
+          rv = newNode;
+          nodeCache.put(rv, rv);
+        }
+        return rv;
+      } else {
+        return protoChild;  // anything returned by recurse has been checked already
+      }
     }
 
     // make sure to check the return value in cache before return
     // Also check that the children are not all equal.
     public Romdd<T> expandBoth(final Node<T> left, final Node<T> right) {
-      // This only occurs if both alphabets are the same. The children consist of restricting both children and recursing.
-      return null;
+      assert(left.alpha.compareTo(right.alpha) == 0);
+      ArrayList<Romdd<T>> children = new ArrayList<Romdd<T>>();
+      Romdd<T> protoChild = null;
+      boolean foundDiff = false;
+      for (int i = 0; i < left.getSize(); i++) {
+        Romdd<T> mix = recurse(left.getChild(i), right.getChild(i));
+        children.add(mix);
+        if (!foundDiff) {
+          if (protoChild == null) {
+            protoChild = mix;
+          } else {
+            foundDiff = protoChild.compareTo(mix) != 0;
+          }
+        }
+      }
+      if (foundDiff) {
+        Romdd<T> newNode = new Node<T>(left.alpha, children);
+        Romdd<T> rv = nodeCache.get(newNode);
+        if (rv == null) {
+          rv = newNode;
+          nodeCache.put(rv, rv);
+        }
+        return rv;
+      } else {
+        return protoChild;
+      }
     }
   }
   
