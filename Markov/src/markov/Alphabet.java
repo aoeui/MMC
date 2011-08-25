@@ -25,8 +25,7 @@ public class Alphabet implements Iterable<Resolver.Atom>, Comparable<Alphabet> {
   }
   
   public int compareTo(Alphabet b) {
-    int rv = machineName.compareTo(b.machineName);
-    if (rv == 0) rv = domainName.compareTo(b.domainName);
+    int rv = name.compareTo(b.name);
     // Alphabets should be equal if machine.name is equal
     assert(rv == 0 ? compareAlphabets(characters, b.characters) == 0 : true);
     return rv;

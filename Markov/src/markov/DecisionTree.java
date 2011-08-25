@@ -6,7 +6,7 @@ import markov.Predicate.CollectionPredicate;
 import markov.Predicate.Implies;
 import markov.Predicate.Neg;
 import markov.Predicate.Or;
-import util.Closure;
+import util.Coroutine;
 import util.Indenter;
 import util.TerminatedIterator;
 
@@ -21,7 +21,7 @@ public abstract class DecisionTree<T extends Comparable<? super T>> {
     return new AtomIterator<T>(this).iterator();
   }
   
-  private static class AtomIterator<T extends Comparable<? super T>> extends Closure<Predicate.Atom> {
+  private static class AtomIterator<T extends Comparable<? super T>> extends Coroutine<Predicate.Atom> {
     public final DecisionTree<T> root;
     
     public AtomIterator(DecisionTree<T> root) {

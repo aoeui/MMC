@@ -15,11 +15,131 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
 
   public static interface Op<T extends Comparable<? super T>> {
     public T apply(T v1, T v2);
+    public boolean isDominant(T value);
   }
 
   public static <T extends Comparable<? super T>> Romdd<T> apply(Op<T> op, Romdd<T> f, Romdd<T> g) {
-    // TODO implement apply
-    return null;
+    return new Application<T>(op, f, g).apply();
+  }
+
+  // TODO implement apply
+  public static class Application<T extends Comparable<? super T>> {
+    public final Op<T> operation;
+    public final Romdd<T> f;
+    public final Romdd<T> g;
+    
+    TreeMap<RomddPair<T>, Romdd<T>> pairCache;
+    TreeMap<Romdd<T>, Romdd<T>> nodeCache;
+    
+    public Application(Op<T> operation, Romdd<T> f, Romdd<T> g) {
+      this.operation = operation;
+      this.f = f;
+      this.g = g;
+      this.pairCache = new TreeMap<RomddPair<T>, Romdd<T>>();
+      this.nodeCache = new TreeMap<Romdd<T>, Romdd<T>>();
+    }
+    
+    public Romdd<T> apply() {
+      return recurse(f, g);
+    }
+    
+    public Romdd<T> recurse(final Romdd<T> left, final Romdd<T> right) {
+      RomddPair<T> pair = new RomddPair<T>(left, right);
+      Romdd<T> rv = pairCache.get(pair);
+      if (rv == null) {
+        final RomddPtr<T> rvPtr = new RomddPtr<T>();
+        left.accept(new Visitor<T>() {
+          public void visitNode(final Node<T> leftNode) {
+            right.accept(new Visitor<T>() {
+              public void visitNode(final Node<T> rightNode) {
+                int comp = leftNode.alpha.compareTo(rightNode.alpha);
+                if (comp == 0) {
+                  rvPtr.value = expandBoth(leftNode, rightNode);
+                } else {
+                  rvPtr.value = comp < 0 ? expandLeft(leftNode, rightNode) : expandRight(leftNode, rightNode);
+                }
+              }
+              public void visitTerminal(final Terminal<T> rightTerm) {
+                if (operation.isDominant(rightTerm.output)) {
+                  rvPtr.value = getTerm(rightTerm.output);
+                } else {
+                  rvPtr.value = expandLeft(leftNode, rightTerm);
+                }
+              }
+            });
+          }
+          public void visitTerminal(final Terminal<T> leftTerm) {
+            right.accept(new Visitor<T>() {
+              public void visitNode(final Node<T> rightNode) {
+                if (operation.isDominant(leftTerm.output)) {
+                  rvPtr.value = getTerm(leftTerm.output);
+                } else {
+                  rvPtr.value = expandRight(leftTerm, rightNode);
+                }
+              }
+              public void visitTerminal(final Terminal<T> rightTerm) {
+                rvPtr.value = getTerm(operation.apply(leftTerm.output, rightTerm.output));
+              }
+            });
+          }
+        });
+        rv = rvPtr.value;
+        pairCache.put(pair, rv);
+      }
+      return rv;
+    }
+    
+    public Romdd<T> getTerm(T output) {
+      Terminal<T> newTerminal = new Terminal<T>(output);
+      Romdd<T> terminal = nodeCache.get(newTerminal);
+      if (terminal == null) {
+        nodeCache.put(newTerminal, newTerminal);
+        terminal = newTerminal;
+      }
+      return terminal;
+    }
+    
+    // make sure to check the return value in cache before return
+    // Also check that the children are not all equal.
+    public Romdd<T> expandLeft(final Node<T> left, final Romdd<T> right) {
+      return null;
+    }
+
+    // make sure to check the return value in cache before return
+    // Also check that the children are not all equal.
+    public Romdd<T> expandRight(final Romdd<T> left, final Node<T> right) {
+      return null;
+    }
+
+    // make sure to check the return value in cache before return
+    // Also check that the children are not all equal.
+    public Romdd<T> expandBoth(final Node<T> left, final Node<T> right) {
+      // This only occurs if both alphabets are the same. The children consist of restricting both children and recursing.
+      return null;
+    }
+  }
+  
+  /** This class exists solely so that we can use it in closures. */
+  static class RomddPtr<T extends Comparable<? super T>> {
+    public Romdd<T> value; 
+  }
+  
+  static class RomddPair<T extends Comparable<? super T>> implements Comparable<RomddPair<T>>{
+    public final Romdd<T> first;
+    public final Romdd<T> second;
+    
+    public RomddPair(Romdd<T> first, Romdd<T> second) {
+      this.first = first;
+      this.second = second;
+    }
+    
+    public int compareTo(RomddPair<T> pair) {
+      int rv = first.compareTo(pair.first);
+      if (rv == 0) {
+        rv = second.compareTo(pair.second);
+      }
+      return rv;
+    }
   }
 
   public abstract Romdd<T> restrict(String name, String value);
