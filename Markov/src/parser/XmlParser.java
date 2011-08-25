@@ -105,6 +105,97 @@ public class XmlParser {
 
       }
       
+      
+      public static DecisionTree<String> decisionTreeParser2(String xmlFileName){
+        
+        DocumentBuilderFactory dbfac = DocumentBuilderFactory.newInstance();
+        DocumentBuilder docBuilder;
+        try {
+          docBuilder = dbfac.newDocumentBuilder();
+          Document doc = docBuilder.parse(xmlFileName);
+          doc.getDocumentElement().normalize();
+          
+//        System.out.println("Root element :" + doc.getDocumentElement().getNodeName());
+          Element stateXml = (Element)doc.getElementsByTagName("state").item(0);
+          
+          DecisionTree<String> out=getDecisionTreeInfo2(stateXml);
+          return out;
+          
+        } catch (Exception e) {
+          e.printStackTrace();
+        }
+        
+        return null;
+
+      }
+      
+      
+
+      private static DecisionTree<String> getDecisionTreeInfo2(Element parent){
+        
+        Element decisionTreeXml=null;
+        //if DecisionTree is under state use the 4th item of childNodes 
+        if (parent.getNodeName().equals("state")){
+          decisionTreeXml=(Element)parent.getChildNodes().item(1);
+//          System.out.println(parent.getNodeName()+": DecisionTree: "+ decisionTreeXml.getChildNodes().item(0).getNodeName()+ ": ");
+
+        }//else if DecisionTree is under consequent or alternative use 2nd item of childNodes
+        else if(parent.getNodeName().equals("consequent")||parent.getNodeName().equals("alternative")){
+         decisionTreeXml=(Element)parent.getChildNodes().item(0);
+//         System.out.println("  "+parent.getNodeName()+": DecisionTree: "+ decisionTreeXml.getChildNodes().item(0).getNodeName()+ ": ");
+
+        }
+        
+        if (decisionTreeXml==null){
+          System.err.println("DecisionTree parent is not valid");
+        }
+        
+        
+        
+        if (decisionTreeXml.getChildNodes().item(0).getNodeName().equals("branch")){
+          Element predicateXml=(Element) decisionTreeXml.getChildNodes().item(0).getChildNodes().item(0);
+//        System.out.println("  "+predicateXml.getNodeName()+": ");
+            
+          //get atom or ... info from predicate
+          Predicate predicate=null;
+          predicate=getInfoFromPredicate(predicateXml,predicate);
+          
+          if (predicate==null){
+            System.err.println("!!Predicate not parsed!");
+          }
+          
+          DecisionTree<String> consequent=null;
+          DecisionTree<String> alternative=null;         
+          Element consequentXml = (Element) decisionTreeXml.getChildNodes().item(0).getChildNodes().item(1);
+          consequent = getDecisionTreeInfo2 (consequentXml);
+          if (decisionTreeXml.getChildNodes().item(0).getChildNodes().getLength()<3){
+            System.err.println("!Missing consequence or alternative");
+          } //no alternative
+          else {
+            Element alternativeXml = (Element) decisionTreeXml.getChildNodes().item(0).getChildNodes().item(2);
+            alternative=getDecisionTreeInfo2(alternativeXml);
+          }
+          if (consequent==null || alternative==null)
+            System.err.println("!Consequence or alternative not parsed!");
+          
+          DecisionTree.Branch<String> branch=new DecisionTree.Branch<String>(predicate,consequent,alternative);
+          
+          return branch;  
+        }
+        else if(decisionTreeXml.getChildNodes().item(0).getNodeName().equals("probability")){  
+          Element probabilityXml = (Element)decisionTreeXml.getChildNodes().item(0);
+          String temp = probabilityXml.getNodeValue();
+          DecisionTree.Terminal<String> terminal= new DecisionTree.Terminal<String>(temp);
+          return terminal;
+          
+        }else{
+          return null;
+        }
+        
+       
+      }
+      
+      
       private static DecisionTree<TransitionVector<FractionProbability>> getDecisionTreeInfo(String machineName, Element parent){
         
         Element decisionTreeXml=null;

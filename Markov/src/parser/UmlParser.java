@@ -1,10 +1,10 @@
 package parser;
 
-/*import java.io.BufferedReader;
+//import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.FileReader;
+//import java.io.FileReader;
 import java.io.FileWriter;
-import javax.xml.parsers.DocumentBuilder;
+/*import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;*/
@@ -77,6 +77,75 @@ public class UmlParser {
       e.printStackTrace();
     }
   }*/
+  
+  
+  public static void decisionTreeParser2(String decisionTree, String outputFile) throws IOException {
+    FileWriter fstream = new FileWriter(outputFile);
+    BufferedWriter outFile = new BufferedWriter(fstream);
+    StringWriter out=new StringWriter();
+    out.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+    
+    out.write("<state><decisionTree>");
+    if(decisionTree.contains("if")){
+      out.write("<branch>");
+      int startIfIdx=decisionTree.indexOf("if");
+      int ifNum=1,elseNum=1;
+      int endBranchIndex=findEndOfBranchIdx(decisionTree,ifNum, startIfIdx);
+      int elseIndex=findElseIdx(decisionTree,elseNum,startIfIdx);
+      
+      int startBranchIndex=decisionTree.indexOf("then");
+      String predicate=decisionTree.substring(2,startBranchIndex);
+      out.write("<predicate>");
+      parsePredicate(predicate,out);
+      out.write("</predicate>");
+//      System.out.println("Predicate: "+predicate+ " "+decisionTree.substring(startBranchIndex+4, endBranchIndex));
+      
+      out.write("<consequent>");
+      String consequent=decisionTree.substring(startBranchIndex+4,elseIndex);
+      
+      if (consequent.contains("if")){
+        out.write("<decisionTree>");
+        consequent=consequent.substring(consequent.indexOf("if"));
+        parseDecisionTree(consequent,out);
+        out.write("</decisionTree>");
+      }else{
+        out.write("<decisionTree>");
+        out.write(consequent);
+        out.write("</decisionTree>");
+      }
+      out.write("</consequent>");
+      
+      out.write("<alternative>");
+      String alternative=decisionTree.substring(elseIndex+4, endBranchIndex);
+      
+      if (alternative.contains("if")){
+        out.write("<decisionTree>");
+        alternative=alternative.substring(alternative.indexOf("if"));
+        parseDecisionTree(alternative,out);
+        out.write("</decisionTree>");
+      }else{
+        out.write("<decisionTree>");
+        out.write("<probability>");
+        parseProbability(alternative,out);
+        out.write("</probability>");
+        out.write("</decisionTree>");
+      }
+      out.write("</alternative>");
+      
+      out.write("</branch>");
+    }else{
+      out.write("<probability>");
+      out.write(decisionTree);
+      out.write("</probability>");
+    }
+    
+    out.write("</decisionTree></state>");  
+    
+    outFile.write(out.toString());
+    
+  }
+  
+  
   
   public static String decisionTreeXslParser(String input) throws IOException{
     StringWriter out=new StringWriter();
