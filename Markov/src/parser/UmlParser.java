@@ -1,32 +1,35 @@
-package test;
+package parser;
 
-import java.io.BufferedReader;
+//import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.FileReader;
+//import java.io.FileReader;
 import java.io.FileWriter;
+/*import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;*/
+
+
 import java.io.IOException;
 import java.io.StringWriter;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-
-public class TestUMLInput {
+public class UmlParser {
   
-  
-  public static void main (String args[]) {
-    System.out.println(new TestUMLInput());
+  /****** main method is not used anymore********/
+  //TODO add xsl Xalan into this part to remove dependency on eclipse plunge-in
+/*public static void main (String args[]) {
+    System.out.println(new UmlParser());
     
   }
-  public TestUMLInput() {
+  public UmlParser() {
     
-    UmlInput("uml/Input.out.xml","xml/umlVersion.xml");
+    UmlToXml("uml/Input.out.xml","xml/umlVersion.xml");
     TestXmlInput.XmlInput("xml/umlVersion.xml");
    
   }
-  private void UmlInput(String fileName, String outputFile) {
+  
+  private void UmlToXml(String fileName, String outputFile) {
     try {
 
       //Read in XML file
@@ -50,17 +53,17 @@ public class TestUMLInput {
 
       while ((temp=in.readLine())!=null){
         if (!temp.contains("decisionTree") && !withInDecisionTree){
-          out.write(temp+"\n");
+          out.write(temp);
         }else if(temp.contains("<decisionTree>") && !temp.contains("</decisionTree>")){
           withInDecisionTree=true;
         }else if((temp.contains("</decisionTree>")&& withInDecisionTree) || (temp.contains("<decisionTree>") && temp.contains("</decisionTree>"))){
           withInDecisionTree=false;
           Element decisionTreeXml;
-          out.write("<decisionTree>\n");
+          out.write("<decisionTree>");
           decisionTreeXml=(Element)doc.getElementsByTagName("decisionTree").item(decisionTreeCounter);
           String decisionTree=decisionTreeXml.getChildNodes().item(0).getNodeValue();
           parseDecisionTree(decisionTree,out);
-          out.write("</decisionTree>\n");
+          out.write("</decisionTree>");
           
           decisionTreeCounter++;
         }else{ //skip the lines
@@ -73,18 +76,18 @@ public class TestUMLInput {
     }catch(Exception e) {
       e.printStackTrace();
     }
-  }
+  }*/
   
-  public static String decisionTreeXslParser(String input) throws IOException{
+  
+  public static void decisionTreeParser2(String decisionTree, String outputFile) throws IOException {
+    FileWriter fstream = new FileWriter(outputFile);
+    BufferedWriter outFile = new BufferedWriter(fstream);
     StringWriter out=new StringWriter();
-    parseDecisionTree(input,out);
-    return out.toString();
-  }
-  
- 
-  private static void parseDecisionTree(String decisionTree, StringWriter out) throws IOException {
+    out.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+    
+    out.write("<state><decisionTree>");
     if(decisionTree.contains("if")){
-      out.write("<branch>\n");
+      out.write("<branch>");
       int startIfIdx=decisionTree.indexOf("if");
       int ifNum=1,elseNum=1;
       int endBranchIndex=findEndOfBranchIdx(decisionTree,ifNum, startIfIdx);
@@ -92,50 +95,119 @@ public class TestUMLInput {
       
       int startBranchIndex=decisionTree.indexOf("then");
       String predicate=decisionTree.substring(2,startBranchIndex);
-      out.write("<predicate>\n");
+      out.write("<predicate>");
       parsePredicate(predicate,out);
-      out.write("</predicate>\n");
+      out.write("</predicate>");
 //      System.out.println("Predicate: "+predicate+ " "+decisionTree.substring(startBranchIndex+4, endBranchIndex));
       
-      out.write("<consequent>\n");
+      out.write("<consequent>");
       String consequent=decisionTree.substring(startBranchIndex+4,elseIndex);
       
       if (consequent.contains("if")){
-        out.write("<decisionTree>\n");
+        out.write("<decisionTree>");
         consequent=consequent.substring(consequent.indexOf("if"));
         parseDecisionTree(consequent,out);
-        out.write("</decisionTree>\n");
-      }else if(consequent.contains("p[")){
-        out.write("<decisionTree>\n");
-        out.write("<probability>\n");
-        parseProbability(consequent,out);
-        out.write("</probability>\n");
-        out.write("</decisionTree>\n");
+        out.write("</decisionTree>");
+      }else{
+        out.write("<decisionTree>");
+        out.write(consequent);
+        out.write("</decisionTree>");
       }
-      out.write("</consequent>\n");
+      out.write("</consequent>");
       
-      out.write("<alternative>\n");
+      out.write("<alternative>");
       String alternative=decisionTree.substring(elseIndex+4, endBranchIndex);
       
       if (alternative.contains("if")){
-        out.write("<decisionTree>\n");
+        out.write("<decisionTree>");
         alternative=alternative.substring(alternative.indexOf("if"));
         parseDecisionTree(alternative,out);
-        out.write("</decisionTree>\n");
-      }else if(alternative.contains("p[")){
-        out.write("<decisionTree>\n");
-        out.write("<probability>\n");
+        out.write("</decisionTree>");
+      }else{
+        out.write("<decisionTree>");
+        out.write("<probability>");
         parseProbability(alternative,out);
-        out.write("</probability>\n");
-        out.write("</decisionTree>\n");
+        out.write("</probability>");
+        out.write("</decisionTree>");
       }
-      out.write("</alternative>\n");
+      out.write("</alternative>");
       
-      out.write("</branch>\n");
+      out.write("</branch>");
+    }else{
+      out.write("<probability>");
+      out.write(decisionTree);
+      out.write("</probability>");
+    }
+    
+    out.write("</decisionTree></state>");  
+    
+    outFile.write(out.toString());
+    
+  }
+  
+  
+  
+  public static String decisionTreeXslParser(String input) throws IOException{
+    StringWriter out=new StringWriter();
+    parseDecisionTree(input,out);
+    return out.toString();
+  }
+  
+
+  private static void parseDecisionTree(String decisionTree, StringWriter out) throws IOException {
+    if(decisionTree.contains("if")){
+      out.write("<branch>");
+      int startIfIdx=decisionTree.indexOf("if");
+      int ifNum=1,elseNum=1;
+      int endBranchIndex=findEndOfBranchIdx(decisionTree,ifNum, startIfIdx);
+      int elseIndex=findElseIdx(decisionTree,elseNum,startIfIdx);
+      
+      int startBranchIndex=decisionTree.indexOf("then");
+      String predicate=decisionTree.substring(2,startBranchIndex);
+      out.write("<predicate>");
+      parsePredicate(predicate,out);
+      out.write("</predicate>");
+//      System.out.println("Predicate: "+predicate+ " "+decisionTree.substring(startBranchIndex+4, endBranchIndex));
+      
+      out.write("<consequent>");
+      String consequent=decisionTree.substring(startBranchIndex+4,elseIndex);
+      
+      if (consequent.contains("if")){
+        out.write("<decisionTree>");
+        consequent=consequent.substring(consequent.indexOf("if"));
+        parseDecisionTree(consequent,out);
+        out.write("</decisionTree>");
+      }else if(consequent.contains("p[")){
+        out.write("<decisionTree>");
+        out.write("<probability>");
+        parseProbability(consequent,out);
+        out.write("</probability>");
+        out.write("</decisionTree>");
+      }
+      out.write("</consequent>");
+      
+      out.write("<alternative>");
+      String alternative=decisionTree.substring(elseIndex+4, endBranchIndex);
+      
+      if (alternative.contains("if")){
+        out.write("<decisionTree>");
+        alternative=alternative.substring(alternative.indexOf("if"));
+        parseDecisionTree(alternative,out);
+        out.write("</decisionTree>");
+      }else if(alternative.contains("p[")){
+        out.write("<decisionTree>");
+        out.write("<probability>");
+        parseProbability(alternative,out);
+        out.write("</probability>");
+        out.write("</decisionTree>");
+      }
+      out.write("</alternative>");
+      
+      out.write("</branch>");
     }else if(decisionTree.contains("p[")){
-      out.write("<probability>\n");
+      out.write("<probability>");
       parseProbability(decisionTree,out);
-      out.write("</probability>\n");
+      out.write("</probability>");
     }else{
       System.err.println("Error in DecisionTree!");
     }
@@ -157,12 +229,12 @@ public class TestUMLInput {
         int idxTmp2=(temp[i].indexOf('\n')==-1)? temp[i].length():temp[i].indexOf('\n');
         int idx5=Math.min(idxTmp,idxTmp2);
         out.write(temp[i].substring(idx1+1, idx2));
-        out.write("</stateName>\n");
+        out.write("</stateName>");
         out.write("<pValue>");
         int den=(idx4!=-1)? Integer.parseInt(temp[i].substring(idx4+1,idx5)):1;
         int num=(idx4!=-1)? Integer.parseInt(temp[i].substring(idx3+1,idx4)):Integer.parseInt(temp[i].substring(idx3+1,idx5));
         out.write(num+","+den);
-        out.write("</pValue>\n");
+        out.write("</pValue>");
       }else{
       }
     }
@@ -186,67 +258,67 @@ public class TestUMLInput {
           int negIdx=predicate.indexOf("NEG");
           String negPredicate=predicate.substring(negIdx+3,endIdx);
    //       System.out.println("NEG:"+negPredicate);
-          out.write("<neg>\n");
-          out.write("<predicate>\n");
+          out.write("<neg>");
+          out.write("<predicate>");
           parsePredicate(negPredicate,out);
-          out.write("</predicate>\n");
-          out.write("</neg>\n");
+          out.write("</predicate>");
+          out.write("</neg>");
         }
         else if (pattern.equals("IMPLIES")){
           int impliesIdx=predicate.indexOf("IMPLIES");
-          out.write("<implies>\n");
+          out.write("<implies>");
           String antecedent=predicate.substring(startIdx+1,impliesIdx);
-          out.write("<predicate>\n");
+          out.write("<predicate>");
           parsePredicate(antecedent,out);
-          out.write("</predicate>\n");
+          out.write("</predicate>");
           String consequent=predicate.substring(impliesIdx+7,endIdx);
-          out.write("<predicate>\n");
+          out.write("<predicate>");
           parsePredicate(consequent,out);
-          out.write("</predicate>\n");
-          out.write("</implies>\n");
+          out.write("</predicate>");
+          out.write("</implies>");
           
   //        System.out.println("IMPLIES:" +antecedent +"=>"+consequent);
         }
         else if (pattern.equals("OR")){
-          out.write("<or>\n");
+          out.write("<or>");
           
           String temp=predicate.substring(startIdx+1,endIdx);
           
           while (temp.contains("OR")){
             int orIdx=temp.indexOf("OR");
             String predicateFirst=temp.substring(0,orIdx);
-            out.write("<predicate>\n");
+            out.write("<predicate>");
             temp=temp.substring(orIdx+3,temp.length());
 //            System.out.println(predicateFirst+" OR "+temp+";");          
             parsePredicate(predicateFirst,out);
-            out.write("</predicate>\n");
+            out.write("</predicate>");
           }
-          out.write("<predicate>\n");
+          out.write("<predicate>");
           parsePredicate(temp,out);
-          out.write("</predicate>\n");
+          out.write("</predicate>");
           
-          out.write("</or>\n");
+          out.write("</or>");
 
         }
         else if (pattern.equals("AND")){
-          out.write("<and>\n");
+          out.write("<and>");
           
           String temp=predicate.substring(startIdx+1,endIdx);
           
           while (temp.contains("AND")){
             int andIdx=temp.indexOf("AND");
             String predicateFirst=temp.substring(0,andIdx);
-            out.write("<predicate>\n");
+            out.write("<predicate>");
             temp=temp.substring(andIdx+3,temp.length());
 //            System.out.println(predicateFirst+" AND "+temp+";");          
             parsePredicate(predicateFirst,out);
-            out.write("</predicate>\n");
+            out.write("</predicate>");
           }
-          out.write("<predicate>\n");
+          out.write("<predicate>");
           parsePredicate(temp,out);
-          out.write("</predicate>\n");
+          out.write("</predicate>");
           
-          out.write("</and>\n");
+          out.write("</and>");
         }
         
       }
@@ -255,10 +327,10 @@ public class TestUMLInput {
       int idx2=predicate.indexOf('.');
       int idx3=predicate.indexOf('=');
       int idx4=(predicate.lastIndexOf(' ')>0)? predicate.lastIndexOf(' '):predicate.length();
-      out.write("<atom machineName=\""+predicate.substring(idx1,idx2)+"\">\n");
-      out.write("<labelPair name=\""+predicate.substring(idx2+1,idx3)+"\">\n");
-      out.write("<instance>"+predicate.substring(idx3+1,idx4)+"</instance>\n");
-      out.write("</labelPair>\n</atom>\n");
+      out.write("<atom machineName=\""+predicate.substring(idx1,idx2)+"\">");
+      out.write("<labelPair name=\""+predicate.substring(idx2+1,idx3)+"\">");
+      out.write("<instance>"+predicate.substring(idx3+1,idx4)+"</instance>");
+      out.write("</labelPair></atom>");
     }else{
       System.err.println("Predicate missmatch!"+predicate);
     }

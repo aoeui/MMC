@@ -3,7 +3,7 @@
 xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
 xmlns:xmi="http://schema.omg.org/spec/XMI/2.1"
 xmlns:uml="http://www.eclipse.org/uml2/3.0.0/UML">
-<xsl:output method="xml" indent="yes"/>
+<xsl:output method="xml" indent="no"/>
 
 <xsl:template match="/">
 	<xsl:element name="machines">
