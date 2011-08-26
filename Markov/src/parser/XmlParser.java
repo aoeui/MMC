@@ -23,7 +23,8 @@ public class XmlParser {
       
       public XmlParser() {
         
-        XmlInput("xml/umlVersion2.xml");
+        Net<FractionProbability> net = XmlInput("xml/umlVersion2.xml");
+        System.out.println(net.toString());
        
       }
       
@@ -94,7 +95,7 @@ public class XmlParser {
               }
               Net<FractionProbability> net=netBuild.build();
               
-              System.out.println(net.toString());
+
               return net;
               
           } catch (Exception e) {

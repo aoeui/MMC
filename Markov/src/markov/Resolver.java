@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 
 import util.UnmodifiableIterator;
+import util.Ptr;
 import markov.Predicate.CollectionType;
 
 public abstract class Resolver {
@@ -279,7 +280,7 @@ public abstract class Resolver {
     }
     
     Resolver recurse(final Predicate pred, final boolean doNegate) {
-      final Resolver[] rvPtr = new Resolver[] {null};
+      final Ptr<Resolver> rvPtr = new Ptr<Resolver>();
       pred.accept(new Predicate.Visitor() {
         public void visitAnd(Predicate.And predicate) {
           visitCollection(predicate);
@@ -288,20 +289,20 @@ public abstract class Resolver {
           visitCollection(predicate);
         }
         public void visitImplies(Predicate.Implies predicate) {
-          rvPtr[0] = recurse(predicate.convert(), doNegate);
+          rvPtr.value = recurse(predicate.convert(), doNegate);
         }
         public void visitNeg(Predicate.Neg predicate) {
-          rvPtr[0] = recurse(predicate.subject, !doNegate);
+          rvPtr.value = recurse(predicate.subject, !doNegate);
         }
         public void visitAtom(Predicate.Atom predicate) {
           Resolver.Atom atom = dict.convert(predicate);
-          rvPtr[0] = doNegate ? atom.invert() : atom;
+          rvPtr.value = doNegate ? atom.invert() : atom;
         }
         public void visitCollection(Predicate.CollectionPredicate predicate) {
-          rvPtr[0] = handleAggregate(predicate, doNegate);
+          rvPtr.value = handleAggregate(predicate, doNegate);
         }
       });
-      return rvPtr[0];
+      return rvPtr.value;
     }
     
     Resolver handleAggregate(Predicate.CollectionPredicate predicate, boolean doNegate) {

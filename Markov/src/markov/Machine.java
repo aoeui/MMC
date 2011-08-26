@@ -21,6 +21,10 @@ public class Machine<T extends Probability<T>> implements Iterable<State<T>> {
     return states.get(name);
   }
   
+  public int getStateNum(){
+    return states.size();
+  }
+  
   public String toString() {
     StringBuilder builder = new StringBuilder();
     builder.append("Machine:").append(name);
