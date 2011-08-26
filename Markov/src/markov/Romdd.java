@@ -38,8 +38,13 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
       this.operation = operation;
       this.varName = varName;
     }
-    
+
     public Romdd<T> compute() {
+      // DiffTrackingArrayList<>
+      return recurse();
+    }
+
+    public Romdd<T> recurse() {
       return null;
     }
   }
