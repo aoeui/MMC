@@ -101,10 +101,7 @@ public class TransitionVector<T extends Probability<T>>
     int myIdx = 0, idx = 0;
     while (myIdx < myNameArr.length && idx < nameArr.length) {
       int comp = myNameArr[myIdx].compareTo(nameArr[idx]);
-      if (comp == 0){
-        
-        throw new RuntimeException();
-      }
+      if (comp == 0) throw new RuntimeException();
       boolean nextSeq = comp > 0;
       String next = nextSeq ? myNameArr[myIdx] : nameArr[idx];
       sequence[myIdx + idx] = nextSeq;

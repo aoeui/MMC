@@ -1,11 +1,13 @@
 package markov;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.TreeMap;
 
 import util.LexicalCompare;
 import util.Pair;
+import util.Partition;
 import util.Ptr;
 import util.Stack;
 
@@ -27,20 +29,106 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
     return new Summation<T>(this, op, varName).compute();
   }
 
-  // TODO Implement sum
   private static class Summation<T extends Comparable<? super T>> {
     public final Romdd<T> root;
     public final Op<T> operation;
     public final String varName;
     
+    private final TreeMap<Romdd<T>, Romdd<T>> cache;
+
+    public Romdd<T> checkCache(Romdd<T> test) {
+      Romdd<T> rv = cache.get(test);
+      if (rv == null) {
+        cache.put(test, test);
+        rv = test;
+      }
+      return rv;
+    }
+
     public Summation(Romdd<T> root, Op<T> operation, String varName) {
       this.root = root;
       this.operation = operation;
       this.varName = varName;
+      
+      this.cache = new TreeMap<Romdd<T>, Romdd<T>>();
+    }
+
+    public Romdd<T> compute() {
+      final Ptr<Romdd<T>> rvPtr = new Ptr<Romdd<T>>();
+      root.accept(new Visitor<T>() {
+        public void visitTerminal(Terminal<T> term) {
+          rvPtr.value = term;
+        }
+        public void visitNode(Node<T> node) {
+          rvPtr.value = recurse(node);
+        }
+      });
+      return rvPtr.value;
     }
     
-    public Romdd<T> compute() {
-      return null;
+    public Romdd<T> recurse(Node<T> node) {
+      if (node.alpha.name.equals(varName)) {
+        final Partition.Builder<Node<T>> builder = new Partition.Builder<Node<T>>(NodeAlphaComparator.INSTANCE);
+        final Ptr<T> wPtr = new Ptr<T>();
+        for (Romdd<T> child : node) {
+          child.accept(new Visitor<T>() {
+            public void visitTerminal(Terminal<T> term) {
+              wPtr.value = wPtr.value == null ? term.output : operation.apply(wPtr.value, term.output);
+            }
+            public void visitNode(Node<T> node) {
+              builder.add(node);
+            }
+          });
+        }
+        return recurse(builder.build(), wPtr.value);
+      } else {
+        DiffTrackingArrayList<Romdd<T>> children = new DiffTrackingArrayList<Romdd<T>>();
+        for (Romdd<T> child : node) {
+          children.add(child);
+        }
+        return children.isAllSame() ? children.get(0) : checkCache(new Node<T>(node.alpha, children));
+      }
+    }
+
+    // Must deal with possibly null weight, size 0 partitions.
+    // Each of the nodes reaching this part of the recursion are summed together, though branching is permitted.
+    public Romdd<T> recurse(Partition<Node<T>> nodes, T weight) {
+      if (nodes.size() == 0 || ((weight != null) && operation.isDominant(weight))) {
+        if (weight == null) throw new RuntimeException();
+        return checkCache(new Terminal<T>(weight));
+      }
+      Partition<Node<T>>.Block block = nodes.getBlock(0);
+      
+      final DiffTrackingArrayList<Romdd<T>> children = new DiffTrackingArrayList<Romdd<T>>();
+      Alphabet alpha = nodes.get(0).alpha;
+      for (int i = 0; i < alpha.size(); i++) {
+        final Ptr<T> wPtr = new Ptr<T>(weight);
+        final Partition.Builder<Node<T>> builder = new Partition.Builder<Node<T>>(NodeAlphaComparator.INSTANCE);
+        for (int j = block.start; j <= block.end; j++) {
+          nodes.get(j).getChild(i).accept(new Visitor<T>() {
+            public void visitTerminal(Terminal<T> term) {
+              wPtr.value = wPtr.value == null ? term.output : operation.apply(wPtr.value, term.output);
+            }
+            public void visitNode(Node<T> node) {
+              builder.add(node);
+            }
+          });
+        }
+        for (int j = block.end+1; j < nodes.size(); j++) {
+          builder.add(nodes.get(j));
+        }
+        children.add(recurse(builder.build(), wPtr.value));
+      }
+      return children.isAllSame() ? children.get(0) : checkCache(new Node<T>(alpha, children));
+    }
+  }
+  
+  public static class NodeAlphaComparator implements Comparator<Node<?>> {
+    public final static NodeAlphaComparator INSTANCE = new NodeAlphaComparator();
+    
+    private NodeAlphaComparator() {}
+    public int compare(Node<?> first, Node<?> second) {
+      return first.alpha.compareTo(second.alpha);
     }
   }
   
