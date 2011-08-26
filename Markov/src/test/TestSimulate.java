@@ -1,9 +1,11 @@
 package test;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.Map.Entry;
 
 import markov.DecisionTree;
@@ -19,10 +21,12 @@ import parser.XmlParser;
 import util.Ptr;
 
 public class TestSimulate {
+  public TreeMap<String,Integer> headlist;
+  public TransitionMatrix<FractionProbability> matrix;
   
-  public static void main(String args[]) {
-    
-    Net<FractionProbability> net=XmlParser.XmlInput("xml/umlVersion2.xml");
+  
+  public TestSimulate(String xmlFileName){
+    Net<FractionProbability> net=XmlParser.XmlInput(xmlFileName);
 
     Iterator<Machine<FractionProbability>> itr=net.iterator();
     
@@ -116,14 +120,41 @@ public class TestSimulate {
           if (colNum>-1) row.set(colNum, temp.getValue());
         }
         builder.set(rowNum, row);
+      }
+    }
+    this.matrix = builder.build();
 
+    
+    ValueComparator bvc =  new ValueComparator(stateNameList);
+    this.headlist = new TreeMap<String, Integer>(bvc);
+    headlist.putAll(stateNameList);
+
+    System.out.println(headlist.keySet().toString());
+    System.out.println(matrix.toString()); 
+  }
+  
+  
+    public static void main(String args[]) {
+      System.out.println(new TestSimulate("xml/umlVersion2.xml"));
+    }
+    
+  class ValueComparator implements Comparator<String>{
+
+    Map<String, Integer> base;
+    public ValueComparator(Map<String, Integer> base) {
+        this.base = base;
+    }
+
+    public int compare(String key1, String key2) {
+      if((Integer)base.get(key1) < (Integer)base.get(key2)) {
+        return -1;
+      } else if((Integer)base.get(key1) == (Integer)base.get(key2)) {
+        return 0;
+      } else {
+        return 1;
       }
 
     }
-    
-    TransitionMatrix<FractionProbability> matrix = builder.build();
-    System.out.println(matrix.toString());
-    System.out.println(stateNameList.toString());
     
   }
   
