@@ -1,44 +1,85 @@
 grammar DecisionTree;
 
-tokens {
-	AND 	= '&' ;
-	OR		= '|' ;
-	IMPLIES	= '>' ;
-	NEG		= '-' ;
-	IF		= 'if';
-	ELSE	= 'else';
-	LEFTSTACHE	= '{';
-	RIGHTSTACHE	= '}';
-	LEFT = '(';
-	RIGHT = ')';
+options {
+  language = Java;
 }
 
-/*------------------------------------------------------------------
- * PARSER RULES
- *------------------------------------------------------------------*/
+@header {
+  package dsl;
+  
+  import markov.DecisionTree;
+  import markov.TransitionVector;
+  import markov.Predicate;
+  import markov.FractionProbability;
+}
 
-tree		: branch | terminal ;
-branch  	: IF expression LEFTSTACHE tree RIGHTSTACHE ELSE LEFTSTACHE tree RIGHTSTACHE ;
-terminal	: NUMBER ;
-expression  : (LEFT predicate RIGHT) | predicate ;
-predicate	: ( negation | conjunction | disjunction | implication ) ;
-negation	: NEG expression;
-conjunction	: expression ( AND expression )+;
-disjunction : expression ( OR expression)+;
-implies		: expression IMPLIES expression;
+@lexer::header {
+  package dsl;
+}
 
-/*------------------------------------------------------------------
- * LEXER RULES
- *------------------------------------------------------------------*/
+@members {
+  String machineName; 
+}
 
-STR		: (CAPALPHA|LOWALPHA|DIGIT|PERMITTED_SYMBOLS)+;
+decisionTree returns [DecisionTree<TransitionVector<FractionProbability>> dt]
+    : '(' IDENT { machineName = $IDENT.text; } ')' expression EOF { $dt = $expression.dt ;}
+    ;
 
-NUMBER	: (DIGIT)+ ;
+expression returns [DecisionTree<TransitionVector<FractionProbability>> dt]
+    : v=probabilityVector { $dt = new DecisionTree.Terminal<TransitionVector<FractionProbability>>($v.tv); }
+    | conditional { $dt = $conditional.dt; }
+    ;
 
-WHITESPACE : ( '\t' | ' ' | '\r' | '\n'| '\u000C' )+ 	{ $channel = HIDDEN; } ;
+conditional returns [DecisionTree.Branch<TransitionVector<FractionProbability>> dt]
+    : 'if' predicate 'then' cons=expression 'else' alt=expression 'end'
+    { $dt = new DecisionTree.Branch<TransitionVector<FractionProbability>>($predicate.pred, $cons.dt, $alt.dt); ;} 
+    ;
 
-PERMITTED_SYMBOLS : ( '_' | '.' | '=' );
+term returns [Predicate pred]
+    : atom { $pred = $atom.atom; }
+    | '(' predicate ')' {$pred = $predicate.pred; }
+    ;
 
-fragment CAPALPHA : 'A'..'Z';
-fragment LOWALPHA : 'a'..'z';
-fragment DIGIT	: '0'..'9' ;
+negation returns [Predicate pred]
+    : { boolean isTrue = true; }
+    ('-' { isTrue = !isTrue; })* term { $pred = isTrue ? $term.pred : new Predicate.Neg($term.pred); }
+    ;
+
+conjunction returns [Predicate pred]
+    : { Predicate.CollectionBuilder builder = new Predicate.CollectionBuilder(Predicate.CollectionType.AND); }
+    n1=negation { builder.add($n1.pred); } ('/\\' n2=negation { builder.add($n2.pred); })*
+    { $pred = builder.build(); }
+    ;
+
+disjunction returns [Predicate pred]
+    : { Predicate.CollectionBuilder builder = new Predicate.CollectionBuilder(Predicate.CollectionType.OR); }
+    c1=conjunction { builder.add($c1.pred); } ('\\/' c2=conjunction {builder.add($c2.pred); })*
+    { $pred = builder.build(); }
+    ;
+
+predicate returns [Predicate pred]
+    : d1=disjunction { $pred = $d1.pred; } ('->' d2=disjunction { $pred = new Predicate.Implies(pred, $d2.pred); } )?
+    ;
+
+atom returns [Predicate.Atom atom]
+    : mName=IDENT '.' lName=IDENT '=' label=IDENT { atom = new Predicate.Atom($mName.text, $lName.text, $label.text);  } 
+    ;
+
+probabilityVector returns [TransitionVector<FractionProbability> tv]
+    :
+    { TransitionVector.Builder<FractionProbability> builder = new TransitionVector.Builder<FractionProbability>(machineName); }
+    p1=probability {builder.setProbability($p1.stateName, $p1.fp); } (',' p2=probability { builder.setProbability($p2.stateName, $p2.fp); })*
+    { tv = builder.build(); }
+    ;
+
+probability returns [String stateName, FractionProbability fp]
+    : 'p[' IDENT ']' '=' num=NUMBER '/' den=NUMBER
+    { $stateName = $IDENT.text; $fp = new FractionProbability(Long.parseLong($num.text), Long.parseLong($den.text)); }
+    ;
+
+IDENT : ALPHA (ALPHA|'0'..'9')* ;
+NUMBER : '1'..'9' '0'..'9'* ;
+
+WHITESPACE : ( '\t' | ' ' | '\r' | '\n'| '\f' )+  { $channel = HIDDEN; } ;
+
+fragment ALPHA : ('a'..'z'|'A'..'Z');
