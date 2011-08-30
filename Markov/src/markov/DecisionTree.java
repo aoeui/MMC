@@ -17,6 +17,10 @@ public abstract class DecisionTree<T extends Comparable<? super T>> {
   public abstract void accept(Visitor<T> visitor);
   public abstract <S> S accept(VisitorRv<T,S> visitor);
   
+  public Romdd<T> toRomdd(Dictionary dict) {
+    return Romdd.<T>build(new Evaluation<T>(dict, this));
+  }
+  
   public TerminatedIterator<Predicate.Atom> atomIterator() {
     return new AtomIterator<T>(this).iterator();
   }

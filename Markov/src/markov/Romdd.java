@@ -24,7 +24,7 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
   public static <T extends Comparable<? super T>> Romdd<T> apply(Op<T> op, Romdd<T> f, Romdd<T> g) {
     return new Application<T>(op, f, g).apply();
   }
-
+  
   public Romdd<T> sum(Op<T> op, String varName) {
     return new Summation<T>(this, op, varName).compute();
   }
@@ -167,7 +167,7 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
       });
       return rvPtr[0];
     }
-    
+
     public String getName() { return alpha.name; }
   }
 
@@ -195,6 +195,10 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
       });
       return rv[0];
     }
+  }
+  
+  public static <T extends Comparable<? super T>> Romdd<T> build(Evaluation<T> eval) {
+    return new Builder<T>(eval).build();
   }
   
   public static class Builder<T extends Comparable<? super T>> {

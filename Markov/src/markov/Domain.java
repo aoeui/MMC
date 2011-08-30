@@ -42,7 +42,7 @@ public class Domain implements Comparable<Domain> {
       builder.append(alpha);
     }
     return builder.toString();
-  } 
+  }
   
   public static class Builder {
     Machine<?> machine;
@@ -61,6 +61,24 @@ public class Domain implements Comparable<Domain> {
         alphabets.add(alphaBuilder.build());
       }
       return new Domain(machine.name, alphabets);
+    }
+  }
+  
+  public static class AltBuilder {
+    public final String machineName;
+    ArrayList<Alphabet> alphabets;
+    
+    public AltBuilder(String machineName) {
+      this.machineName = machineName;
+      alphabets = new ArrayList<Alphabet>();
+    }
+    
+    public void add(Alphabet alpha) {
+      alphabets.add(alpha);
+    }
+    
+    public Domain build() {
+      return new Domain(machineName, alphabets);
     }
   }
 }

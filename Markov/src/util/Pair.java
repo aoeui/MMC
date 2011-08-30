@@ -10,6 +10,31 @@ public class Pair<T extends Comparable<? super T>> implements Comparable<Pair<T>
     this.second = second;
   }
   
+  public String toString() {
+    return "(" + first + ", " + second + ")";
+  }
+  
+  public int hashCode() {
+    int accu = 0;
+    if (first != null) accu += first.hashCode();
+    if (second != null) {
+      accu *= 31;
+      accu += second.hashCode();
+    }
+    return accu;
+  }
+  
+  public boolean equals(Object o) {
+    try {
+      @SuppressWarnings("unchecked")
+      Pair<T> other = (Pair<T>)o;
+      return (first == other.first || (first != null && first.equals(other.first)))
+         && (second == other.second || (second != null && second.equals(other.second)));
+    } catch (Exception e) {
+      return false;
+    }
+  }
+  
   public int compareTo(Pair<T> pair) {
     int rv = first.compareTo(pair.first);
     if (rv == 0) {

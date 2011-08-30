@@ -75,26 +75,39 @@ public class Alphabet implements Iterable<Resolver.Atom>, Comparable<Alphabet> {
     public void remove() { throw new UnsupportedOperationException(); }
   }
   
-  public static class Builder {
+  public static class Builder extends AltBuilder {
     Machine<?> machine;
-    String domainName;
-    TreeSet<String> chars;
     
     public Builder(Machine<?> machine, String name) {
+      super(machine.name, name);
       this.machine = machine;
-      this.domainName = name;
-      this.chars=new TreeSet<String>();
     }
-    
-    private void addCharacter(String character) {
-      chars.add(character);
-    }
-    
+        
     public Alphabet build() {
       for (State<?> state : machine) {
         addCharacter(state.getLabel(domainName));
       }
-      return new Alphabet(machine.name, domainName, chars);
+      return super.build();
+    }
+  }
+  
+  public static class AltBuilder {
+    public final String machineName;
+    public final String domainName;
+    TreeSet<String> chars;
+    
+    public AltBuilder(String machineName, String domainName) {
+      this.machineName = machineName;
+      this.domainName = domainName;
+      this.chars = new TreeSet<String>();
+    }
+    
+    public void addCharacter(String character) {
+      chars.add(character);
+    }
+    
+    public Alphabet build() {
+      return new Alphabet(machineName, domainName, chars);
     }
   }
   
