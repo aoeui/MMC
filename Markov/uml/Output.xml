@@ -1,21 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?><machines>
-  <machine name="MPatient:ICP"><state name="A"><labels><labelPair name="Cost"><instance>M</instance></labelPair><labelPair name="Patient"><instance>G</instance></labelPair><labelPair name="ICP"><instance>A</instance></labelPair></labels><decisionTree>if MPatient:Lung.Condition=S then
-  p[A]=6/10, p[B]=14/100, p[D]=6/100, p[E]=2/10
+  <machine name="MPatient:ICP"><state name="InitLow"><labels><labelPair name="Cost"><instance>M</instance></labelPair><labelPair name="Patient"><instance>G</instance></labelPair><labelPair name="ICP"><instance>A</instance></labelPair></labels><decisionTree>if MPatient:Lung.Condition=S then
+  p[InitlLow]=6/10, p[High]=14/100, p[Dead]=6/100, p[Exit]=2/10
 else
     if MPatient:Lung.Condition=B then
-      p[A]=62/100, p[B]=12/100, p[D]=6/100, p[E]=2/10
+      p[InitLow]=62/100, p[High]=12/100, p[Dead]=6/100, p[Exit]=2/10
     else
-       p[A]=65/100, p[B]=1/10, p[D]=5/100, p[E]=2/10
+       p[InitLow]=65/100, p[High]=1/10, p[Dead]=5/100, p[Exit]=2/10
     end if
-end if</decisionTree></state><state name="B"><labels><labelPair name="Cost"><instance>H</instance></labelPair><labelPair name="Patient"><instance>B</instance></labelPair><labelPair name="ICP"><instance>B</instance></labelPair></labels><decisionTree>if MPatient:Lung.Condition=S then
-  p[B]=52/100, p[C]=3/10, p[D]=18/100
+end if</decisionTree></state><state name="High"><labels><labelPair name="Cost"><instance>H</instance></labelPair><labelPair name="Patient"><instance>B</instance></labelPair><labelPair name="ICP"><instance>B</instance></labelPair></labels><decisionTree>if MPatient:Lung.Condition=S then
+  p[High]=52/100, p[Low]=3/10, p[Dead]=18/100
 else
     if MPatient:Lung.Condition=B then
-      p[B]=51/100, p[C]=33/100, p[D]=16/100
+      p[High]=51/100, p[Low]=33/100, p[Dead]=16/100
     else
-         p[B]=5/10, p[C]=35/100, p[D]=15/100
+         p[High]=5/10, p[Low]=35/100, p[Dead]=15/100
     end if
-end if</decisionTree></state><state name="C"><labels><labelPair name="Cost"><instance>M</instance></labelPair><labelPair name="Patient"><instance>G</instance></labelPair><labelPair name="ICP"><instance>C</instance></labelPair></labels><decisionTree>if MPatient:Lung.Condition=S then
+end if</decisionTree></state><state name="Low"><labels><labelPair name="Cost"><instance>M</instance></labelPair><labelPair name="Patient"><instance>G</instance></labelPair><labelPair name="ICP"><instance>C</instance></labelPair></labels><decisionTree>if MPatient:Lung.Condition=S then
   p[B]=8/100, p[C]=48/100, p[D]=7/100, p[E]=37/100
 else
     if MPatient:Lung.Condition=B then
@@ -23,6 +23,7 @@ else
     else
          p[B]=5/100, p[C]=5/10, p[D]=5/100, p[E]=4/10
     end if
-end if</decisionTree></state><state name="D"><labels><labelPair name="Cost"><instance>H</instance></labelPair><labelPair name="Patient"><instance>NA</instance></labelPair><labelPair name="ICP"><instance>D</instance></labelPair></labels><decisionTree>p[D]=1</decisionTree></state><state name="E"><labels><labelPair name="Cost"><instance>L</instance></labelPair><labelPair name="Patient"><instance>G</instance></labelPair><labelPair name="ICP"><instance>E</instance></labelPair></labels><decisionTree>p[E]=1</decisionTree></state></machine>
+end if</decisionTree></state><state name="Dead"><labels><labelPair name="Cost"><instance>H</instance></labelPair><labelPair name="Patient"><instance>NA</instance></labelPair><labelPair name="ICP"><instance>D</instance></labelPair></labels><decisionTree>p[Dead]=1</decisionTree></state><state name="Exit"><labels><labelPair name="Cost"><instance>L</instance></labelPair><labelPair name="Patient"><instance>G</instance></labelPair><labelPair name="ICP"><instance>E</instance></labelPair></labels><decisionTree>p[Exit]=1</decisionTree></state></machine>
   <machine name="MPatient:Lung"><state name="Severe"><labels><labelPair name="Condition"><instance>S</instance></labelPair></labels><decisionTree>p[Bad]=45/100, p[Severe]=5/10, p[Fine]=5/100</decisionTree></state><state name="Fine"><labels><labelPair name="Condition"><instance>F</instance></labelPair></labels><decisionTree>p[Bad]=15/100, p[Severe]=5/100, p[Fine]=8/10</decisionTree></state><state name="Bad"><labels><labelPair name="Condition"><instance>B</instance></labelPair></labels><decisionTree>p[Bad]=55/100, p[Severe]=3/10, p[Fine]=15/100</decisionTree></state></machine>
+  <machine name="MPatient:Heart"><state name="Good"><labels><labelPair name="Condition"><instance>Good</instance></labelPair></labels><decisionTree>p[Damaged]=1/5, p[Good]=4/5</decisionTree></state><state name="Damaged"><labels><labelPair name="Condition"><instance>Damaged</instance></labelPair></labels><decisionTree>p[Good]=3/10, p[Damaged]=7/10</decisionTree></state></machine>
 </machines>

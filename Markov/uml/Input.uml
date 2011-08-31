@@ -58,4 +58,16 @@
     <edge xmi:type="uml:ControlFlow" xmi:id="_mtwq4NAMEeCe4_g6Bg3RFA" source="_wapDcMkHEeCdsOVyeGqdOQ" target="_wapDcMkHEeCdsOVyeGqdOQ"/>
     <edge xmi:type="uml:ControlFlow" xmi:id="_txS_ENAMEeCe4_g6Bg3RFA" source="_xwVrEMkHEeCdsOVyeGqdOQ" target="_xwVrEMkHEeCdsOVyeGqdOQ"/>
   </packagedElement>
+  <packagedElement xmi:type="uml:Activity" xmi:id="_KPx0wNPlEeClTMX5vRjQWA" name="MPatient:Heart">
+    <node xmi:type="uml:OpaqueAction" xmi:id="_dxaBUNPlEeClTMX5vRjQWA" name="Good" outgoing="_jIMf0NPlEeClTMX5vRjQWA" incoming="_jyFKUNPlEeClTMX5vRjQWA">
+      <body>labelCondition=Good;</body>
+      <body>p[Damaged]=1/5, p[Good]=4/5</body>
+    </node>
+    <node xmi:type="uml:OpaqueAction" xmi:id="_g0qW8NPlEeClTMX5vRjQWA" name="Damaged" outgoing="_jyFKUNPlEeClTMX5vRjQWA" incoming="_jIMf0NPlEeClTMX5vRjQWA">
+      <body>labelCondition=Damaged;</body>
+      <body>p[Good]=3/10, p[Damaged]=7/10</body>
+    </node>
+    <edge xmi:type="uml:ControlFlow" xmi:id="_jIMf0NPlEeClTMX5vRjQWA" source="_dxaBUNPlEeClTMX5vRjQWA" target="_g0qW8NPlEeClTMX5vRjQWA"/>
+    <edge xmi:type="uml:ControlFlow" xmi:id="_jyFKUNPlEeClTMX5vRjQWA" source="_g0qW8NPlEeClTMX5vRjQWA" target="_dxaBUNPlEeClTMX5vRjQWA"/>
+  </packagedElement>
 </uml:Package>
