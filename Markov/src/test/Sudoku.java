@@ -13,6 +13,7 @@ import markov.Predicate.CollectionType;
 import markov.Romdd;
 
 import util.Pair;
+import util.Stack;
 
 public class Sudoku {
   public final int N;
@@ -30,6 +31,14 @@ public class Sudoku {
   public int get(int row, int col) {
     if (row < 0 || row >= N || col < 0 || col >= N) throw new ArrayIndexOutOfBoundsException();
     return puzzle[row*N+col];
+  }
+  
+  public int get(Pair<Integer> pair) {
+    return get(pair.first, pair.second);
+  }
+  
+  public int get(int idx) {
+    return puzzle[idx];
   }
   
   public List<Pair<Integer>> getNeighbors(int row, int col) {
@@ -127,57 +136,158 @@ public class Sudoku {
   
   public static class ValidationException extends RuntimeException {
     private static final long serialVersionUID = -4291372421542506125L;}
+  
+  public static class AndOp implements Romdd.Op<Boolean> {
+    public final static AndOp INSTANCE = new AndOp();
+    
+    private AndOp() {}
+
+    public Boolean apply(Boolean v1, Boolean v2) { return v1 && v2; }
+
+    public boolean isDominant(Boolean value) { return !value; }
+  }
+  public static class OrOp implements Romdd.Op<Boolean> {
+    public final static OrOp INSTANCE = new OrOp();
+    
+    private OrOp() {}
+
+    public Boolean apply(Boolean v1, Boolean v2) { return v1 || v2; }
+
+    public boolean isDominant(Boolean value) { return value; }
+  }
 
   public static class Solver {
     public final static DecisionTree<Boolean> TRUE = new DecisionTree.Terminal<Boolean>(true);
     public final static DecisionTree<Boolean> FALSE = new DecisionTree.Terminal<Boolean>(false);
     
+    public final int N;
     public final Sudoku instance;
     public final Dictionary dict;
 
-    boolean[] marks;
+    boolean[] marked;
+    int markCount;
+    Stack<Romdd<Boolean>> stack;
     
     public Solver(Sudoku instance) {
+      this.N = instance.N;
       this.instance = instance;
       this.dict = buildDictionary();
-      marks = new boolean[instance.N*instance.N];
+      marked = new boolean[instance.N*instance.N];
+      initialize();
+      stack = Stack.<Romdd<Boolean>>emptyInstance().push(TRUE.toRomdd(dict));
     }
     
     public void solve() {
-      Romdd<Boolean> tree = initialize();
+      while (markCount < N*N-1) {  // we should be able to read the value of the last node
+        Integer fixed = findDetermined();
+        if (fixed != null) {
+          eliminate(fixed / N, fixed % N);
+        } else {
+          Pair<Integer> opt = findBestCandidate();
+          eliminate(opt.first, opt.second);
+        }
+      }
+    }
+    
+    // Instantiates all neighboring constraints and then eliminates the given variable.
+    public void eliminate(int row, int col) {
+      if (isMarked(row, col)) throw new RuntimeException();
       
-    }
-    
-    protected void setMarked(int i, int j) {
-      marks[instance.N*i + j] = true; 
-    }
-    
-    public boolean isMarked(int i, int j) {
-      return marks[instance.N*i + j];
-    }
-    
-    Romdd<Boolean> initialize() {
       Predicate.CollectionBuilder builder = new Predicate.CollectionBuilder(CollectionType.AND);
-      for (int i = 0; i < instance.N; i++) {
-        for (int j = 0; j < instance.N; j++) {
+      for (Pair<Integer> neighbor : instance.getNeighbors(row, col)) {
+        int assigned = instance.get(neighbor);
+        if (assigned == 0) {
+          // conventional handling of constraints
+          for (int i = 1; i <= N; i++) {
+            Predicate.CollectionBuilder termBuilder = new Predicate.CollectionBuilder(CollectionType.AND);
+            termBuilder.add(new Predicate.Atom(Integer.toString(row), Integer.toString(col), Integer.toString(i)));
+            termBuilder.add(new Predicate.Atom(neighbor.first.toString(), neighbor.second.toString(), Integer.toString(i)));
+            builder.add(new Predicate.Neg(termBuilder.build()));
+          }
+        } else {
+          // instantiated constraints
+          builder.add(new Predicate.Neg(new Predicate.Atom(Integer.toString(row), Integer.toString(col), Integer.toString(assigned))));
+        }
+      }
+      Romdd<Boolean> newConstraints = (new DecisionTree.Branch<Boolean>(builder.build(), TRUE, FALSE)).toRomdd(dict);
+      stack = stack.push(Romdd.<Boolean>apply(AndOp.INSTANCE, newConstraints, stack.head()).sum(OrOp.INSTANCE, row + "." + col));
+    }
+    
+    public Pair<Integer> findBestCandidate() {
+      Pair<Integer> rv = null;
+      int minMarkedNeighbors = Integer.MAX_VALUE;
+      
+      for (int row = 0; row < N; row++) {
+        for (int col = 0; col < N; col++) {
+          int count = 0;
+          for (Pair<Integer> neighbor : instance.getNeighbors(row, col)) {
+            if (!isMarked(neighbor)) {
+              count++;
+            }
+          }
+          if (count < minMarkedNeighbors) {
+            rv = new Pair<Integer>(row, col);
+          }
+        }
+      }
+      return rv;
+    }
+
+    private Integer findDetermined() {
+      for (int row = 0; row < N; row++) {
+        for (int col = 0; col < N; col++) {
+          if (isMarked(row,col)) continue;
+          
+          if (countPossibleValues(row, col, stack.head()) == 1) {
+            return N*row+col;
+          }
+        }
+      }
+      return null;
+    }
+    
+    // this could be an expensive operation
+    private int countPossibleValues(int row, int col, Romdd<Boolean> tree) {
+      return tree.findChildrenReaching(row + "." + col, true).size();
+    }
+    
+    private void setMarked(int i, int j) {
+      setMarked(N*i + j);
+    }
+    
+    private void setMarked(int idx) {
+      if (!marked[idx]) {
+        marked[idx] = true;
+        markCount++;
+      }
+    }
+        
+    public boolean isMarked(int i, int j) {
+      return marked[N*i + j];
+    }
+    
+    public boolean isMarked(Pair<Integer> pair) {
+      return isMarked(pair.first, pair.second);
+    }
+    
+    void initialize() {  // initializes the markings
+      for (int i = 0; i < N; i++) {
+        for (int j = 0; j < N; j++) {
           int val = instance.get(i,j);
           if (val == 0) continue;
           setMarked(i,j);
-          builder.add(new Predicate.Atom(Integer.toString(i), Integer.toString(j), Integer.toString(val)));
         }
       }
-      DecisionTree<Boolean> tree = new DecisionTree.Branch<Boolean>(builder.build(), TRUE, FALSE);
-      return tree.toRomdd(dict);
     }
     
     /** We treat rows machines and cols as domains here. */
     private Dictionary buildDictionary() {
       Dictionary.Builder builder = new Dictionary.Builder();
-      for (int row = 0; row < instance.N; row++) {
+      for (int row = 0; row < N; row++) {
         Domain.AltBuilder domBuilder = new Domain.AltBuilder(Integer.toString(row));
-        for (int col = 0; col < instance.N; col++) {
+        for (int col = 0; col < N; col++) {
           Alphabet.AltBuilder alphaBuilder = new Alphabet.AltBuilder(Integer.toString(row), Integer.toString(col));
-          for (int i = 1; i <= instance.N; i++) {
+          for (int i = 1; i <= N; i++) {
             alphaBuilder.addCharacter(Integer.toString(i));
           }
           domBuilder.add(alphaBuilder.build());
