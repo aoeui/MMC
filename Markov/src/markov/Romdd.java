@@ -22,6 +22,14 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
     public boolean isDominant(T value);
   }
   
+  public TreeSet<String> listVarNames() {
+    TreeSet<String> rv = new TreeSet<String>();
+    recurseVarNames(rv);
+    return rv;
+  }
+  
+  void recurseVarNames(TreeSet<String> accu) {}
+  
   public TreeSet<String> findChildrenReaching(final String varName, final T value) {
     final TreeSet<String> rv = new TreeSet<String>();
     final class Finder {
@@ -321,6 +329,13 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
     public Iterator<Romdd<T>> iterator() { return children.iterator(); }
     
     public void accept(Visitor<T> visitor) { visitor.visitNode(this); }
+    
+    void recurseVarNames(TreeSet<String> accu) {
+      accu.add(alpha.name);
+      for (Romdd<T> child : children) {
+        child.recurseVarNames(accu);
+      }
+    }
 
     public int compareTo(Romdd<T> o) {
       if (this == o) return 0;

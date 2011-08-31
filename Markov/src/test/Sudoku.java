@@ -1,8 +1,12 @@
 package test;
 
+import java.io.BufferedReader;
+
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
+import java.util.TreeSet;
+import java.util.Formatter;
 
 import markov.Alphabet;
 import markov.DecisionTree;
@@ -20,12 +24,20 @@ public class Sudoku {
   public final int root;
 
   private int[] puzzle;
+  private int[] solution;
+  
+  public static Sudoku parse() {
+    // TODO
+    return null;
+  }
   
   private Sudoku(int N, int root, int[] puzzle) {
     this.N = N;
     this.root = root;
     this.puzzle = new int[N*N];
     System.arraycopy(puzzle, 0, this.puzzle, 0, N*N);
+    this.solution = new int[N*N];
+    System.arraycopy(puzzle, 0, this.solution, 0, N*N);
   }
   
   public int get(int row, int col) {
@@ -39,6 +51,28 @@ public class Sudoku {
   
   public int get(int idx) {
     return puzzle[idx];
+  }
+  
+  public void setSolution(int row, int col, int val) {
+    if (row < 0 || row >= N || col < 0 || col >= N) throw new ArrayIndexOutOfBoundsException();
+    solution[N*row+col] = val;
+  }
+  
+  public void setSolution(Pair<Integer> coord, int val) {
+    setSolution(coord.first, coord.second, val);
+  }
+  
+  public void setSolution(Entry e) {
+    setSolution(e.row, e.col, e.val);
+  }
+  
+  public int getSolution(int row, int col) {
+    if (row < 0 || row >= N || col < 0 || col >= N) throw new ArrayIndexOutOfBoundsException();
+    return solution[N*row+col];
+  }
+  
+  public int getSolution(Pair<Integer> coord) {
+    return getSolution(coord.first, coord.second);
   }
   
   public List<Pair<Integer>> getNeighbors(int row, int col) {
@@ -76,6 +110,25 @@ public class Sudoku {
     int offCol = offset % root;
     
     return new Pair<Integer>(blockRow * root + offRow, blockCol*root + offCol);
+  }
+  
+  public boolean verifySolution() {
+    for (int i = 0; i < N; i++) {
+      for (int j = 0; j < N; j++) {
+        // TODO
+      }
+    }
+    return true;
+  }
+  
+  public String toString() {
+    Formatter format = new Formatter();
+    for (int i = 0; i < N; i++) {
+      for (int j = 0; j < N; j++) {
+        format.format("%4d", solution[N*i+j]);
+      }
+    }
+    return format.toString();
   }
   
   public static class Builder {
@@ -155,7 +208,39 @@ public class Sudoku {
 
     public boolean isDominant(Boolean value) { return value; }
   }
+  
+  public static class SolverException extends RuntimeException {
+    private static final long serialVersionUID = -397675822428486153L;
+    public SolverException() { }
+    public SolverException(String msg) { super(msg); }
+  }
 
+  public static class Entry {
+    public final String name;
+    public final int row;
+    public final int col;
+    public final int val;
+    
+    public Entry(int row, int col, int val) {
+      this.row = row;
+      this.col = col;
+      this.val = val;
+      this.name = row + "." + col;
+    }
+    
+    public Entry(String name, int val) {
+      this.name = name;
+      this.val = val;
+      String[] names = name.split("\\.");
+      row = Integer.parseInt(names[0]);
+      col = Integer.parseInt(names[1]);
+    }
+    
+    public Entry(Pair<Integer> pair, int val) {
+      this(pair.first, pair.second, val);
+    }
+  }
+    
   public static class Solver {
     public final static DecisionTree<Boolean> TRUE = new DecisionTree.Terminal<Boolean>(true);
     public final static DecisionTree<Boolean> FALSE = new DecisionTree.Terminal<Boolean>(false);
@@ -177,7 +262,7 @@ public class Sudoku {
       stack = Stack.<Romdd<Boolean>>emptyInstance().push(TRUE.toRomdd(dict));
     }
     
-    public void solve() {
+    public void solve() throws SolverException {
       while (markCount < N*N-1) {  // we should be able to read the value of the last node
         Integer fixed = findDetermined();
         if (fixed != null) {
@@ -186,6 +271,28 @@ public class Sudoku {
           Pair<Integer> opt = findBestCandidate();
           eliminate(opt.first, opt.second);
         }
+      }
+
+      ArrayList<Entry> recorded = new ArrayList<Entry>();
+      // back substitute
+      Stack<Romdd<Boolean>> next = stack;
+      while (!next.isEmpty()) {
+        Romdd<Boolean> equation = next.head();
+        for (Entry e : recorded) {
+          equation = equation.restrict(e.name, Integer.toString(e.val));
+        }
+        TreeSet<String> vars = equation.listVarNames();
+        if (vars.size() != 1) throw new RuntimeException();  // this should never happen
+        String varName = vars.iterator().next();
+        
+        TreeSet<String> solutions = equation.findChildrenReaching(varName, true);
+        if (solutions.size() != 1) {
+          throw new SolverException("Puzzle appears " + (solutions.size() < 1 ? "overconstrained."
+              : "underconstrained: >" + solutions.size() + " solutions exist."));
+        }
+        Entry newEntry = new Entry(varName, Integer.parseInt(solutions.iterator().next()));
+        instance.setSolution(newEntry);
+        recorded.add(newEntry);
       }
     }
     
@@ -196,7 +303,10 @@ public class Sudoku {
       Predicate.CollectionBuilder builder = new Predicate.CollectionBuilder(CollectionType.AND);
       for (Pair<Integer> neighbor : instance.getNeighbors(row, col)) {
         int assigned = instance.get(neighbor);
-        if (assigned == 0) {
+        if (assigned != 0) {
+          // instantiated constraints
+          builder.add(new Predicate.Neg(new Predicate.Atom(Integer.toString(row), Integer.toString(col), Integer.toString(assigned))));          
+        } else if (!isMarked(neighbor)){
           // conventional handling of constraints
           for (int i = 1; i <= N; i++) {
             Predicate.CollectionBuilder termBuilder = new Predicate.CollectionBuilder(CollectionType.AND);
@@ -204,9 +314,6 @@ public class Sudoku {
             termBuilder.add(new Predicate.Atom(neighbor.first.toString(), neighbor.second.toString(), Integer.toString(i)));
             builder.add(new Predicate.Neg(termBuilder.build()));
           }
-        } else {
-          // instantiated constraints
-          builder.add(new Predicate.Neg(new Predicate.Atom(Integer.toString(row), Integer.toString(col), Integer.toString(assigned))));
         }
       }
       Romdd<Boolean> newConstraints = (new DecisionTree.Branch<Boolean>(builder.build(), TRUE, FALSE)).toRomdd(dict);
@@ -261,7 +368,7 @@ public class Sudoku {
         markCount++;
       }
     }
-        
+      
     public boolean isMarked(int i, int j) {
       return marked[N*i + j];
     }
