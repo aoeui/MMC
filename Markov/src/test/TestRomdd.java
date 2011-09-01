@@ -42,7 +42,7 @@ public class TestRomdd {
     System.out.println("Checking summations");
     next = romdd;
     for (int i = 0; i < N-1; i++) {
-      next = next.sum(Sudoku.OrOp.INSTANCE, "x." + i);
+      next = next.sum(Romdd.OR, "x." + i);
       System.out.println("After summing out " + "x." + i);
       printTableOfReachableValues(next);
     }

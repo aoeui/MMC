@@ -6,13 +6,18 @@ import util.UnmodifiableIterator;
 
 public abstract class Predicate {
   protected abstract String computeString();
+  
+  public abstract Romdd<Boolean> toRomdd(Dictionary dict);
 
   public enum CollectionType {
-    AND("/\\"), OR("\\/");
+    AND("/\\", Romdd.AND), OR("\\/", Romdd.OR);
     
     public final String str;
-    CollectionType(String str) {
+    public final Romdd.Op<Boolean> op;
+    
+    CollectionType(String str, Romdd.Op<Boolean> op) {
       this.str = str;
+      this.op = op;
     }
     public String toString() { return str; }
     public CollectionType opposite() {
@@ -105,6 +110,13 @@ public abstract class Predicate {
       }
       return b.toString();
     }
+    public Romdd<Boolean> toRomdd(Dictionary dict) {
+      Romdd<Boolean> accu = terms.get(0).toRomdd(dict);
+      for (int i = 1; i < terms.size(); i++) {
+        accu = Romdd.<Boolean>apply(type.op, accu, terms.get(i).toRomdd(dict));
+      }
+      return accu;
+    }
   }
 
   public static class And extends CollectionPredicate {
@@ -141,6 +153,10 @@ public abstract class Predicate {
     protected String computeString() {
       return "(" + antecedent + ") -> (" + consequent + ")";
     }
+    
+    public Romdd<Boolean> toRomdd(Dictionary dict) {
+      return Romdd.<Boolean>apply(Romdd.OR, antecedent.toRomdd(dict).remap(Romdd.INVERT), consequent.toRomdd(dict));
+    }
   }
   public static class Neg extends Predicate {
     public final Predicate subject;
@@ -152,6 +168,10 @@ public abstract class Predicate {
     
     protected String computeString() {
       return "-(" + subject + ")";
+    }
+    
+    public Romdd<Boolean> toRomdd(Dictionary dict) {
+      return subject.toRomdd(dict).remap(Romdd.INVERT);
     }
   }
   public static class Atom extends Predicate implements Comparable<Atom> {
@@ -189,6 +209,24 @@ public abstract class Predicate {
         Atom other = (Atom)o;
         return varName.equals(other.varName) && character.equals(other.character);
       } catch (Exception e) { return false; }
+    }
+    
+    public Romdd<Boolean> toRomdd(Dictionary dict) {
+      Alphabet alpha = dict.get(machineName).get(labelName);
+      ArrayList<Romdd<Boolean>> children = new ArrayList<Romdd<Boolean>>();
+      boolean found = false;
+      for (int i = 0; i < alpha.size(); i++) {
+        if (alpha.get(i).equals(character)) {
+          if (found) throw new RuntimeException();
+          children.add(Romdd.TRUE);
+          found = true;
+        } else {
+          children.add(Romdd.FALSE);
+        }
+      }
+      if (!found) throw new RuntimeException();
+      
+      return new Romdd.Node<Boolean>(alpha, children);
     }
   }
 

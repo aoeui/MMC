@@ -11,7 +11,7 @@ import java.util.TreeSet;
 import java.util.Formatter;
 
 import markov.Alphabet;
-import markov.DecisionTree;
+import markov.Constraint;
 import markov.Dictionary;
 import markov.Domain;
 import markov.Predicate;
@@ -211,26 +211,7 @@ public class Sudoku {
   
   public static class ValidationException extends RuntimeException {
     private static final long serialVersionUID = -4291372421542506125L;}
-  
-  public static class AndOp implements Romdd.Op<Boolean> {
-    public final static AndOp INSTANCE = new AndOp();
     
-    private AndOp() {}
-
-    public Boolean apply(Boolean v1, Boolean v2) { return v1 && v2; }
-
-    public boolean isDominant(Boolean value) { return !value; }
-  }
-  public static class OrOp implements Romdd.Op<Boolean> {
-    public final static OrOp INSTANCE = new OrOp();
-    
-    private OrOp() {}
-
-    public Boolean apply(Boolean v1, Boolean v2) { return v1 || v2; }
-
-    public boolean isDominant(Boolean value) { return value; }
-  }
-  
   public static class SolverException extends RuntimeException {
     private static final long serialVersionUID = -397675822428486153L;
     public SolverException() { }
@@ -279,9 +260,6 @@ public class Sudoku {
   }
   
   public static class Solver {
-    public final static DecisionTree<Boolean> TRUE = new DecisionTree.Terminal<Boolean>(true);
-    public final static DecisionTree<Boolean> FALSE = new DecisionTree.Terminal<Boolean>(false);
-    
     public final int N;
     public final Sudoku instance;
     public final Dictionary dict;
@@ -298,7 +276,55 @@ public class Sudoku {
       marked = new boolean[instance.N*instance.N];
       initialize();
       backStack = Stack.<Romdd<Boolean>>emptyInstance();
-      stack = backStack.push(TRUE.toRomdd(dict));
+      stack = backStack.push(Romdd.TRUE);
+    }
+    
+    public void altSolve() {
+      ArrayList<Constraint> constraints = createConstraints();
+      
+    }
+    
+    ArrayList<Constraint> createConstraints() {
+      ArrayList<Constraint> rv = new ArrayList<Constraint>();
+      // create row, col, block constraints
+      for (int idx = 0; idx < N; idx++) {
+        Romdd<Boolean> rowConstraint = Romdd.TRUE, colConstraint = Romdd.TRUE, blockConstraint = Romdd.TRUE;
+        for (int c1 = 0; c1 < N; c1++) {
+          for (int c2 = c1+1; c2 < N; c2++) {
+            Predicate p = createPairPredicate(new Pair<Integer>(idx, c1), new Pair<Integer>(idx, c2));
+            rowConstraint = Romdd.apply(Romdd.AND, rowConstraint, p.toRomdd(dict));
+            p = createPairPredicate(new Pair<Integer>(c1, idx), new Pair<Integer>(c2, idx));
+            colConstraint = Romdd.apply(Romdd.AND, colConstraint, p.toRomdd(dict));
+            p = createPairPredicate(fromBlockIdxToIdx(N, instance.root, idx, c1), fromBlockIdxToIdx(N, instance.root, idx, c2));
+            blockConstraint = Romdd.apply(Romdd.AND, blockConstraint, p.toRomdd(dict));
+          }
+        }
+        rv.add(new Constraint(rowConstraint));
+        rv.add(new Constraint(colConstraint));
+        rv.add(new Constraint(blockConstraint));
+      }
+      return rv;
+    }
+    
+    Predicate createPairPredicate(Pair<Integer> p1, Pair<Integer> p2) {
+      if (instance.get(p1) != 0) {
+        if (instance.get(p2) != 0) {
+          return null;
+        } else {
+          return new Predicate.Neg(new Predicate.Atom(Integer.toString(p2.first), Integer.toString(p2.second), Integer.toString(instance.get(p1))));
+        }
+      } else if (instance.get(p2) != 0) {
+        return new Predicate.Neg(new Predicate.Atom(Integer.toString(p1.first), Integer.toString(p1.second), Integer.toString(instance.get(p2))));
+      } else {
+        Predicate.CollectionBuilder builder = new Predicate.CollectionBuilder(CollectionType.AND);
+        for (int i = 1; i <= N; i++) {
+          Predicate.CollectionBuilder termBuilder = new Predicate.CollectionBuilder(CollectionType.AND);
+          termBuilder.add(new Predicate.Atom(Integer.toString(p1.first), Integer.toString(p1.second), Integer.toString(i)));
+          termBuilder.add(new Predicate.Atom(Integer.toString(p2.first), Integer.toString(p2.second), Integer.toString(i)));
+          builder.add(new Predicate.Neg(termBuilder.build()));
+        }
+        return builder.build();
+      }
     }
 
     public void solve() throws SolverException {
@@ -331,11 +357,11 @@ System.out.println("The value of " + (fixed / N) + ", " + (fixed % N) + " was de
       while (!next.isEmpty()) {
         Romdd<Boolean> equation = next.head();
         System.out.println("Examining equation with vars " + equation.listVarNames());
-        TestRomdd.printTableOfReachableValues(equation);
+        // TestRomdd.printTableOfReachableValues(equation);
         for (Entry e : recorded) {
           System.out.println("Back-subtituting " + e);
           equation = equation.restrict(e.name, Integer.toString(e.val));
-          TestRomdd.printTableOfReachableValues(equation);
+//          TestRomdd.printTableOfReachableValues(equation);
         }
         TreeSet<String> vars = equation.listVarNames();
 
@@ -376,17 +402,17 @@ System.out.println("Eliminating " + row + ", " + col);
           }
         }
       }
-      Romdd<Boolean> newConstraints = (new DecisionTree.Branch<Boolean>(builder.build(), TRUE, FALSE)).toRomdd(dict);
-      Romdd<Boolean> multiplied = Romdd.<Boolean>apply(AndOp.INSTANCE, newConstraints, stack.head());
+      Romdd<Boolean> newConstraints = builder.build().toRomdd(dict);
+      Romdd<Boolean> multiplied = Romdd.<Boolean>apply(Romdd.AND, newConstraints, stack.head());
       backStack = backStack.push(multiplied);
 setMarked(row, col);      
 System.out.println("vars after multiplication: " + getVarString(multiplied));
-TestRomdd.printTableOfReachableValues(multiplied);
-testPairWiseConstraints(multiplied);
-      Romdd<Boolean> summed = multiplied.sum(OrOp.INSTANCE, row + "." + col);
+// TestRomdd.printTableOfReachableValues(multiplied);
+// testPairWiseConstraints(multiplied);
+      Romdd<Boolean> summed = multiplied.sum(Romdd.OR, row + "." + col);
 System.out.println("vars after summation:      " + getVarString(summed));
-TestRomdd.printTableOfReachableValues(summed);
-testPairWiseConstraints(summed);
+// TestRomdd.printTableOfReachableValues(summed);
+// testPairWiseConstraints(summed);  // this method is useless because only ONE node has its constraints fully instantiated
       stack = stack.push(summed);
     }
     

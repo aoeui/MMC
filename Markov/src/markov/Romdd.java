@@ -14,12 +14,23 @@ import util.Stack;
 
 /* T corresponds to terminal values. */
 public abstract class Romdd<T extends Comparable<? super T>> implements Comparable<Romdd<T>> {
+  public final static Romdd.Terminal<Boolean> TRUE = new Romdd.Terminal<Boolean>(Boolean.TRUE);
+  public final static Romdd.Terminal<Boolean> FALSE = new Romdd.Terminal<Boolean>(Boolean.FALSE);
+  
+  public final static Op<Boolean> AND = AndOp.INSTANCE;
+  public final static Op<Boolean> OR = OrOp.INSTANCE;
+  public final static Mapping<Boolean,Boolean> INVERT = Invert.INSTANCE;
+
   private Romdd() { }
   public abstract void accept(Visitor<T> visitor);
-
+  
   public static interface Op<T extends Comparable<? super T>> {
     public T apply(T v1, T v2);
     public boolean isDominant(T value);
+  }
+  
+  public static interface Mapping<T extends Comparable<? super T>, S extends Comparable<? super S>> {
+    public S transform(T input);
   }
   
   public TreeSet<String> listVarNames() {
@@ -28,11 +39,50 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
     return rv;
   }
   
+  public static class RomddCacher<T extends Comparable<? super T>> {
+    private TreeMap<Romdd<T>, Romdd<T>> cache = new TreeMap<Romdd<T>, Romdd<T>>();
+    
+    public Romdd<T> checkCache(Romdd<T> test) {
+      Romdd<T> rv = cache.get(test);
+      if (rv == null) {
+        rv = test;
+        cache.put(test, test);
+      }
+      return rv;
+    }
+  }
+  
+  public <S extends Comparable<? super S>> Romdd<S> remap(final Mapping<T,S> mapper) { 
+    final class Remapper extends RomddCacher<S >{
+      Romdd<S> remap() {
+        return recurse(Romdd.this);
+      }
+      Romdd<S> recurse(Romdd<T> input) {
+        final Ptr<Romdd<S>> rvPtr = new Ptr<Romdd<S>>();
+        input.accept(new Visitor<T>() {
+          public void visitTerminal(Terminal<T> term) {
+            rvPtr.value = checkCache(new Terminal<S>(mapper.transform(term.output)));
+          }
+          public void visitNode(Node<T> node) {
+            DiffTrackingArrayList<Romdd<S>> newChildren = new DiffTrackingArrayList<Romdd<S>>();
+            for (Romdd<T> child : node) {
+              newChildren.add(recurse(child));
+            }
+            rvPtr.value = newChildren.isAllSame() ? newChildren.get(0) : checkCache(new Node<S>(node.alpha, newChildren));
+          }
+        });
+        return rvPtr.value;
+      }
+    }
+    return new Remapper().remap();
+  }
+  
   void recurseVarNames(TreeSet<String> accu) {}
   
   public TreeSet<String> findChildrenReaching(final String varName, final T value) {
     final TreeSet<String> rv = new TreeSet<String>();
     final class Finder {
+      final TreeSet<Node<T>> cache = new TreeSet<Node<T>>();
       void find() {
         findVar(Romdd.this);
       }
@@ -40,6 +90,9 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
         romdd.accept(new Visitor<T>() {
           public void visitTerminal(Terminal<T> term) { }
           public void visitNode(Node<T> node) {
+            if (cache.contains(node)) return;
+            cache.add(node);
+
             if (node.alpha.name.equals(varName)) {
               for (int i = 0; i < node.alpha.size(); i++) {
                 isValueReachable(node.alpha.get(i), node.getChild(i));
@@ -72,20 +125,18 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
   }
 
   public static <T extends Comparable<? super T>> Romdd<T> apply(Op<T> op, Romdd<T> f, Romdd<T> g) {
-    class Application {
+    class Application extends RomddCacher<T> {
       public final Op<T> operation;
       public final Romdd<T> f;
       public final Romdd<T> g;
       
       TreeMap<Pair<Romdd<T>>, Romdd<T>> pairCache;
-      TreeMap<Romdd<T>, Romdd<T>> nodeCache;
       
       public Application(Op<T> operation, Romdd<T> f, Romdd<T> g) {
         this.operation = operation;
         this.f = f;
         this.g = g;
         this.pairCache = new TreeMap<Pair<Romdd<T>>, Romdd<T>>();
-        this.nodeCache = new TreeMap<Romdd<T>, Romdd<T>>();
       }
       
       public Romdd<T> apply() {
@@ -130,15 +181,6 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
         return rv;
       }
       
-      public Romdd<T> checkCache(Romdd<T> test) {
-        Romdd<T> rv = nodeCache.get(test);
-        if (rv == null) {
-          nodeCache.put(test, test);
-          rv = test;
-        }
-        return rv;
-      }
-      
       public Romdd<T> getTerm(T output) {
         return checkCache(new Terminal<T>(output));
       }
@@ -170,26 +212,13 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
   }
   
   public Romdd<T> sum(Op<T> op, String varName) {
-    final class Summation {
+    final class Summation extends RomddCacher<T> {
       public final Op<T> operation;
       public final String varName;
       
-      private final TreeMap<Romdd<T>, Romdd<T>> cache;
-
-      public Romdd<T> checkCache(Romdd<T> test) {
-        Romdd<T> rv = cache.get(test);
-        if (rv == null) {
-          cache.put(test, test);
-          rv = test;
-        }
-        return rv;
-      }
-
       public Summation(Op<T> operation, String varName) {
         this.operation = operation;
         this.varName = varName;        
-        
-        this.cache = new TreeMap<Romdd<T>, Romdd<T>>();
       }
 
       public Romdd<T> compute() {
@@ -272,25 +301,13 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
   }
 
   public Romdd<T> restrict(String varName, String value) {
-    class Restriction {
+    class Restriction extends RomddCacher<T> {
       public final String varName;
       public final String value;
-      
-      final TreeMap<Romdd<T>, Romdd<T>> cache;
-      
+            
       public Restriction(String varName, String value) {
         this.varName = varName;
         this.value = value;
-        this.cache = new TreeMap<Romdd<T>,Romdd<T>>();
-      }
-      
-      public Romdd<T> checkCache(Romdd<T> test) {
-        Romdd<T> rv = cache.get(test);
-        if (rv == null) {
-          cache.put(test, test);
-          rv = test;
-        }
-        return rv;
       }
       
       public Romdd<T> build() {
@@ -392,13 +409,11 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
   }
   
   public static <T extends Comparable<? super T>> Romdd<T> build(Evaluation<T> eval) {
-    class Builder {
+    class Builder extends RomddCacher<T> {
       public final Evaluation<T> eval;
-      private TreeMap<Romdd<T>,Romdd<T>> nodes;
 
       public Builder(Evaluation<T> eval) {
         this.eval = eval;
-        this.nodes = new TreeMap<Romdd<T>,Romdd<T>>();
       }
       
       public Romdd<T> build() {
@@ -408,15 +423,6 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
         }
         alphabets = alphabets.reverse();  // top of stack is now least element
         return recurse(alphabets, eval.root);
-      }
-      
-      private Romdd<T> checkCache(Romdd<T> test) {
-        Romdd<T> rv = nodes.get(test);
-        if (rv == null) {
-          nodes.put(test, test);
-          rv = test;
-        }
-        return rv;
       }
       
       private Romdd<T> recurse(final Stack<Alphabet> stack, final Evaluation<T>.Evaluator state) {
@@ -477,5 +483,31 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
     public boolean isAllSame() {
       return !foundDifference;
     }
+  }
+ 
+  private static class AndOp implements Op<Boolean> {
+    public final static AndOp INSTANCE = new AndOp();
+
+    private AndOp() {}
+
+    public Boolean apply(Boolean v1, Boolean v2) { return v1 && v2; }
+
+    public boolean isDominant(Boolean value) { return !value; }
+  }
+  private static class OrOp implements Op<Boolean> {
+    public final static OrOp INSTANCE = new OrOp();
+
+    private OrOp() {}
+
+    public Boolean apply(Boolean v1, Boolean v2) { return v1 || v2; }
+
+    public boolean isDominant(Boolean value) { return value; }
+  }
+
+  private static class Invert implements Mapping<Boolean, Boolean> {
+    public final static Invert INSTANCE = new Invert();
+    
+    private Invert() {}
+    public Boolean transform(Boolean input) { return !input; }
   }
 }
