@@ -187,7 +187,7 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
 
       public Summation(Op<T> operation, String varName) {
         this.operation = operation;
-        this.varName = varName;
+        this.varName = varName;        
         
         this.cache = new TreeMap<Romdd<T>, Romdd<T>>();
       }
@@ -221,9 +221,16 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
           }
           return recurse(builder.build(), wPtr.value);
         } else {
-          DiffTrackingArrayList<Romdd<T>> children = new DiffTrackingArrayList<Romdd<T>>();
+          final DiffTrackingArrayList<Romdd<T>> children = new DiffTrackingArrayList<Romdd<T>>();
           for (Romdd<T> child : node) {
-            children.add(child);
+            child.accept(new Visitor<T>() {
+              public void visitTerminal(Terminal<T> term) {
+                children.add(term);
+              }
+              public void visitNode(Node<T> node) {
+                children.add(recurse(node));
+              }
+            });
           }
           return children.isAllSame() ? children.get(0) : checkCache(new Node<T>(node.alpha, children));
         }
@@ -380,6 +387,8 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
       });
       return rv[0];
     }
+    
+    public String toString() { return output.toString(); }
   }
   
   public static <T extends Comparable<? super T>> Romdd<T> build(Evaluation<T> eval) {

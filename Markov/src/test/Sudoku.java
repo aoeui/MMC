@@ -1,6 +1,8 @@
 package test;
 
 import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 
 import java.util.ArrayList;
 import java.util.BitSet;
@@ -26,9 +28,25 @@ public class Sudoku {
   private int[] puzzle;
   private int[] solution;
   
-  public static Sudoku parse() {
-    // TODO
-    return null;
+  public static void main(String[] args) throws IOException { 
+    Sudoku puzzle = parse(new BufferedReader(new FileReader(args[0])));
+    Solver solver = new Solver(puzzle);
+    solver.solve();
+    System.out.println(puzzle);
+  }
+  
+  public static Sudoku parse(BufferedReader reader) throws IOException {
+    String nStr = reader.readLine();
+    int N = Integer.parseInt(nStr);
+    Builder builder = new Builder(N);
+    for (int i = 0; i < N; i++) {
+      String[] nums = reader.readLine().split("\\s+");
+      for (int j = 0; j < N; j++) {
+        int val = Integer.parseInt(nums[j]);
+        if (val != 0) builder.set(i, j, val);
+      }
+    }
+    return builder.build();
   }
   
   private Sudoku(int N, int root, int[] puzzle) {
@@ -115,7 +133,10 @@ public class Sudoku {
   public boolean verifySolution() {
     for (int i = 0; i < N; i++) {
       for (int j = 0; j < N; j++) {
-        // TODO
+        int val = solution[N*i + j];
+        for (Pair<Integer> neighbor : getNeighbors(i, j)) {
+          if (val == getSolution(neighbor)) return false;
+        }
       }
     }
     return true;
@@ -127,6 +148,7 @@ public class Sudoku {
       for (int j = 0; j < N; j++) {
         format.format("%4d", solution[N*i+j]);
       }
+      format.format("\n");
     }
     return format.toString();
   }
@@ -239,8 +261,23 @@ public class Sudoku {
     public Entry(Pair<Integer> pair, int val) {
       this(pair.first, pair.second, val);
     }
-  }
     
+    public String toString() {
+      return name + " = " + val;
+    }
+  }
+  
+  public static Pair<Integer> toPair(String name) {
+    String[] names = name.split("\\.");
+    return new Pair<Integer>(Integer.parseInt(names[0]),Integer.parseInt(names[1]));  
+  }
+
+  public boolean isNeighbor(Pair<Integer> p1, Pair<Integer> p2) {
+    if (p1.first.equals(p2.first) || p1.second.equals(p2.second)) return true;
+    if (p1.first / root == p2.first / root && p1.second / root == p2.second) return true; 
+    return false;
+  }
+  
   public static class Solver {
     public final static DecisionTree<Boolean> TRUE = new DecisionTree.Terminal<Boolean>(true);
     public final static DecisionTree<Boolean> FALSE = new DecisionTree.Terminal<Boolean>(false);
@@ -252,6 +289,7 @@ public class Sudoku {
     boolean[] marked;
     int markCount;
     Stack<Romdd<Boolean>> stack;
+    Stack<Romdd<Boolean>> backStack;
     
     public Solver(Sudoku instance) {
       this.N = instance.N;
@@ -259,46 +297,68 @@ public class Sudoku {
       this.dict = buildDictionary();
       marked = new boolean[instance.N*instance.N];
       initialize();
-      stack = Stack.<Romdd<Boolean>>emptyInstance().push(TRUE.toRomdd(dict));
+      backStack = Stack.<Romdd<Boolean>>emptyInstance();
+      stack = backStack.push(TRUE.toRomdd(dict));
     }
-    
+
     public void solve() throws SolverException {
       while (markCount < N*N-1) {  // we should be able to read the value of the last node
         Integer fixed = findDetermined();
         if (fixed != null) {
+System.out.println("The value of " + (fixed / N) + ", " + (fixed % N) + " was determined to be "
+    + stack.head().findChildrenReaching((fixed / N) + "." + (fixed % N), true));
           eliminate(fixed / N, fixed % N);
         } else {
           Pair<Integer> opt = findBestCandidate();
           eliminate(opt.first, opt.second);
         }
       }
+      System.out.println("Forward propagation complete. Beginning back-substitution.");
+      
+      TreeSet<String> firstNames = stack.head().listVarNames();
+      if (firstNames.size() != 1) throw new RuntimeException();
+      String firstName = firstNames.iterator().next();      
+      TreeSet<String> answer = stack.head().findChildrenReaching(firstName, true);
+      if (answer.size() != 1) throw new RuntimeException();
+      int firstVal = Integer.parseInt(answer.iterator().next());
 
       ArrayList<Entry> recorded = new ArrayList<Entry>();
+      Entry firstEntry = new Entry(firstName, firstVal);
+      instance.setSolution(firstEntry);
+      recorded.add(firstEntry);
       // back substitute
-      Stack<Romdd<Boolean>> next = stack;
+      Stack<Romdd<Boolean>> next = backStack;
       while (!next.isEmpty()) {
         Romdd<Boolean> equation = next.head();
+        System.out.println("Examining equation with vars " + equation.listVarNames());
+        TestRomdd.printTableOfReachableValues(equation);
         for (Entry e : recorded) {
+          System.out.println("Back-subtituting " + e);
           equation = equation.restrict(e.name, Integer.toString(e.val));
+          TestRomdd.printTableOfReachableValues(equation);
         }
         TreeSet<String> vars = equation.listVarNames();
+
         if (vars.size() != 1) throw new RuntimeException();  // this should never happen
         String varName = vars.iterator().next();
         
         TreeSet<String> solutions = equation.findChildrenReaching(varName, true);
         if (solutions.size() != 1) {
           throw new SolverException("Puzzle appears " + (solutions.size() < 1 ? "overconstrained."
-              : "underconstrained: >" + solutions.size() + " solutions exist."));
+              : "underconstrained: >=" + solutions.size() + " solutions exist."));
         }
         Entry newEntry = new Entry(varName, Integer.parseInt(solutions.iterator().next()));
         instance.setSolution(newEntry);
         recorded.add(newEntry);
+        
+        next = next.tail();
       }
     }
-    
+
     // Instantiates all neighboring constraints and then eliminates the given variable.
     public void eliminate(int row, int col) {
       if (isMarked(row, col)) throw new RuntimeException();
+System.out.println("Eliminating " + row + ", " + col);
       
       Predicate.CollectionBuilder builder = new Predicate.CollectionBuilder(CollectionType.AND);
       for (Pair<Integer> neighbor : instance.getNeighbors(row, col)) {
@@ -317,23 +377,76 @@ public class Sudoku {
         }
       }
       Romdd<Boolean> newConstraints = (new DecisionTree.Branch<Boolean>(builder.build(), TRUE, FALSE)).toRomdd(dict);
-      stack = stack.push(Romdd.<Boolean>apply(AndOp.INSTANCE, newConstraints, stack.head()).sum(OrOp.INSTANCE, row + "." + col));
+      Romdd<Boolean> multiplied = Romdd.<Boolean>apply(AndOp.INSTANCE, newConstraints, stack.head());
+      backStack = backStack.push(multiplied);
+setMarked(row, col);      
+System.out.println("vars after multiplication: " + getVarString(multiplied));
+TestRomdd.printTableOfReachableValues(multiplied);
+testPairWiseConstraints(multiplied);
+      Romdd<Boolean> summed = multiplied.sum(OrOp.INSTANCE, row + "." + col);
+System.out.println("vars after summation:      " + getVarString(summed));
+TestRomdd.printTableOfReachableValues(summed);
+testPairWiseConstraints(summed);
+      stack = stack.push(summed);
+    }
+    
+    public String getVarString(Romdd<Boolean> romdd) {
+      StringBuilder builder = new StringBuilder("[");
+      boolean isFirst = true;
+      for (String varName : romdd.listVarNames()) {
+        if (isFirst) isFirst = false;
+        else builder.append(", ");
+        builder.append(varName);
+        Pair<Integer> pair = toPair(varName);
+        if (isMarked(pair)) builder.append('*');
+      }
+      builder.append(']');
+      return builder.toString();
+    }
+    
+    public void testPairWiseConstraints(Romdd<Boolean> eq) {
+      TreeSet<String> vars = eq.listVarNames();
+      for (String v1 : vars) {
+        for (String v2 : vars) {
+          Pair<Integer> p1 = toPair(v1), p2 = toPair(v2);
+          if (!(isMarked(p1) && isMarked(p2))) continue;  // only marked nodes can be expected to respect each other
+          if (p1.compareTo(p2) >= 0 || !instance.isNeighbor(p1, p2)) continue;  // only need to check once per pair and not self
+          
+          for (int val = 1; val <= N; val++) {
+            Romdd<Boolean> test = eq.restrict(p1.first + "." + p1.second, Integer.toString(val));
+            test.restrict(p2.first + "." + p2.second, Integer.toString(val));
+            test.accept(new Romdd.Visitor<Boolean>() {
+              public void visitTerminal(Romdd.Terminal<Boolean> term) {
+                if (term.output) {
+                  throw new RuntimeException();
+                }
+              }
+              public void visitNode(Romdd.Node<Boolean> node) {
+                throw new RuntimeException();
+              }
+            });
+          }
+        }
+      }
     }
     
     public Pair<Integer> findBestCandidate() {
       Pair<Integer> rv = null;
-      int minMarkedNeighbors = Integer.MAX_VALUE;
+      int minUnmarkedNeighbors = Integer.MAX_VALUE;
       
       for (int row = 0; row < N; row++) {
         for (int col = 0; col < N; col++) {
+          if (isMarked(row, col)) continue;  // marked nodes cannot be candidates
+
           int count = 0;
           for (Pair<Integer> neighbor : instance.getNeighbors(row, col)) {
             if (!isMarked(neighbor)) {
               count++;
             }
           }
-          if (count < minMarkedNeighbors) {
+          if (count < minUnmarkedNeighbors) {
             rv = new Pair<Integer>(row, col);
+            minUnmarkedNeighbors = count;
           }
         }
       }
