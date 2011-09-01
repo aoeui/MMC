@@ -11,7 +11,7 @@ xmlns:uml="http://www.eclipse.org/uml2/3.0.0/UML">
 	</xsl:element>
 </xsl:template>
 
-<xsl:template match="uml:Package/packagedElement[@xmi:type='uml:Activity']">
+<xsl:template match="packagedElement[@xmi:type='uml:Activity']">
 	<xsl:element name="machine">
 		<xsl:attribute name="name">
 			<xsl:value-of select="@name"/>
