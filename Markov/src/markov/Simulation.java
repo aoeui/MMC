@@ -9,6 +9,8 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.Map.Entry;
 
+import markov.TransitionMatrix.RandomBuilder;
+
 import parser.XmlParser;
 import util.Ptr;
 import util.Stack;
@@ -28,11 +30,18 @@ public class Simulation {
       Iterator<Machine<FractionProbability>> itr=net.iterator();
       
       /****** Initialization ***********************************************************
-       * 1. Retrieve stateNameList to assign combined state a count up number to be used in transition Matrix mapping  -->cannot be initialized here since machine name is not compared
+       * 1. Retrieve stateNameList to assign combined state a count up number to be used in transition Matrix mapping +>add step 5 before to have correct machine sequence
        * 2. Get a iterator array to save all the pointer to state of each machine --> change to 3
        * 3. Initialize stack with every machines to be used in recursive combined state retrieval
        * 4. Get a list of machine names
        * **************************************************************************/
+      TreeMap<String,Machine<FractionProbability>> sortList=new TreeMap<String,Machine<FractionProbability>>();
+      while (itr.hasNext()){
+        Machine<FractionProbability> temp=itr.next();
+        sortList.put(temp.name,temp);
+      }
+      itr=sortList.values().iterator();
+      
       HashMap<String,Integer> stateNameList=new HashMap<String, Integer>();
 //      ArrayList<Iterator<State<FractionProbability>>> itrStateArray=new ArrayList<Iterator<State<FractionProbability>>>();
       Stack<Machine<FractionProbability>> stack= Stack.<Machine<FractionProbability>>emptyInstance();
@@ -48,13 +57,14 @@ public class Simulation {
       
       while (itr.hasNext()){
         tempB=itr.next();
-//        initializeStates(tempA,tempB,stateNameList);
+        initializeStates(tempA,tempB,stateNameList);
 //        itrStateArray.add(tempB.iterator());
         stack=stack.push(tempB);
         machineName.add(tempB.name);
         tempA=tempB;
       }
       
+      stack=stack.reverse();
       
       constructStateList(stateArray,stack,accu);
       
@@ -62,9 +72,9 @@ public class Simulation {
       
       Iterator<ArrayList<State<FractionProbability>>> itrStates=accu.iterator();
       while(itrStates.hasNext()){
-        int rowNum=-1;
-        ArrayList<FractionProbability> row=retrieveProbability(machineName,(itrStates.next()),net.dictionary, stateNameList, rowNum);
-        builder.set(rowNum, row);
+        
+        retrieveProbability(machineName,(itrStates.next()),net.dictionary, stateNameList, builder);
+        
       }
 
       this.matrix = builder.build();
@@ -79,9 +89,9 @@ public class Simulation {
 
   }
   
-  private ArrayList<FractionProbability> retrieveProbability(
+  private void retrieveProbability(
       ArrayList<String> machineName,
-      ArrayList<State<FractionProbability>> states, Dictionary dictionary, HashMap<String, Integer> stateNameList, int rowNum) {
+      ArrayList<State<FractionProbability>> states, Dictionary dictionary, HashMap<String, Integer> stateNameList, RandomBuilder<FractionProbability> builder) {
     
 
     
@@ -107,7 +117,7 @@ public class Simulation {
         while(itrLabel.hasNext()){
           String labelName=itrLabel.next();
           String instance=s.getLabel(labelName);
-          Predicate.Atom atom=new Predicate.Atom(machineName.get(i),labelName,instance);
+          Predicate.Atom atom=new Predicate.Atom(machineNameCopy.get(i),labelName,instance);
           root=root.restrict(atom);      
         }
       }
@@ -135,12 +145,12 @@ public class Simulation {
       combinedStateName=(combinedStateName.equals("empty")) ? states.get(machineName.indexOf(s)).name : combinedStateName+Machine.MULTIPLY_STRING+states.get(machineName.indexOf(s)).name;
     }
     
-    rowNum=stateNameList.get(combinedStateName);
+    int rowNum=stateNameList.get(combinedStateName);
     
     Iterator<Map.Entry<String, FractionProbability>> itrMergedLabel=out.iterator();
     ArrayList<FractionProbability> row=new ArrayList<FractionProbability>();
     
-    for (int i=0;i<states.size();i++){
+    for (int i=0;i<stateNameList.size();i++){
       row.add(i, FractionProbability.ZERO);
     }
     
@@ -149,8 +159,7 @@ public class Simulation {
       int colNum=(stateNameList.get(temp.getKey())!=null)?stateNameList.get(temp.getKey()):-1;
       if (colNum>-1) row.set(colNum, temp.getValue());
     }
-    
-    return row;
+    builder.set(rowNum, row);
   }
 
   private void constructStateList(

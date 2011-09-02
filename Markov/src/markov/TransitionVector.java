@@ -97,18 +97,18 @@ public class TransitionVector<T extends Probability<T>>
     String[] nameArr = arg.machineName.split(Machine.MULTIPLY_STRING);
     boolean[] sequence = new boolean[myNameArr.length + nameArr.length];
 
-//    String prev = null;
+    String prev = null;
     int myIdx = 0, idx = 0;
     while (myIdx < myNameArr.length && idx < nameArr.length) {
       int comp = myNameArr[myIdx].compareTo(nameArr[idx]);
       if (comp == 0) throw new RuntimeException();
-      boolean nextSeq = comp > 0;
-//      String next = nextSeq ? myNameArr[myIdx] : nameArr[idx];
+      boolean nextSeq = comp < 0;
+      String next = nextSeq ? myNameArr[myIdx] : nameArr[idx];
       sequence[myIdx + idx] = nextSeq;
       if (nextSeq) myIdx++; else idx++;
 
-//      if (prev != null && next.compareTo(prev) <= 0) throw new RuntimeException();  // verifies uniqueness and order of machine names
-//      prev = next;
+      if (prev != null && next.compareTo(prev) < 0) throw new RuntimeException();  // verifies uniqueness and order of machine names
+      prev = next;
     }
     while (myIdx == myNameArr.length && idx < nameArr.length){
       sequence[myIdx+idx]=false;
