@@ -2,13 +2,12 @@ package markov;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
 import util.LexicalCompare;
 
-public class Alphabet implements Iterable<Resolver.Atom>, Comparable<Alphabet> {
+public class Alphabet implements Comparable<Alphabet> {
   public final String machineName;  // needed for generating fully qualified labels
   public final String domainName;  // domain name
 
@@ -55,26 +54,7 @@ public class Alphabet implements Iterable<Resolver.Atom>, Comparable<Alphabet> {
     return Collections.<String>binarySearch(characters, str);
   }
   public int size() { return characters.size(); }
-  
-  public Iterator<Resolver.Atom> iterator() {
-    return new IteratorHelper();
-  }
-  
-  class IteratorHelper implements Iterator<Resolver.Atom> {
-    int idx;
-
-    IteratorHelper() {
-      idx = 0;
-    }
     
-    public Resolver.Atom next() {
-      return new Resolver.Atom(Alphabet.this, idx++);
-    }
-    
-    public boolean hasNext() { return idx < size(); }
-    public void remove() { throw new UnsupportedOperationException(); }
-  }
-  
   public static class Builder extends AltBuilder {
     Machine<?> machine;
     

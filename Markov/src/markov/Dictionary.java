@@ -26,12 +26,7 @@ public class Dictionary implements Iterable<Domain> {
   public Iterator<Domain> iterator() {
     return new util.UnmodifiableIterator<Domain>(data.values().iterator());
   }
-  
-  public Resolver.Atom convert(Predicate.Atom atom) {
-    Alphabet alpha = get(atom.machineName).get(atom.labelName);
-    return new Resolver.Atom(alpha, alpha.indexOf(atom.character));
-  }
-  
+    
   public static class Builder {
     TreeSet<Domain> list;
     public Builder() {

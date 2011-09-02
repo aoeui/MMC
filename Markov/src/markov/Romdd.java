@@ -10,7 +10,6 @@ import util.LexicalCompare;
 import util.Pair;
 import util.Partition;
 import util.Ptr;
-import util.Stack;
 
 /* T corresponds to terminal values. */
 public abstract class Romdd<T extends Comparable<? super T>> implements Comparable<Romdd<T>> {
@@ -445,47 +444,6 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
     }
     
     public String toString() { return output.toString(); }
-  }
-  
-  public static <T extends Comparable<? super T>> Romdd<T> build(Evaluation<T> eval) {
-    class Builder extends RomddCacher<T> {
-      public final Evaluation<T> eval;
-
-      public Builder(Evaluation<T> eval) {
-        this.eval = eval;
-      }
-      
-      public Romdd<T> build() {
-        Stack<Alphabet> alphabets = Stack.<Alphabet>emptyInstance();
-        for (Alphabet alpha : eval) {
-          alphabets = alphabets.push(alpha);
-        }
-        alphabets = alphabets.reverse();  // top of stack is now least element
-        return recurse(alphabets, eval.root);
-      }
-      
-      private Romdd<T> recurse(final Stack<Alphabet> stack, final Evaluation<T>.Evaluator state) {
-        final Ptr<Romdd<T>> rvPtr = new Ptr<Romdd<T>>();
-        state.accept(new Evaluation.Visitor<T>() {
-          public void visitTerminal(Evaluation<T>.Terminal term) {
-            rvPtr.value = checkCache(new Terminal<T>(term.output));
-          }
-          public void visitWalker(Evaluation<T>.Walker walker) {
-            if (stack.isEmpty()) throw new RuntimeException();
-            
-            Alphabet next = stack.head();
-            assert(next.size() > 0);
-            DiffTrackingArrayList<Romdd<T>> children = new DiffTrackingArrayList<Romdd<T>>();
-            for (Resolver.Atom nextRestriction : next) { 
-              children.add(recurse(stack.tail(), state.restrict(nextRestriction)));
-            }
-            rvPtr.value = children.isAllSame() ? children.get(0) : checkCache(new Node<T>(next, children));          
-          }
-        });
-        return rvPtr.value;
-      }
-    }
-    return new Builder(eval).build();
   }
 
   public static interface Visitor<T extends Comparable<? super T>> {

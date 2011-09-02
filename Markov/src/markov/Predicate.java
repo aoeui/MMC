@@ -30,11 +30,6 @@ public abstract class Predicate {
   }
 
   public abstract void accept(Visitor visitor);
-
-  /** Turns everything into alternating AND / OR and eliminates NEG */
-  public Resolver reduce(Dictionary dictionary) {
-    return new Resolver.Builder(this, dictionary).build();
-  }
   
   private String stringRepresentation;
   private boolean hashCodeInitialized = false;
