@@ -23,6 +23,10 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
 
   private Romdd() { }
   public abstract void accept(Visitor<T> visitor);
+
+  // these break the visitor pattern and should be used sparingly
+  abstract Alphabet getAlphabet();
+  abstract T getOutput(); 
   
   public static interface Op<T extends Comparable<? super T>> {
     public T apply(T v1, T v2);
@@ -33,23 +37,53 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
     public S transform(T input);
   }
   
+  public static <T extends Comparable<? super T>> Romdd<T> branch(final Romdd<Boolean> condition, final Romdd<T> consequent, final Romdd<T> alternative) {
+    final class Brancher extends RomddCacher<T> {
+      Romdd<T> branch() {
+        return recurse(condition, consequent, alternative);
+      }
+      Romdd<T> recurse(Romdd<Boolean> pred, Romdd<T> cons, Romdd<T> alt) {
+        Alphabet alpha = findMinAlpha(pred, cons, alt);
+        if (alpha == null) {  // implies all searches at terminal
+          return checkCache(pred.getOutput() ? cons : alt); 
+        } else {
+          DiffTrackingArrayList<Romdd<T>> newChildren = new DiffTrackingArrayList<Romdd<T>>();
+          for (int i = 0; i < alpha.size(); i++) {
+            newChildren.add(recurse(choose(alpha, i, pred), choose(alpha, i, cons), choose(alpha, i, alt)));
+          }
+          return newChildren.isAllSame() ? newChildren.get(0) : checkCache(new Node<T>(alpha, newChildren));
+        }
+      }
+      <S extends Comparable<? super S>> Romdd<S> choose(final Alphabet alpha, final int idx, Romdd<S> romdd) {
+        final Ptr<Romdd<S>> rvPtr = new Ptr<Romdd<S>>();
+        romdd.accept(new Visitor<S>() {
+          public void visitTerminal(Terminal<S> term) {
+            rvPtr.value = term;
+          }
+          public void visitNode(Node<S> node) {
+            rvPtr.value = alpha.name.equals(node.alpha.name) ? node.getChild(idx) : node;
+          }
+        });
+        return rvPtr.value;
+      }
+      Alphabet findMinAlpha(Romdd<?> ... romdds) {
+        Alphabet rv = null;
+        for (Romdd<?> romdd : romdds) {
+          Alphabet test = romdd.getAlphabet();
+          if (test != null && (rv == null || test.compareTo(rv) < 0)) {
+            rv = test;
+          }
+        }
+        return rv;
+      }
+    }
+    return new Brancher().branch();
+  }
+  
   public TreeSet<String> listVarNames() {
     TreeSet<String> rv = new TreeSet<String>();
     recurseVarNames(rv);
     return rv;
-  }
-  
-  public static class RomddCacher<T extends Comparable<? super T>> {
-    private TreeMap<Romdd<T>, Romdd<T>> cache = new TreeMap<Romdd<T>, Romdd<T>>();
-    
-    public Romdd<T> checkCache(Romdd<T> test) {
-      Romdd<T> rv = cache.get(test);
-      if (rv == null) {
-        rv = test;
-        cache.put(test, test);
-      }
-      return rv;
-    }
   }
   
   public <S extends Comparable<? super S>> Romdd<S> remap(final Mapping<T,S> mapper) { 
@@ -348,6 +382,8 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
       this.children = new ArrayList<Romdd<T>>(children);
     }
     
+    T getOutput() { return null; }
+    Alphabet getAlphabet() { return alpha; }
     public Romdd<T> getChild(int i) { return children.get(i); }
     public int getSize() { return alpha.size(); }
     public Iterator<Romdd<T>> iterator() { return children.iterator(); }
@@ -387,6 +423,9 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
       this.output = output;
     }
     
+    Alphabet getAlphabet() { return null; }
+    T getOutput() { return output; }
+
     public Romdd<T> restrict(String name, String value) { return this; }
     
     public void accept(Visitor<T> visitor) { visitor.visitTerminal(this); }
@@ -509,5 +548,18 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
     
     private Invert() {}
     public Boolean transform(Boolean input) { return !input; }
+  }
+  
+  private static class RomddCacher<T extends Comparable<? super T>> {
+    private TreeMap<Romdd<T>, Romdd<T>> cache = new TreeMap<Romdd<T>, Romdd<T>>();
+    
+    public Romdd<T> checkCache(Romdd<T> test) {
+      Romdd<T> rv = cache.get(test);
+      if (rv == null) {
+        rv = test;
+        cache.put(test, test);
+      }
+      return rv;
+    }
   }
 }
