@@ -23,7 +23,7 @@ public class XmlParser {
       
       public XmlParser() {
         
-        Net<FractionProbability> net = XmlInput("xml/umlVersion2.xml");
+        Net<FractionProbability> net = XmlInput("xml/umlVersion3.xml");
         System.out.println(net.toString());
        
       }
