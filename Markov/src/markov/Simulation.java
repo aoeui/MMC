@@ -1,5 +1,6 @@
 package markov;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -9,8 +10,11 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.Map.Entry;
 
-import markov.TransitionMatrix.RandomBuilder;
+import com.jmatio.io.*;
+import com.jmatio.types.*;
 
+
+import markov.TransitionMatrix.RandomBuilder;
 import parser.XmlParser;
 import util.Ptr;
 import util.Stack;
@@ -30,11 +34,12 @@ public class Simulation {
       Iterator<Machine<FractionProbability>> itr=net.iterator();
       
       /****** Initialization ***********************************************************
-       * 1. Retrieve stateNameList to assign combined state a count up number to be used in transition Matrix mapping +>add step 5 before to have correct machine sequence
-       * 2. Get a iterator array to save all the pointer to state of each machine --> change to 3
+       * 1. Order Machines by machineName and create iterator based on ordered machines
+       * 2. Retrieve stateNameList to assign combined state a count up number to be used in transition Matrix mapping
        * 3. Initialize stack with every machines to be used in recursive combined state retrieval
        * 4. Get a list of machine names
        * **************************************************************************/
+      //sort machines
       TreeMap<String,Machine<FractionProbability>> sortList=new TreeMap<String,Machine<FractionProbability>>();
       while (itr.hasNext()){
         Machine<FractionProbability> temp=itr.next();
@@ -43,7 +48,6 @@ public class Simulation {
       itr=sortList.values().iterator();
       
       HashMap<String,Integer> stateNameList=new HashMap<String, Integer>();
-//      ArrayList<Iterator<State<FractionProbability>>> itrStateArray=new ArrayList<Iterator<State<FractionProbability>>>();
       Stack<Machine<FractionProbability>> stack= Stack.<Machine<FractionProbability>>emptyInstance();
       ArrayList<State<FractionProbability>> stateArray=new ArrayList<State<FractionProbability>>();
       HashSet<ArrayList<State<FractionProbability>>> accu=new HashSet<ArrayList<State<FractionProbability>>>();
@@ -53,47 +57,81 @@ public class Simulation {
       Machine<FractionProbability>tempA=itr.next();
       stack=stack.push(tempA);
       machineName.add(tempA.name);
-//      itrStateArray.add(tempA.iterator());
       
       while (itr.hasNext()){
         tempB=itr.next();
+        //create stateNameList
         initializeStates(tempA,tempB,stateNameList);
-//        itrStateArray.add(tempB.iterator());
+        //create stack of machines for use in constructStateList
         stack=stack.push(tempB);
+        //create machineName
         machineName.add(tempB.name);
         tempA=tempB;
       }
-      
+      //order the stack so that stack.head is the same one as the first one that get pushed on the the stack
       stack=stack.reverse();
       
+      //get combinedState and return them in accu
       constructStateList(stateArray,stack,accu);
       
       TransitionMatrix.RandomBuilder<FractionProbability> builder =new TransitionMatrix.RandomBuilder<FractionProbability>(stateNameList.size());
       
       Iterator<ArrayList<State<FractionProbability>>> itrStates=accu.iterator();
       while(itrStates.hasNext()){
-        
+        //now get probability and save it to the correct row of transition Matrix based on ordering of stateNameList
         retrieveProbability(machineName,(itrStates.next()),net.dictionary, stateNameList, builder);
-        
       }
 
       this.matrix = builder.build();
       
+      //sort the head to be printed.
       ValueComparator bvc =  new ValueComparator(stateNameList);
       this.headlist = new TreeMap<String, Integer>(bvc);
       headlist.putAll(stateNameList);
 
       System.out.println(headlist.keySet().toString());
       System.out.println(matrix.toString()); 
-    
+      
+      int[] test={1,2,3,4};
+      double[][] matOut=this.matrixToDouble();
+      MLDouble mldouble=new MLDouble("pTransition",matOut);
+      String[] heads=headlist.keySet().toString().split(", ");
+      MLCell mlcell=new MLCell("heads", new int[]{headlist.keySet().size(), 1} );
+      
+      for(int colNum=0;colNum<headlist.keySet().size();colNum++){
+        MLChar temp=new MLChar("text",heads[colNum]);
+        mlcell.set(temp, colNum);
+      }
+      
+      //write arrays to file
+      ArrayList list = new ArrayList();
+      list.add( mldouble );
+      list.add( mlcell );
+      
+      try {
+        new MatFileWriter( "mat_file.mat", list );
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+   
 
   }
   
+  private double[][] matrixToDouble() {
+    
+    double[][] out=new double[this.matrix.N][this.matrix.N];
+    
+    for (int i=0;i<this.matrix.N;i++){
+      for (int j=0;j<this.matrix.N;j++){
+        out[i][j]=(double)this.matrix.get(i, j).p.num / (double)this.matrix.get(i, j).p.den;
+      }
+    }
+    return out;
+  }
+
   private void retrieveProbability(
       ArrayList<String> machineName,
       ArrayList<State<FractionProbability>> states, Dictionary dictionary, HashMap<String, Integer> stateNameList, RandomBuilder<FractionProbability> builder) {
-    
-
     
     ArrayList<Ptr<TransitionVector<FractionProbability>>> ptrs=new ArrayList<Ptr<TransitionVector<FractionProbability>>>();
     TransitionVector<FractionProbability> out=null;
