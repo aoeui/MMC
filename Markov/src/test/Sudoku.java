@@ -18,12 +18,15 @@ import markov.Predicate;
 import markov.Predicate.CollectionType;
 import markov.Romdd;
 
+import util.Coroutine;
 import util.Pair;
+import util.Partition;
 import util.Stack;
+import util.TerminatedIterator;
 
 public class Sudoku {
   public final int N;
-  public final int root;
+  public final int order;
 
   private int[] puzzle;
   private int[] solution;
@@ -31,14 +34,17 @@ public class Sudoku {
   public static void main(String[] args) throws IOException { 
     Sudoku puzzle = parse(new BufferedReader(new FileReader(args[0])));
     Solver solver = new Solver(puzzle);
-    solver.solve();
+    solver.altSolve();
     System.out.println(puzzle);
+    System.out.println("Verified = " + puzzle.verifySolution());
+    System.exit(0);
   }
   
   public static Sudoku parse(BufferedReader reader) throws IOException {
     String nStr = reader.readLine();
-    int N = Integer.parseInt(nStr);
-    Builder builder = new Builder(N);
+    int order = Integer.parseInt(nStr);
+    int N = order*order;
+    Builder builder = new Builder(order);
     for (int i = 0; i < N; i++) {
       String[] nums = reader.readLine().split("\\s+");
       for (int j = 0; j < N; j++) {
@@ -49,9 +55,9 @@ public class Sudoku {
     return builder.build();
   }
   
-  private Sudoku(int N, int root, int[] puzzle) {
-    this.N = N;
-    this.root = root;
+  private Sudoku(int order, int[] puzzle) {
+    this.N = order*order;
+    this.order = order;
     this.puzzle = new int[N*N];
     System.arraycopy(puzzle, 0, this.puzzle, 0, N*N);
     this.solution = new int[N*N];
@@ -61,6 +67,19 @@ public class Sudoku {
   public int get(int row, int col) {
     if (row < 0 || row >= N || col < 0 || col >= N) throw new ArrayIndexOutOfBoundsException();
     return puzzle[row*N+col];
+  }
+  
+  public TerminatedIterator<Entry> nonZeroIterator() {
+    return new Coroutine<Entry>() {
+      public void init() {
+        for (int row = 0; row < N; row++) {
+          for (int col = 0; col < N; col++) {
+            int val = puzzle[N*row + col];
+            if (val != 0) yield(new Entry(row, col, val));
+          }
+        }
+      }
+    }.iterator();
   }
   
   public int get(Pair<Integer> pair) {
@@ -93,13 +112,17 @@ public class Sudoku {
     return getSolution(coord.first, coord.second);
   }
   
+  public List<Pair<Integer>> getNeighbors(Pair<Integer> pair) {
+    return getNeighbors(pair.first, pair.second);
+  }
+  
   public List<Pair<Integer>> getNeighbors(int row, int col) {
     ArrayList<Pair<Integer>> neighbors = new ArrayList<Pair<Integer>>();
-    Pair<Integer> blockInfo = fromIdxToBlockIdx(N, root, row, col);
+    Pair<Integer> blockInfo = fromIdxToBlockIdx(N, order, row, col);
     for (int i = 0; i < N; i++) {
       if (i != row) neighbors.add(new Pair<Integer>(i, col));
       if (i != col) neighbors.add(new Pair<Integer>(row, i));
-      if (i != blockInfo.second) neighbors.add(fromBlockIdxToIdx(N, root, blockInfo.first, i));
+      if (i != blockInfo.second) neighbors.add(fromBlockIdxToIdx(N, order, blockInfo.first, i));
     }
     return neighbors;
   }
@@ -155,15 +178,12 @@ public class Sudoku {
   
   public static class Builder {
     public final int N;
-    public final int root;
+    public final int order;
     private int[] puzzle;
 
-    public Builder(int N) {
-      this.N = N;
-      this.root = (int)Math.sqrt(N);
-      if (root*root != N) {
-        throw new RuntimeException("Puzzle size must be a perfect square.");
-      }
+    public Builder(int order) {
+      this.order = order;
+      this.N = order*order;
       puzzle = new int[N*N];
     }
 
@@ -193,7 +213,7 @@ public class Sudoku {
             if (tracker2.get(val)) throw new RuntimeException("Invalid puzzle.");
             tracker2.set(val);
           }
-          Pair<Integer> pair = fromBlockIdxToIdx(N, root, row, col);
+          Pair<Integer> pair = fromBlockIdxToIdx(N, order, row, col);
           val = puzzle[pair.first*N + pair.second];
           if (val != 0) {
             if (tracker3.get(val)) throw new RuntimeException("Invalid puzzle.");
@@ -205,7 +225,7 @@ public class Sudoku {
 
     public Sudoku build() throws ValidationException {
       validate();
-      return new Sudoku(N, root, puzzle);
+      return new Sudoku(order, puzzle);
     }
   }
   
@@ -243,6 +263,10 @@ public class Sudoku {
       this(pair.first, pair.second, val);
     }
     
+    public Entry(Pair<Integer> pair, String next) {
+      this(pair, Integer.parseInt(next));
+    }
+
     public String toString() {
       return name + " = " + val;
     }
@@ -255,7 +279,7 @@ public class Sudoku {
 
   public boolean isNeighbor(Pair<Integer> p1, Pair<Integer> p2) {
     if (p1.first.equals(p2.first) || p1.second.equals(p2.second)) return true;
-    if (p1.first / root == p2.first / root && p1.second / root == p2.second) return true; 
+    if (p1.first / order == p2.first / order && p1.second / order == p2.second) return true; 
     return false;
   }
   
@@ -266,6 +290,7 @@ public class Sudoku {
 
     boolean[] marked;
     int markCount;
+    TreeSet<Pair<Integer>> tapped;
     Stack<Romdd<Boolean>> stack;
     Stack<Romdd<Boolean>> backStack;
     
@@ -273,15 +298,104 @@ public class Sudoku {
       this.N = instance.N;
       this.instance = instance;
       this.dict = buildDictionary();
-      marked = new boolean[instance.N*instance.N];
-      initialize();
+      marked = new boolean[N*N];
+      initializeMarkings();
+      tapped = new TreeSet<Pair<Integer>>();
       backStack = Stack.<Romdd<Boolean>>emptyInstance();
       stack = backStack.push(Romdd.TRUE);
     }
     
     public void altSolve() {
-      ArrayList<Constraint> constraints = createConstraints();
-      
+      System.out.println("In alt solver.");
+      Romdd<Boolean> constraints = buildInitialConstraints();
+      System.out.println("Initial constraints complete.");
+
+      while (Romdd.TRUE.compareTo(constraints) != 0) {
+        System.out.println("Computing value tables");
+        Partition<ValueTable> tables = getValueTable(constraints);
+        System.out.println("Value tables computed");
+        if (tables.get(0).values.size() == 1) {
+          System.out.println("Found block.");
+          for (ValueTable table : tables.getBlock(0)) {
+            Entry fixed = new Entry(table.pair, table.values.iterator().next());
+            System.out.println(fixed);
+            instance.setSolution(fixed);
+            setMarked(fixed.row, fixed.col);
+  
+            constraints = constraints.restrict(fixed.row + "." + fixed.col, Integer.toString(fixed.val));
+  
+            Predicate.CollectionBuilder pBuilder = new Predicate.CollectionBuilder(CollectionType.AND);         
+            for (Pair<Integer> neighbor : instance.getNeighbors(fixed.row, fixed.col)) {
+              if (isMarked(neighbor)) continue;
+              pBuilder.add(new Predicate.Neg(buildAtom(neighbor, fixed.val)));
+            }
+            if (pBuilder.size() >= 1) {
+              constraints = Romdd.<Boolean>apply(Romdd.AND, constraints, pBuilder.build().toRomdd(dict));
+            }
+          }
+          tapped.clear();
+        } else {
+          System.out.println("Block not found.");
+          ValueTable table = null;
+          boolean found = false;
+          for (int next = 0; !found && next < tables.size(); ) {
+            table = tables.get(next);
+            if (tapped.contains(table.pair)) next++;
+            else found = true;
+          }
+          if (!found) throw new SolverException();
+          tapped.add(table.pair);
+          
+          System.out.println("Trying table " + table);
+          
+          Predicate.CollectionBuilder pBuilder = new Predicate.CollectionBuilder(CollectionType.AND);
+          for (Pair<Integer> neighbor : instance.getNeighbors(table.pair)) {
+            if (isMarked(neighbor)) continue;
+            for (String val : table.values) {
+              pBuilder.add(new Predicate.Neg(new Predicate.And(buildAtom(neighbor, val), buildAtom(neighbor, val))));
+            }
+          }
+          // System.out.println(constraints.listVarNames());
+        }
+      }
+    }
+    
+    Romdd<Boolean> buildInitialConstraints() {
+      Predicate.CollectionBuilder pBuilder = new Predicate.CollectionBuilder(CollectionType.AND);
+      TerminatedIterator<Entry> it = instance.nonZeroIterator();
+      while (it.hasNext()) {
+        Entry entry = it.next();
+        for (Pair<Integer> neighbor : instance.getNeighbors(entry.row, entry.col)) {
+          if (isMarked(neighbor)) continue;
+          pBuilder.add(new Predicate.Neg(buildAtom(neighbor, entry.val)));
+        }
+      }
+      return pBuilder.build().toRomdd(dict);      
+    }
+    
+    TerminatedIterator<Pair<Integer>> unmarkedIterator() {
+      return new Coroutine<Pair<Integer>>() {
+        public void init() {
+          for (int row = 0; row < N; row++) {
+            for (int col = 0; col < N; col++) {
+              if (isMarked(row, col)) continue;
+              yield(new Pair<Integer>(row, col));
+            }
+          }
+        }        
+      }.iterator();
+    }
+    
+    private Predicate.Atom buildAtom(Pair<Integer> pair, int val) {
+      return buildAtom(pair.first, pair.second, val);
+    }
+    
+    private Predicate.Atom buildAtom(Pair<Integer> pair, String val) {
+      return new Predicate.Atom(Integer.toString(pair.first), Integer.toString(pair.second), val);
+    }
+    
+    private Predicate.Atom buildAtom(int row, int col, int val) {
+      return new Predicate.Atom(Integer.toString(row), Integer.toString(col), Integer.toString(val));
     }
     
     ArrayList<Constraint> createConstraints() {
@@ -295,7 +409,7 @@ public class Sudoku {
             rowConstraint = Romdd.apply(Romdd.AND, rowConstraint, p.toRomdd(dict));
             p = createPairPredicate(new Pair<Integer>(c1, idx), new Pair<Integer>(c2, idx));
             colConstraint = Romdd.apply(Romdd.AND, colConstraint, p.toRomdd(dict));
-            p = createPairPredicate(fromBlockIdxToIdx(N, instance.root, idx, c1), fromBlockIdxToIdx(N, instance.root, idx, c2));
+            p = createPairPredicate(fromBlockIdxToIdx(N, instance.order, idx, c1), fromBlockIdxToIdx(N, instance.order, idx, c2));
             blockConstraint = Romdd.apply(Romdd.AND, blockConstraint, p.toRomdd(dict));
           }
         }
@@ -329,11 +443,10 @@ public class Sudoku {
 
     public void solve() throws SolverException {
       while (markCount < N*N-1) {  // we should be able to read the value of the last node
-        Integer fixed = findDetermined();
+        Entry fixed = findDetermined(stack.head());
         if (fixed != null) {
-System.out.println("The value of " + (fixed / N) + ", " + (fixed % N) + " was determined to be "
-    + stack.head().findChildrenReaching((fixed / N) + "." + (fixed % N), true));
-          eliminate(fixed / N, fixed % N);
+System.out.println("The value of " + fixed.row + ", " + fixed.col + " was determined to be " + fixed.val);
+          eliminate(fixed.row, fixed.col);
         } else {
           Pair<Integer> opt = findBestCandidate();
           eliminate(opt.first, opt.second);
@@ -478,25 +591,47 @@ System.out.println("vars after summation:      " + getVarString(summed));
       }
       return rv;
     }
+    
+    private static class ValueTable implements Comparable<ValueTable> {
+      public final Pair<Integer> pair;
+      public final TreeSet<String> values;
+      
+      public ValueTable(Pair<Integer> pair, TreeSet<String> values) {
+        this.pair = pair;
+        this.values = values;
+      }
+      
+      public int compareTo(ValueTable t) {
+        return values.size() - t.values.size();
+      }
+    }
+    
+    private Partition<ValueTable> getValueTable(Romdd<Boolean> tree) {
+      Partition.Builder<ValueTable> builder = Partition.<ValueTable>naturalBuilder();
+      for (TerminatedIterator<Pair<Integer>> it = unmarkedIterator(); it.hasNext(); ) {
+        Pair<Integer> next = it.next();
+        TreeSet<String> values = tree.findChildrenReaching(next.first + "." + next.second, true);
+        System.out.println("Possible values for " + next + " = " + values);
+        ValueTable table = new ValueTable(next, values);
+        builder.add(table);
+      }
+      return builder.build();
+    }
 
-    private Integer findDetermined() {
+    private Entry findDetermined(Romdd<Boolean> tree) {
       for (int row = 0; row < N; row++) {
         for (int col = 0; col < N; col++) {
           if (isMarked(row,col)) continue;
           
-          if (countPossibleValues(row, col, stack.head()) == 1) {
-            return N*row+col;
+          TreeSet<String> values = tree.findChildrenReaching(row + "." + col, true);
+          if (values.size() == 1) {
+            return new Entry(row, col, Integer.parseInt(values.iterator().next()));
           }
         }
       }
       return null;
     }
-    
-    // this could be an expensive operation
-    private int countPossibleValues(int row, int col, Romdd<Boolean> tree) {
-      return tree.findChildrenReaching(row + "." + col, true).size();
-    }
-    
+        
     private void setMarked(int i, int j) {
       setMarked(N*i + j);
     }
@@ -516,13 +651,11 @@ System.out.println("vars after summation:      " + getVarString(summed));
       return isMarked(pair.first, pair.second);
     }
     
-    void initialize() {  // initializes the markings
-      for (int i = 0; i < N; i++) {
-        for (int j = 0; j < N; j++) {
-          int val = instance.get(i,j);
-          if (val == 0) continue;
-          setMarked(i,j);
-        }
+    void initializeMarkings() {  // initializes the markings
+      TerminatedIterator<Entry> it = instance.nonZeroIterator();
+      while (it.hasNext()) {
+        Entry e = it.next();
+        setMarked(e.row, e.col);
       }
     }
     

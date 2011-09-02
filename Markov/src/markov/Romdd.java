@@ -112,6 +112,23 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
   
   void recurseVarNames(TreeSet<String> accu) {}
   
+  public static class LabeledNode<T extends Comparable<? super T>> {
+    public final String label;
+    public final Romdd<T> node;
+
+    public LabeledNode(String label, Romdd<T> node) {
+      this.label = label;
+      this.node = node;
+    }
+  }
+  
+  public static class LabeledNodeComparator<T extends Comparable<? super T>> implements Comparator<LabeledNode<T>> {
+    public LabeledNodeComparator() {}
+    public int compare(LabeledNode<T> arg0, LabeledNode<T> arg1) {
+      return arg0.node.compareTo(arg1.node);
+    }
+  }
+  
   public TreeSet<String> findChildrenReaching(final String varName, final T value) {
     final TreeSet<String> rv = new TreeSet<String>();
     final class Finder {
@@ -127,27 +144,41 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
             cache.add(node);
 
             if (node.alpha.name.equals(varName)) {
-              for (int i = 0; i < node.alpha.size(); i++) {
-                isValueReachable(node.alpha.get(i), node.getChild(i));
+              Partition<LabeledNode<T>> childPartition = node.computeChildPartition();
+              for (Partition<LabeledNode<T>>.Block block : childPartition) {
+                TreeSet<String> labels = new TreeSet<String>();
+                for (LabeledNode<T> ln : block) {
+                  labels.add(ln.label);
+                }
+                isValueReachable(labels, block.get(0).node);
               }
             } else {
+              Partition.Builder<Romdd<T>> builder = Partition.<Romdd<T>>naturalBuilder();
               for (Romdd<T> child : node) {
-                findVar(child);
+                builder.add(child);
+              }
+              for (Partition<Romdd<T>>.Block block : builder.build()) {
+                findVar(block.get(0));
               }
             }
           }
         });
       }
-      void isValueReachable(final String choice, Romdd<T> next) {
+      void isValueReachable(final TreeSet<String> choice, Romdd<T> next) {
         next.accept(new Visitor<T>() {
           public void visitTerminal(Terminal<T> term) {
             if (term.output.equals(value)) {
-              rv.add(choice);
+              rv.addAll(choice);
             }
           }
           public void visitNode(Node<T> node) {
+            Partition.Builder<Romdd<T>> builder = Partition.<Romdd<T>>naturalBuilder();
             for (Romdd<T> child : node) {
-              isValueReachable(choice, child);
+              builder.add(child);
+            }
+            Partition<Romdd<T>> part = builder.build();
+            for (Partition<Romdd<T>>.Block block : part) {
+              isValueReachable(choice, block.get(0));
             }
           }
         });
@@ -386,6 +417,14 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
     public Romdd<T> getChild(int i) { return children.get(i); }
     public int getSize() { return alpha.size(); }
     public Iterator<Romdd<T>> iterator() { return children.iterator(); }
+
+    public Partition<LabeledNode<T>> computeChildPartition() {
+      Partition.Builder<LabeledNode<T>> builder = new Partition.Builder<LabeledNode<T>>(new LabeledNodeComparator<T>());
+      for (int i = 0; i < alpha.size(); i++) {
+        builder.add(new LabeledNode<T>(alpha.get(i), children.get(i)));
+      }
+      return builder.build();
+    }
     
     public void accept(Visitor<T> visitor) { visitor.visitNode(this); }
     
