@@ -17,60 +17,57 @@ public abstract class DecisionTree<T extends Comparable<? super T>> {
   public abstract void accept(Visitor<T> visitor);
   public abstract <S> S accept(VisitorRv<T,S> visitor);
   
-  public Romdd<T> toRomdd(Dictionary dict) {
-    return Romdd.<T>build(new Evaluation<T>(dict, this));
-  }
+  public abstract Romdd<T> toRomdd(Dictionary dict);
   
   public TerminatedIterator<Predicate.Atom> atomIterator() {
-    return new AtomIterator<T>(this).iterator();
+    class AtomIterator extends Coroutine<Predicate.Atom> {
+      public final DecisionTree<T> root;
+      
+      public AtomIterator(DecisionTree<T> root) {
+        this.root = root;
+      }
+      public void init() {
+        recurseDecision(root);
+      }
+      private void recurseDecision(DecisionTree<T> tree) {
+        tree.accept(new Visitor<T>() {
+          public void visitTerminal(Terminal<T> t) { }
+          public void visitBranch(Branch<T> t) {
+            recursePredicate(t.predicate);
+            recurseDecision(t.alternative);
+            recurseDecision(t.consequent);
+          }
+        });      
+      }
+      public void recursePredicate(Predicate pred) {
+        pred.accept(new Predicate.Visitor() {
+          public void visitCollection(CollectionPredicate predicate) {
+            for (Predicate child : predicate) {
+              recursePredicate(child);
+            }
+          }
+          public void visitAnd(And predicate) {
+            visitCollection(predicate);
+          }
+          public void visitOr(Or predicate) {
+            visitCollection(predicate);
+          }
+          public void visitNeg(Neg predicate) {
+            recursePredicate(predicate.subject);
+          }
+          public void visitImplies(Implies predicate) {
+            recursePredicate(predicate.antecedent);
+            recursePredicate(predicate.consequent);
+          }
+          public void visitAtom(Atom predicate) {
+            yield(predicate);
+          }
+        });
+      }
+    }
+    return new AtomIterator(this).iterator();
   }
   
-  private static class AtomIterator<T extends Comparable<? super T>> extends Coroutine<Predicate.Atom> {
-    public final DecisionTree<T> root;
-    
-    public AtomIterator(DecisionTree<T> root) {
-      this.root = root;
-    }
-    public void init() {
-      recurseDecision(root);
-    }
-    private void recurseDecision(DecisionTree<T> tree) {
-      tree.accept(new Visitor<T>() {
-        public void visitTerminal(Terminal<T> t) { }
-        public void visitBranch(Branch<T> t) {
-          recursePredicate(t.predicate);
-          recurseDecision(t.alternative);
-          recurseDecision(t.consequent);
-        }
-      });      
-    }
-    public void recursePredicate(Predicate pred) {
-      pred.accept(new Predicate.Visitor() {
-        public void visitCollection(CollectionPredicate predicate) {
-          for (Predicate child : predicate) {
-            recursePredicate(child);
-          }
-        }
-        public void visitAnd(And predicate) {
-          visitCollection(predicate);
-        }
-        public void visitOr(Or predicate) {
-          visitCollection(predicate);
-        }
-        public void visitNeg(Neg predicate) {
-          recursePredicate(predicate.subject);
-        }
-        public void visitImplies(Implies predicate) {
-          recursePredicate(predicate.antecedent);
-          recursePredicate(predicate.consequent);
-        }
-        public void visitAtom(Atom predicate) {
-          yield(predicate);
-        }
-      });
-    }
-  }
-
   public static class Branch<T extends Comparable<? super T>> extends DecisionTree<T> {
     public final Predicate predicate;
     public final DecisionTree<T> consequent;
@@ -89,6 +86,10 @@ public abstract class DecisionTree<T extends Comparable<? super T>> {
     
     public<S> S accept(VisitorRv<T,S> visitor) {
       return visitor.visitBranch(this);
+    }
+    
+    public Romdd<T> toRomdd(Dictionary dict) {
+      return Romdd.<T>branch(predicate.toRomdd(dict), consequent.toRomdd(dict), alternative.toRomdd(dict)); 
     }
     
     public String toString() {
@@ -117,6 +118,10 @@ public abstract class DecisionTree<T extends Comparable<? super T>> {
     
     public Terminal(T output) {
       this.output = output;
+    }
+    
+    public Romdd<T> toRomdd(Dictionary dict) {
+      return new Romdd.Terminal<T>(output);
     }
     
     public void accept(Visitor<T> visitor) {
