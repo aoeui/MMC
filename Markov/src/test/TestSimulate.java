@@ -9,11 +9,10 @@ import java.util.TreeMap;
 import java.util.Map.Entry;
 
 import markov.DecisionTree;
-import markov.Evaluation;
 import markov.FractionProbability;
 import markov.Machine;
 import markov.Net;
-import markov.Predicate;
+import markov.Romdd;
 import markov.State;
 import markov.TransitionMatrix;
 import markov.TransitionVector;
@@ -55,9 +54,7 @@ public class TestSimulate {
     while (itrAState.hasNext()){
       State<FractionProbability> Astate =itrAState.next();
       DecisionTree<TransitionVector<FractionProbability>> decisionTreeA=Astate.getTransitionFunction();
-      Evaluation<TransitionVector<FractionProbability>> eva=new Evaluation<TransitionVector<FractionProbability>>(net.dictionary,decisionTreeA);
-      Evaluation<TransitionVector<FractionProbability>>.Evaluator root=eva.root;
-
+      Romdd<TransitionVector<FractionProbability>> eva=decisionTreeA.toRomdd(net.dictionary);
       
       Iterator<State<FractionProbability>> itrBState= machineB.iterator();
       while(itrBState.hasNext()){
@@ -67,39 +64,37 @@ public class TestSimulate {
         while(itrLabel.hasNext()){
           String labelName=itrLabel.next();
           String instance=Bstate.getLabel(labelName);
-          Predicate.Atom atom=new Predicate.Atom(machineBName,labelName,instance);
-          root=root.restrict(atom);      
+          eva=eva.restrict(machineBName + "." + labelName, instance);      
         }
-        
-        final Ptr<TransitionVector<FractionProbability>> ptrA=new Ptr<TransitionVector<FractionProbability>>();
-        root.accept(new Evaluation.Visitor<TransitionVector<FractionProbability>>() {
 
-          public void visitTerminal(Evaluation<TransitionVector<FractionProbability>>.Terminal term) {
+        final Ptr<TransitionVector<FractionProbability>> ptrA=new Ptr<TransitionVector<FractionProbability>>();
+        eva.accept(new Romdd.Visitor<TransitionVector<FractionProbability>>() {
+
+          public void visitTerminal(Romdd.Terminal<TransitionVector<FractionProbability>> term) {
             ptrA.value=term.output;
           }
 
-          public void visitWalker(Evaluation<TransitionVector<FractionProbability>>.Walker walker) {
+          public void visitNode(Romdd.Node<TransitionVector<FractionProbability>> walker) {
             ptrA.value=null;
             System.err.println("End up in walker!!");
           }
         });
         
-        Evaluation<TransitionVector<FractionProbability>>.Evaluator rootB=(new Evaluation<TransitionVector<FractionProbability>>(net.dictionary,Bstate.getTransitionFunction())).root;
+        Romdd<TransitionVector<FractionProbability>> rootB=Bstate.getTransitionFunction().toRomdd(net.dictionary);
         itrLabel=Astate.labelNameIterator();
         while(itrLabel.hasNext()){
           String labelName=itrLabel.next();
           String instance=Astate.getLabel(labelName);
-          Predicate.Atom atom=new Predicate.Atom(machineAName,labelName,instance);
-          rootB=rootB.restrict(atom);      
+          rootB=rootB.restrict(machineAName +"." + labelName, instance);      
         }
         final Ptr<TransitionVector<FractionProbability>> ptrB=new Ptr<TransitionVector<FractionProbability>>();
-        rootB.accept(new Evaluation.Visitor<TransitionVector<FractionProbability>>() {
+        rootB.accept(new Romdd.Visitor<TransitionVector<FractionProbability>>() {
 
-          public void visitTerminal(Evaluation<TransitionVector<FractionProbability>>.Terminal term) {
+          public void visitTerminal(Romdd.Terminal<TransitionVector<FractionProbability>> term) {
             ptrB.value=term.output;
           }
 
-          public void visitWalker(Evaluation<TransitionVector<FractionProbability>>.Walker walker) {
+          public void visitNode(Romdd.Node<TransitionVector<FractionProbability>> walker) {
             ptrB.value=null;
             System.err.println("End up in walker!!");
           }

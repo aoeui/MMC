@@ -100,13 +100,13 @@ public class Simulation {
     String combinedStateName="empty";
     
     for (int machineCounter=0;machineCounter<machineName.size();machineCounter++){
-      ArrayList<State<FractionProbability>> stateCopy=(ArrayList<State<FractionProbability>>) states.clone();
-      ArrayList<String> machineNameCopy=(ArrayList<String>) machineName.clone();
+      ArrayList<State<FractionProbability>> stateCopy= new ArrayList<State<FractionProbability>>(states);
+      ArrayList<String> machineNameCopy=new ArrayList<String>(machineName);
       
       State<FractionProbability> Astate =states.get(machineCounter);
       DecisionTree<TransitionVector<FractionProbability>> decisionTreeA=Astate.getTransitionFunction();
-      Evaluation<TransitionVector<FractionProbability>> eva=new Evaluation<TransitionVector<FractionProbability>>(dictionary,decisionTreeA);
-      Evaluation<TransitionVector<FractionProbability>>.Evaluator root=eva.root;
+      Romdd<TransitionVector<FractionProbability>> eva = decisionTreeA.toRomdd(dictionary);
+      Romdd<TransitionVector<FractionProbability>> root = eva;
       
       stateCopy.remove(machineCounter);
       machineNameCopy.remove(machineCounter);
@@ -117,19 +117,18 @@ public class Simulation {
         while(itrLabel.hasNext()){
           String labelName=itrLabel.next();
           String instance=s.getLabel(labelName);
-          Predicate.Atom atom=new Predicate.Atom(machineNameCopy.get(i),labelName,instance);
-          root=root.restrict(atom);      
+          root=root.restrict(machineNameCopy.get(i) + "." + labelName, instance);
         }
       }
       
       final Ptr<TransitionVector<FractionProbability>> ptr=new Ptr<TransitionVector<FractionProbability>>();
-      root.accept(new Evaluation.Visitor<TransitionVector<FractionProbability>>() {
+      root.accept(new Romdd.Visitor<TransitionVector<FractionProbability>>() {
 
-        public void visitTerminal(Evaluation<TransitionVector<FractionProbability>>.Terminal term) {
+        public void visitTerminal(Romdd.Terminal<TransitionVector<FractionProbability>> term) {
           ptr.value=term.output;
         }
 
-        public void visitWalker(Evaluation<TransitionVector<FractionProbability>>.Walker walker) {
+        public void visitNode(Romdd.Node<TransitionVector<FractionProbability>> walker) {
           ptr.value=null;
           System.err.println("End up in walker!!");
         }
