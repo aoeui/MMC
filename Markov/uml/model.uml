@@ -25,58 +25,24 @@
   </packagedElement>
   <packagedElement xmi:type="uml:Activity" xmi:id="_ZTnMcNRKEeCR3pl-M5027g" name="MPatient:ICP">
     <node xmi:type="uml:OpaqueAction" xmi:id="_CeH7ENRNEeCR3pl-M5027g" name="InitLow" outgoing="_nbzHwNRNEeCR3pl-M5027g _obC-QNRNEeCR3pl-M5027g _phxVwNRNEeCR3pl-M5027g _tcF2QNRNEeCR3pl-M5027g _Pyl6cNRQEeCR3pl-M5027g" incoming="_Pyl6cNRQEeCR3pl-M5027g">
-      <body>labelCost=M;
-labelPatient=G;
-labelICP=A;</body>
-      <body>if MPatient:Lung.Condition=S then
-  p[InitlLow]=6/10, p[High]=14/100, p[Dead]=6/100, p[Exit]=2/10
-else
-    if MPatient:Lung.Condition=B then
-      p[InitLow]=62/100, p[High]=12/100, p[Dead]=6/100, p[Exit]=2/10
-    else
-       p[InitLow]=65/100, p[High]=1/10, p[Dead]=5/100, p[Exit]=2/10
-    end if
-end if</body>
+      <body>labelCost=M;&#xA;labelPatient=G;&#xA;labelICP=A;</body>
+      <body>if MPatient:Lung.Condition=S then&#xA;  p[InitLow]=6/10, p[High]=14/100, p[Dead]=6/100, p[Exit]=2/10&#xA;else&#xA;    if MPatient:Lung.Condition=B then&#xA;      p[InitLow]=62/100, p[High]=12/100, p[Dead]=6/100, p[Exit]=2/10&#xA;    else&#xA;       p[InitLow]=65/100, p[High]=1/10, p[Dead]=5/100, p[Exit]=2/10&#xA;    end if&#xA;end if</body>
     </node>
     <node xmi:type="uml:OpaqueAction" xmi:id="_H_1QINRNEeCR3pl-M5027g" name="High" outgoing="_vx2zwNRNEeCR3pl-M5027g _widKQNRNEeCR3pl-M5027g _KnUvcNRQEeCR3pl-M5027g" incoming="_obC-QNRNEeCR3pl-M5027g _pZGQANRPEeCR3pl-M5027g _KnUvcNRQEeCR3pl-M5027g">
-      <body>labelCost=H;
-labelPatient=B;
-labelICP=B;</body>
-      <body>if MPatient:Lung.Condition=S then
-  p[High]=52/100, p[Low]=3/10, p[Dead]=18/100
-else
-    if MPatient:Lung.Condition=B then
-      p[High]=51/100, p[Low]=33/100, p[Dead]=16/100
-    else
-         p[High]=5/10, p[Low]=35/100, p[Dead]=15/100
-    end if
-end if</body>
+      <body>labelCost=H;&#xA;labelPatient=B;&#xA;labelICP=B;</body>
+      <body>if MPatient:Lung.Condition=S then&#xA;  p[High]=52/100, p[Low]=3/10, p[Dead]=18/100&#xA;else&#xA;    if MPatient:Lung.Condition=B then&#xA;      p[High]=51/100, p[Low]=33/100, p[Dead]=16/100&#xA;    else&#xA;         p[High]=5/10, p[Low]=35/100, p[Dead]=15/100&#xA;    end if&#xA;end if</body>
     </node>
     <node xmi:type="uml:OpaqueAction" xmi:id="_MBxbkNRNEeCR3pl-M5027g" name="Exit" outgoing="_d1o-cNRQEeCR3pl-M5027g" incoming="_phxVwNRNEeCR3pl-M5027g _A2GtANRQEeCR3pl-M5027g _d1o-cNRQEeCR3pl-M5027g">
-      <body>labelCost=L;
-labelPatient=G;
-labelICP=E;</body>
+      <body>labelCost=L;&#xA;labelPatient=G;&#xA;labelICP=E;</body>
       <body>p[Exit]=1</body>
     </node>
     <node xmi:type="uml:OpaqueAction" xmi:id="_NmtZENRNEeCR3pl-M5027g" name="Dead" outgoing="_YXwZcNRQEeCR3pl-M5027g" incoming="_tcF2QNRNEeCR3pl-M5027g _widKQNRNEeCR3pl-M5027g __K1eANRPEeCR3pl-M5027g _YXwZcNRQEeCR3pl-M5027g">
-      <body>labelCost=H;
-labelPatient=NA;
-labelICP=D;</body>
+      <body>labelCost=H;&#xA;labelPatient=NA;&#xA;labelICP=D;</body>
       <body>p[Dead]=1</body>
     </node>
     <node xmi:type="uml:OpaqueAction" xmi:id="_hpSWkNRNEeCR3pl-M5027g" name="Low" outgoing="_pZGQANRPEeCR3pl-M5027g __K1eANRPEeCR3pl-M5027g _A2GtANRQEeCR3pl-M5027g _iFseYNRQEeCR3pl-M5027g" incoming="_nbzHwNRNEeCR3pl-M5027g _vx2zwNRNEeCR3pl-M5027g _iFseYNRQEeCR3pl-M5027g">
-      <body>labelCost=M;
-labelPatient=G;
-labelICP=C;</body>
-      <body>if MPatient:Lung.Condition=S then
-  p[High]=8/100, p[Low]=48/100, p[Dead]=7/100, p[Exit]=37/100
-else
-    if MPatient:Lung.Condition=B then
-      p[High]=6/100, p[Low]=49/100, p[Dead]=6/100, p[Exit]=39/100
-    else
-         p[High]=5/100, p[Low]=5/10, p[Dead]=5/100, p[Exit]=4/10
-    end if
-end if</body>
+      <body>labelCost=M;&#xA;labelPatient=G;&#xA;labelICP=C;</body>
+      <body>if MPatient:Lung.Condition=S then&#xA;  p[High]=8/100, p[Low]=48/100, p[Dead]=7/100, p[Exit]=37/100&#xA;else&#xA;    if MPatient:Lung.Condition=B then&#xA;      p[High]=6/100, p[Low]=49/100, p[Dead]=6/100, p[Exit]=39/100&#xA;    else&#xA;         p[High]=5/100, p[Low]=5/10, p[Dead]=5/100, p[Exit]=4/10&#xA;    end if&#xA;end if</body>
     </node>
     <edge xmi:type="uml:ControlFlow" xmi:id="_nbzHwNRNEeCR3pl-M5027g" name="" source="_CeH7ENRNEeCR3pl-M5027g" target="_hpSWkNRNEeCR3pl-M5027g"/>
     <edge xmi:type="uml:ControlFlow" xmi:id="_obC-QNRNEeCR3pl-M5027g" name="" source="_CeH7ENRNEeCR3pl-M5027g" target="_H_1QINRNEeCR3pl-M5027g"/>

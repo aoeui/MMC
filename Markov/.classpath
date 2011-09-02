@@ -4,5 +4,6 @@
 	<classpathentry kind="src" path="antlr-generated"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="antlr-3.4-complete.jar"/>
+	<classpathentry kind="lib" path="jamtio.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
