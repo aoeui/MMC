@@ -68,7 +68,7 @@ public class Partition<T> implements Iterable<Partition<T>.Block> {
       this.end = end;
     }
     
-    public int size() { return end - start; }
+    public int size() { return 1 + end - start; }
     public T get(int i) { return elements.get(i+start); }
     
     public Iterator<T> iterator() {
