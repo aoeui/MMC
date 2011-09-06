@@ -3,6 +3,7 @@ package markov;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -135,7 +136,7 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
     final TreeSet<String> rv = new TreeSet<String>();
     final class Finder {
       final TreeSet<Node<T>> cache1 = new TreeSet<Node<T>>();
-      final TreeMap<String,TreeSet<Node<T>>> cache2 = new TreeMap<String,TreeSet<Node<T>>>();
+      final HashMap<String,TreeSet<Node<T>>> cache2 = new HashMap<String,TreeSet<Node<T>>>();
       void find() {
         findVar(Romdd.this);
       }
@@ -147,57 +148,35 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
             cache1.add(node);
 
             if (node.alpha.name.equals(varName)) {
-              Partition<LabeledNode<T>> childPartition = node.computeChildPartition();
-              for (Partition<LabeledNode<T>>.Block block : childPartition) {
-                TreeSet<String> labels = new TreeSet<String>();
-                for (LabeledNode<T> ln : block) {
-                  labels.add(ln.label);
-                }
-                isValueReachable(labels, block.get(0).node);
+              for (int i = 0; i < node.alpha.size(); i++) {
+                isValueReachable(node.alpha.get(i), node.getChild(i));
               }
             } else {
-              Partition.Builder<Romdd<T>> builder = Partition.<Romdd<T>>naturalBuilder();
               for (Romdd<T> child : node) {
-                builder.add(child);
-              }
-              for (Partition<Romdd<T>>.Block block : builder.build()) {
-                findVar(block.get(0));
+                findVar(child);
               }
             }
           }
         });
       }
-      void isValueReachable(final TreeSet<String> choice, Romdd<T> next) {
+      void isValueReachable(final String choice, Romdd<T> next) {
         next.accept(new Visitor<T>() {
           public void visitTerminal(Terminal<T> term) {
             if (term.output.equals(value)) {
-              rv.addAll(choice);
+              rv.add(choice);
             }
           }
           public void visitNode(Node<T> node) {
-            boolean foundNovel = false;
-            for (String str : choice) {
-              TreeSet<Node<T>> set = cache2.get(str);
-              if (set == null) {
-                set = new TreeSet<Node<T>>();
-                set.add(node);
-                cache2.put(str, set);
-                foundNovel = true;
-              } else {
-                if (!set.contains(node)) {
-                  foundNovel = true;
-                  set.add(node);
-                }
+            TreeSet<Node<T>> set = cache2.get(choice);
+            if (set == null) {
+              set = new TreeSet<Node<T>>();
+              cache2.put(choice, set);
+            }
+            if (!set.contains(node)) {
+              set.add(node);
+              for (Romdd<T> child : node) {
+                isValueReachable(choice, child);
               }
-            }
-            if (!foundNovel) return;
-            Partition.Builder<Romdd<T>> builder = Partition.<Romdd<T>>naturalBuilder();
-            for (Romdd<T> child : node) {
-              builder.add(child);
-            }
-            Partition<Romdd<T>> part = builder.build();
-            for (Partition<Romdd<T>>.Block block : part) {
-              isValueReachable(choice, block.get(0));
             }
           }
         });
@@ -294,16 +273,8 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
     return new Application(op, f, g).apply();
   }
   
-  public Romdd<T> sum(Op<T> op, String varName) {
+  public Romdd<T> sum(final Op<T> operation, final String varName) {
     final class Summation extends RomddCacher<T> {
-      public final Op<T> operation;
-      public final String varName;
-      
-      public Summation(Op<T> operation, String varName) {
-        this.operation = operation;
-        this.varName = varName;        
-      }
-
       public Romdd<T> compute() {
         final Ptr<Romdd<T>> rvPtr = new Ptr<Romdd<T>>();
         accept(new Visitor<T>() {
@@ -380,21 +351,12 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
         return children.isAllSame() ? children.get(0) : checkCache(new Node<T>(alpha, children));
       }
     }
-    return new Summation(op, varName).compute();
+    return new Summation().compute();
   }
 
-  public Romdd<T> restrict(String varName, String value) {
-    class Restriction extends RomddCacher<T> {
-      public final String varName;
-      public final String value;
-      
-      TreeMap<Node<T>, Romdd<T>> map;
-            
-      public Restriction(String varName, String value) {
-        this.varName = varName;
-        this.value = value;
-        map = new TreeMap<Node<T>, Romdd<T>>();
-      }
+  public Romdd<T> restrict(final String varName, final String value) {
+    class Restriction extends RomddCacher<T> {      
+      TreeMap<Node<T>, Romdd<T>> map = new TreeMap<Node<T>, Romdd<T>>();
       
       public Romdd<T> build() {
         return recurse(Romdd.this);
@@ -409,21 +371,11 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
               if (node.getName().equals(varName)) {
                 rvPtr.value = recurse(node.getChild(node.alpha.indexOf(value)));
               } else {
-                boolean isAllSame = true;
-                Romdd<T> prototype = null;
-                TreeMap<String, Romdd<T>> children = new TreeMap<String,Romdd<T>>();              
-                for (Partition<LabeledNode<T>>.Block block : node.computeChildPartition()) {
-                  Romdd<T> child = recurse(block.get(0).node);
-                  if (prototype == null) {
-                    prototype = child;
-                  } else if (isAllSame && !(prototype.compareTo(child) == 0)){
-                    isAllSame = false;
-                  }
-                  for (LabeledNode<T> lNode : block) {
-                    children.put(lNode.label, child);
-                  }
+                DiffTrackingArrayList<Romdd<T>> children = new DiffTrackingArrayList<Romdd<T>>();
+                for (Romdd<T> child : node) {
+                  children.add(recurse(child));
                 }
-                rvPtr.value = isAllSame ? children.get(0) : checkCache(new Node<T>(node.alpha,children.values()));
+                rvPtr.value = children.isAllSame() ? children.get(0) : checkCache(new Node<T>(node.alpha,children));
               }
               map.put(node, rvPtr.value);
             }
@@ -435,7 +387,7 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
         return rvPtr.value;
       }
     }
-    return new Restriction(varName, value).build();
+    return new Restriction().build();
   }
 
   public static class Node<T extends Comparable<? super T>> extends Romdd<T> implements Iterable<Romdd<T>> {

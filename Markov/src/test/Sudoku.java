@@ -29,7 +29,17 @@ public class Sudoku {
   private int[] puzzle;
 
   public static void main(String[] args) throws IOException { 
-    Sudoku puzzle = parse(new BufferedReader(new FileReader(args[0])));
+    long begin = System.nanoTime();
+    for (String name : args) {
+      solve(name);
+    }
+    double elapsed = ((double)(System.nanoTime()-begin))/1e9;
+    System.out.println("Time taken = " + elapsed);
+    System.exit(0);
+  }
+  
+  public static void solve(String fileName) throws IOException {
+    Sudoku puzzle = parse(new BufferedReader(new FileReader(fileName)));
     Solver solver = new Solver(puzzle);
     Solver rv = solver.solve();
     if (rv != null) {
@@ -37,8 +47,8 @@ public class Sudoku {
       System.out.println("Verified = " + rv.verifySolution());
     } else {
       System.out.println("Solver failed, inconsistent problem suspected.");
+      System.out.println(puzzle);
     }
-    System.exit(0);
   }
   
   public static Sudoku parse(BufferedReader reader) throws IOException {
@@ -49,8 +59,10 @@ public class Sudoku {
     for (int i = 0; i < N; i++) {
       String[] nums = reader.readLine().split("\\s+");
       for (int j = 0; j < N; j++) {
-        int val = Integer.parseInt(nums[j]);
-        if (val != 0) builder.set(i, j, val);
+        try {
+          int val = Integer.parseInt(nums[j]);
+          if (val != 0) builder.set(i, j, val);
+        } catch (Exception e) {}
       }
     }
     return builder.build();
@@ -92,7 +104,7 @@ public class Sudoku {
   public List<Pair<Integer>> getNeighbors(Pair<Integer> pair) {
     return getNeighbors(pair.first, pair.second);
   }
-  
+
   public List<Pair<Integer>> getNeighbors(int row, int col) {
     ArrayList<Pair<Integer>> neighbors = new ArrayList<Pair<Integer>>();
     Pair<Integer> blockInfo = fromIdxToBlockIdx(order, row, col);
@@ -323,6 +335,7 @@ public class Sudoku {
         ValueTable table = tables.get(0);
         for (String val : table.values) {
           Solver subSolver = new Solver(this);
+          // System.out.println("Speculating");
           subSolver.instantiate(new Entry(table.pair, val));
           Solver rv = subSolver.solve();
           if (rv != null) return rv;
@@ -336,9 +349,9 @@ public class Sudoku {
        setSolution(fixed);
        setMarked(fixed.row, fixed.col);
     
-       System.out.print("restricting " + fixed);
+       // System.out.print("restricting " + fixed);
        constraints = constraints.restrict(fixed.row + "." + fixed.col, Integer.toString(fixed.val));
-       System.out.println(" complete");
+       // System.out.println(" complete");
     
        Predicate.CollectionBuilder pBuilder = new Predicate.CollectionBuilder(CollectionType.AND);
        for (Pair<Integer> neighbor : instance.getNeighbors(fixed.row, fixed.col)) {
@@ -347,25 +360,25 @@ public class Sudoku {
        }
        if (pBuilder.size() >= 1) {
          Predicate prop = pBuilder.build();
-         System.out.println("Propagating constraints " + prop);
+         // System.out.println("Propagating constraints " + prop);
          constraints = Romdd.<Boolean>apply(Romdd.AND, constraints, prop.toRomdd(dict));
        }
     }
     
     public boolean deduce() {
-      System.out.println("In deduce().");
+      // System.out.println("In deduce().");
       boolean stuck = false;
       while (!stuck && !constraints.isTerminal()) {
-        System.out.println("Computing value tables");
+        //System.out.println("Computing value tables");
         Partition<ValueTable> tables = getValueTable(constraints);
-        System.out.println("Value tables computed");
+        //System.out.println("Value tables computed");
         if (tables.get(0).values.size() == 1) {
-          System.out.println("Found " + tables.getBlock(0).size() +  " inferrable " + (tables.getBlock(0).size() > 1 ? "values." : "value."));
+          // System.out.println("Found " + tables.getBlock(0).size() +  " inferrable " + (tables.getBlock(0).size() > 1 ? "values." : "value."));
           for (ValueTable table : tables.getBlock(0)) {
             instantiate(new Entry(table.pair, table.values.iterator().next()));
           }
         } else {
-          System.out.println("No inferrable values found.");
+          // System.out.println("No inferrable values found.");
           stuck = true;
         }
       }
@@ -454,7 +467,7 @@ public class Sudoku {
       for (TerminatedIterator<Pair<Integer>> it = unmarkedIterator(); it.hasNext(); ) {
         Pair<Integer> next = it.next();
         TreeSet<String> values = tree.findChildrenReaching(next.first + "." + next.second, true);
-        System.out.println("Possible values for " + next + " = " + values);
+        // System.out.println("Possible values for " + next + " = " + values);
         ValueTable table = new ValueTable(next, values);
         builder.add(table);
       }
