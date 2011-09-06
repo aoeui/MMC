@@ -29,85 +29,90 @@ public class XmlParser {
       }
       
       /****** This method can be used in other class to retrieve machines **********/
-      public static Net<FractionProbability> XmlInput(String fileName) {
-          try {
-
-              //Read in XML file
-              DocumentBuilderFactory dbfac = DocumentBuilderFactory.newInstance();
-              DocumentBuilder docBuilder = dbfac.newDocumentBuilder();
-              Document doc = docBuilder.parse(fileName);
-
-              doc.getDocumentElement().normalize();
-              
-//              System.out.println("Root element :" + doc.getDocumentElement().getNodeName());
-              NodeList machineList = doc.getElementsByTagName("machine");
-             
-              Net.Builder<FractionProbability> netBuild=new Net.Builder<FractionProbability>();
-              
-              for (int i=0; i<machineList.getLength(); i++){
-                
-                Element machineXml = (Element) machineList.item(i);
-                
-//                System.out.println("-----------------------");
-//                System.out.println("MachineeName : " + machineXml.getAttribute("name") );
-                
-                Machine.Builder<FractionProbability> machineBuild = new Machine.Builder<FractionProbability>(machineXml.getAttribute("name"));
-                ArrayList<String> labelName=new ArrayList<String>();
-                
-                NodeList stateList = machineXml.getElementsByTagName("state");
-                
-                for (int j=0; j<stateList.getLength(); j++){
-                   
-                  Element stateXml = (Element) stateList.item(j);
-//                  System.out.println("  StateName : " + stateXml.getAttribute("name") );
-                              
-                  NodeList labels=stateXml.getChildNodes().item(0).getChildNodes();
-
-                  
-/*                  for (int temp=0; temp<labels.getLength();temp++)
-                  {
-                    if (labels.item(temp).getNodeName().equals("labelPair")) {
-                      Element labelVector=(Element) labels.item(temp);
-                      System.out.println("    LabelVector: [" + labelVector.getAttribute("name") + ":"+ labelVector.getChildNodes().item(0).getChildNodes().item(0).getNodeValue()+"]" );
-                    }
-                  }*/
-
-              
-                  //getDecisionTreeInfo  under state using 3rd under alternative or consequence use 1st of the Elements's childrenNode
-                  DecisionTree<TransitionVector<FractionProbability>> decisionTree=getDecisionTreeInfo(machineBuild.name, stateXml);
-              
-                  State.Builder<FractionProbability> stateBuild=new State.Builder<FractionProbability>(machineXml.getAttribute("name"),stateXml.getAttribute("name"),decisionTree);
-                  
-                  for (int temp=0; temp<labels.getLength();temp++)
-                  {
-                    if (labels.item(temp).getNodeName().equals("labelPair")) {
-                      Element labelVector=(Element) labels.item(temp);
-                      stateBuild.setLabel(labelVector.getAttribute("name"), labelVector.getChildNodes().item(0).getChildNodes().item(0).getNodeValue());
-                      labelName.add(labelVector.getAttribute("name"));
-                    }
-                  }
-                  State<FractionProbability> state=stateBuild.build();
-                  machineBuild.addState(state);
-                }
-                Machine<FractionProbability> machine=machineBuild.build();
-                netBuild.addMachine(machine);
-                                                               
-              }
-              Net<FractionProbability> net=netBuild.build();
-              
-
-              return net;
-              
-          } catch (Exception e) {
-            e.printStackTrace();
-          }
-          
-          return null;
-
+      public static Net<FractionProbability> XmlInput(String fileName){
+        return XmlInput(fileName,1);
       }
+      public static Net<FractionProbability> XmlInput(String fileName, int numOfPatient) {
+        try {
+          
+          Net.Builder<FractionProbability> netBuild=new Net.Builder<FractionProbability>();
+          
+          for (int patientNum=0;patientNum<numOfPatient;patientNum++){
+            //Read in XML file
+            DocumentBuilderFactory dbfac = DocumentBuilderFactory.newInstance();
+            DocumentBuilder docBuilder = dbfac.newDocumentBuilder();
+            Document doc = docBuilder.parse(fileName);
+
+            doc.getDocumentElement().normalize();
+            
+//            System.out.println("Root element :" + doc.getDocumentElement().getNodeName());
+            NodeList machineList = doc.getElementsByTagName("machine");
       
+            for (int i=0; i<machineList.getLength(); i++){
+              
+              Element machineXml = (Element) machineList.item(i);
+              
+//              System.out.println("-----------------------");
+//              System.out.println("MachineeName : " + machineXml.getAttribute("name") );
+              String machineNames[]=machineXml.getAttribute("name").split(":");
+              machineNames[0]=machineNames[0].substring(1);
+              String machineName=machineNames[0]+patientNum+":"+machineNames[1];
+              Machine.Builder<FractionProbability> machineBuild = new Machine.Builder<FractionProbability>(machineName);
+              ArrayList<String> labelName=new ArrayList<String>();
+              
+              NodeList stateList = machineXml.getElementsByTagName("state");
+              
+              for (int j=0; j<stateList.getLength(); j++){
+                 
+                Element stateXml = (Element) stateList.item(j);
+//                System.out.println("  StateName : " + stateXml.getAttribute("name") );
+                            
+                NodeList labels=stateXml.getChildNodes().item(0).getChildNodes();
+
+                
+/*                  for (int temp=0; temp<labels.getLength();temp++)
+                {
+                  if (labels.item(temp).getNodeName().equals("labelPair")) {
+                    Element labelVector=(Element) labels.item(temp);
+                    System.out.println("    LabelVector: [" + labelVector.getAttribute("name") + ":"+ labelVector.getChildNodes().item(0).getChildNodes().item(0).getNodeValue()+"]" );
+                  }
+                }*/
+
+            
+                //getDecisionTreeInfo  under state using 3rd under alternative or consequence use 1st of the Elements's childrenNode
+                DecisionTree<TransitionVector<FractionProbability>> decisionTree=getDecisionTreeInfo(machineBuild.name, stateXml,patientNum);
+            
+                State.Builder<FractionProbability> stateBuild=new State.Builder<FractionProbability>(machineName,stateXml.getAttribute("name"),decisionTree);
+                
+                for (int temp=0; temp<labels.getLength();temp++)
+                {
+                  if (labels.item(temp).getNodeName().equals("labelPair")) {
+                    Element labelVector=(Element) labels.item(temp);
+                    stateBuild.setLabel(labelVector.getAttribute("name"), labelVector.getChildNodes().item(0).getChildNodes().item(0).getNodeValue());
+                    labelName.add(labelVector.getAttribute("name"));
+                  }
+                }
+                State<FractionProbability> state=stateBuild.build();
+                machineBuild.addState(state);
+              }
+              Machine<FractionProbability> machine=machineBuild.build();
+              netBuild.addMachine(machine);
+                                                             
+            }
+          }
+            Net<FractionProbability> net=netBuild.build();
+            
+            return net;
+          
+        } catch (Exception e) {
+          e.printStackTrace();
+        }
+        
+        return null;
+
+    }
       
-      public static DecisionTree<String> decisionTreeParser2(String xmlFileName){
+/*      public static DecisionTree<String> decisionTreeParser2(String xmlFileName){
         
         DocumentBuilderFactory dbfac = DocumentBuilderFactory.newInstance();
         DocumentBuilder docBuilder;
@@ -128,11 +133,11 @@ public class XmlParser {
         
         return null;
 
-      }
+      }*/
       
       
 
-      private static DecisionTree<String> getDecisionTreeInfo2(Element parent){
+/*      private static DecisionTree<String> getDecisionTreeInfo2(Element parent){
         
         Element decisionTreeXml=null;
         //if DecisionTree is under state use the 4th item of childNodes 
@@ -194,10 +199,10 @@ public class XmlParser {
         }
         
        
-      }
+      }*/
       
       
-      private static DecisionTree<TransitionVector<FractionProbability>> getDecisionTreeInfo(String machineName, Element parent){
+      private static DecisionTree<TransitionVector<FractionProbability>> getDecisionTreeInfo(String machineName, Element parent, int patientNum){
         
         Element decisionTreeXml=null;
         //if DecisionTree is under state use the 4th item of childNodes 
@@ -224,7 +229,7 @@ public class XmlParser {
             
           //get atom or ... info from predicate
           Predicate predicate=null;
-          predicate=getInfoFromPredicate(predicateXml,predicate);
+          predicate=getInfoFromPredicate(predicateXml,predicate,patientNum);
           
           if (predicate==null){
             System.err.println("!!Predicate not parsed!");
@@ -233,13 +238,13 @@ public class XmlParser {
           DecisionTree<TransitionVector<FractionProbability>> consequent=null;
           DecisionTree<TransitionVector<FractionProbability>> alternative=null;         
           Element consequentXml = (Element) decisionTreeXml.getChildNodes().item(0).getChildNodes().item(1);
-          consequent = getDecisionTreeInfo (machineName, consequentXml);
+          consequent = getDecisionTreeInfo (machineName, consequentXml,patientNum);
           if (decisionTreeXml.getChildNodes().item(0).getChildNodes().getLength()<3){
             System.err.println("!Missing consequence or alternative");
           } //no alternative
           else {
             Element alternativeXml = (Element) decisionTreeXml.getChildNodes().item(0).getChildNodes().item(2);
-            alternative=getDecisionTreeInfo(machineName, alternativeXml);
+            alternative=getDecisionTreeInfo(machineName, alternativeXml,patientNum);
           }
           if (consequent==null || alternative==null)
             System.err.println("!Consequence or alternative not parsed!");
@@ -279,7 +284,7 @@ public class XmlParser {
        
       }
       
-      private static Predicate getInfoFromPredicate(Element predicate, Predicate Input ){
+      private static Predicate getInfoFromPredicate(Element predicate, Predicate Input, int patientNum ){
         //get atom info
         if (predicate.getChildNodes().item(0).getNodeName().equals("atom")){
           Element atomXml=(Element) predicate.getChildNodes().item(0);
@@ -287,7 +292,9 @@ public class XmlParser {
           Element atomLabelVector=(Element) atomXml.getChildNodes().item(0);
 //          System.out.println("      atom labelVector: [" + atomLabelVector.getAttribute("name")+":"+atomLabelVector.getChildNodes().item(0).getChildNodes().item(0).getNodeValue()+"]");
           // create atom
-          Predicate.Atom atom=new Predicate.Atom(atomXml.getAttribute("machineName"),atomLabelVector.getAttribute("name"),atomLabelVector.getChildNodes().item(0).getChildNodes().item(0).getNodeValue());
+          String machineName[]=atomXml.getAttribute("machineName").split(":");
+          machineName[0]=machineName[0].substring(1);
+          Predicate.Atom atom=new Predicate.Atom(machineName[0]+patientNum+":"+machineName[1], atomLabelVector.getAttribute("name"), atomLabelVector.getChildNodes().item(0).getChildNodes().item(0).getNodeValue());
           Predicate output=(Predicate)atom;
 
           return output;
@@ -316,7 +323,7 @@ public class XmlParser {
           Iterator<Element> itr = predicates.iterator();
           while(itr.hasNext()){
             Element pred=itr.next();
-            Predicate temp=getInfoFromPredicate(pred,Input);
+            Predicate temp=getInfoFromPredicate(pred,Input,patientNum);
             cBuild.add(temp);
           }
           Predicate output=cBuild.build();
@@ -327,7 +334,7 @@ public class XmlParser {
           Element neg=(Element) predicate.getChildNodes().item(0);
           Element pred=(Element) neg.getChildNodes().item(0);
           // call itself to retrieve the predicate info
-          Predicate temp=getInfoFromPredicate(pred,Input);
+          Predicate temp=getInfoFromPredicate(pred,Input,patientNum);
           Predicate output=new Predicate.Neg(temp);
 
           return output;
@@ -337,8 +344,8 @@ public class XmlParser {
           Element antecedentXml=(Element) implies.getChildNodes().item(0);
           Element consequentXml=(Element) implies.getChildNodes().item(1);
           // call itself to retrieve the predicate info
-          Predicate antecedent=getInfoFromPredicate(antecedentXml,Input);
-          Predicate consequent=getInfoFromPredicate(consequentXml,Input);
+          Predicate antecedent=getInfoFromPredicate(antecedentXml,Input,patientNum);
+          Predicate consequent=getInfoFromPredicate(consequentXml,Input,patientNum);
           Predicate output=new Predicate.Implies(antecedent,consequent);
           return output;
         }else{

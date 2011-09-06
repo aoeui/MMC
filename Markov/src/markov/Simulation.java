@@ -2,6 +2,7 @@ package markov;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -25,11 +26,24 @@ public class Simulation {
   public TransitionMatrix<FractionProbability> matrix;
   
   public static void main(String[] args) {
-    System.out.println(new Simulation("xml/umlVersion3.xml"));
+    System.out.println(new Simulation("xml/umlVersion4.xml"));
   }
 
   public Simulation(String xmlFileName){
-      Net<FractionProbability> net=XmlParser.XmlInput(xmlFileName);
+      int numOfPatient=2;
+      
+      Net<FractionProbability> net=XmlParser.XmlInput(xmlFileName,numOfPatient);
+
+      Net.Builder<FractionProbability> netBuild=new Net.Builder<FractionProbability>();
+
+      Machine<FractionProbability> dischargeModel=constructDischargeModel(numOfPatient);
+      
+      Iterator<Machine<FractionProbability>> tempItr=net.iterator();
+      while(tempItr.hasNext()){
+        netBuild.addMachine(tempItr.next());
+      }
+      netBuild.addMachine(dischargeModel);
+      net=netBuild.build();
 
       Iterator<Machine<FractionProbability>> itr=net.iterator();
       
@@ -64,11 +78,11 @@ public class Simulation {
         initializeStates(tempA,tempB,stateNameList);
         //create stack of machines for use in constructStateList
         stack=stack.push(tempB);
-        //create machineName
+        //create list of machineName
         machineName.add(tempB.name);
         tempA=tempB;
       }
-      //order the stack so that stack.head is the same one as the first one that get pushed on the the stack
+      //order the stack so that stack.head is the same as the first one that get pushed on the the stack
       stack=stack.reverse();
       
       //get combinedState and return them in accu
@@ -76,10 +90,21 @@ public class Simulation {
       
       TransitionMatrix.RandomBuilder<FractionProbability> builder =new TransitionMatrix.RandomBuilder<FractionProbability>(stateNameList.size());
       
+      
       Iterator<ArrayList<State<FractionProbability>>> itrStates=accu.iterator();
+      int[] costTable=new int[stateNameList.keySet().size()];
       while(itrStates.hasNext()){
+        ArrayList<State<FractionProbability>> states=itrStates.next();
+        
+        String combinedStateName="empty";
+        int sum=0;
+        for (State<FractionProbability> s:states){
+          sum+=Integer.parseInt(s.getLabel("Cost"));
+          combinedStateName=(combinedStateName.equals("empty")) ? s.name : combinedStateName+Machine.MULTIPLY_STRING+s.name;
+        }
+        costTable[stateNameList.get(combinedStateName)]=sum;
         //now get probability and save it to the correct row of transition Matrix based on ordering of stateNameList
-        retrieveProbability(machineName,(itrStates.next()),net.dictionary, stateNameList, builder);
+        retrieveProbability(machineName,states,net.dictionary, stateNameList, builder);
       }
 
       this.matrix = builder.build();
@@ -89,11 +114,16 @@ public class Simulation {
       this.headlist = new TreeMap<String, Integer>(bvc);
       headlist.putAll(stateNameList);
 
+      System.out.println(machineName.toString());
       System.out.println(headlist.keySet().toString());
-      System.out.println(matrix.toString()); 
+      System.out.println(matrix.toString());
       
-      int[] test={1,2,3,4};
+      System.out.println(Arrays.toString(costTable));
+      System.out.println(machineName.toString());
+      System.out.println(headlist.keySet().toString());
+      
       double[][] matOut=this.matrixToDouble();
+      MLInt8 mlint=new MLInt8("costVector",costTable);
       MLDouble mldouble=new MLDouble("pTransition",matOut);
       String[] heads=headlist.keySet().toString().split(", ");
       MLCell mlcell=new MLCell("heads", new int[]{headlist.keySet().size(), 1} );
@@ -104,9 +134,10 @@ public class Simulation {
       }
       
       //write arrays to file
-      ArrayList list = new ArrayList();
+      ArrayList<MLArray> list = new ArrayList<MLArray>();
       list.add( mldouble );
       list.add( mlcell );
+      list.add(mlint);
       
       try {
         new MatFileWriter( "mat_file.mat", list );
@@ -117,6 +148,22 @@ public class Simulation {
 
   }
   
+  private Machine<FractionProbability> constructDischargeModel(int numOfPatient) {
+    // TODO Auto-generated method stub
+    int numOfState=(int) Math.pow(2,numOfPatient);
+    String[] stateNames=new String[numOfPatient];
+    for (int i=0;i<numOfState;i++){
+      for (int j=0;j<numOfPatient;j++){
+        stateNames[j]=(i-Math.floor(i/2)*2==0)? Math.floor(i/2)+":"+"Empty": Math.floor(i/2)+":"+"Occupied";
+      }
+      String stateName="";
+      for(String s:stateNames){
+        stateName=(stateName.equals("")) ? s : stateName+Machine.MULTIPLY_STRING+s;
+      }
+    }
+    return null;
+  }
+
   private double[][] matrixToDouble() {
     
     double[][] out=new double[this.matrix.N][this.matrix.N];
