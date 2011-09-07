@@ -58,7 +58,7 @@ public class XmlParser {
               machineNames[0]=machineNames[0].substring(1);
               String machineName=machineNames[0]+patientNum+":"+machineNames[1];
               Machine.Builder<FractionProbability> machineBuild = new Machine.Builder<FractionProbability>(machineName);
-              ArrayList<String> labelName=new ArrayList<String>();
+//              ArrayList<String> labelName=new ArrayList<String>();
               
               NodeList stateList = machineXml.getElementsByTagName("state");
               
@@ -89,7 +89,7 @@ public class XmlParser {
                   if (labels.item(temp).getNodeName().equals("labelPair")) {
                     Element labelVector=(Element) labels.item(temp);
                     stateBuild.setLabel(labelVector.getAttribute("name"), labelVector.getChildNodes().item(0).getChildNodes().item(0).getNodeValue());
-                    labelName.add(labelVector.getAttribute("name"));
+//                    labelName.add(labelVector.getAttribute("name"));
                   }
                 }
                 State<FractionProbability> state=stateBuild.build();
