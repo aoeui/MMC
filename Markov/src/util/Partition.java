@@ -6,6 +6,13 @@ import java.util.Comparator;
 import java.util.Iterator;
 
 public class Partition<T> implements Iterable<Partition<T>.Block> {
+  private static class NaturalComparator<S extends Comparable<? super S>> implements Comparator<S> {
+    public NaturalComparator() {}
+    public int compare(S s1, S s2) {
+      return s1.compareTo(s2);
+    }
+  }
+
   public final Comparator<? super T> comparator;
   private ArrayList<T> elements;
   private ArrayList<Block> blocks;
@@ -23,6 +30,7 @@ public class Partition<T> implements Iterable<Partition<T>.Block> {
       if (comparator.compare(prototype, elements.get(i)) != 0) {
         blocks.add(new Block(start, i-1));
         start = i;
+        prototype = elements.get(i);
       }
     }
     blocks.add(new Block(start, elements.size()-1));
@@ -55,10 +63,13 @@ public class Partition<T> implements Iterable<Partition<T>.Block> {
     public final int start;  // index of first element
     public final int end;  // index of last element
     
-    public Block(int start, int end) {
+    private Block(int start, int end) {
       this.start = start;
       this.end = end;
     }
+    
+    public int size() { return 1 + end - start; }
+    public T get(int i) { return elements.get(i+start); }
     
     public Iterator<T> iterator() {
       return new RangeIterator();
@@ -70,6 +81,10 @@ public class Partition<T> implements Iterable<Partition<T>.Block> {
       public T next() { return elements.get(next++); }
       public void remove() { throw new UnsupportedOperationException(); }
     }
+  }
+  
+  public static <T extends Comparable<? super T>> Builder<T> naturalBuilder() {
+    return new Builder<T>(new NaturalComparator<T>());
   }
   
   public static class Builder<T> {

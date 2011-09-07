@@ -1,7 +1,9 @@
 package markov;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 import util.UnmodifiableIterator;
 
 public abstract class Predicate {
@@ -68,6 +70,7 @@ public abstract class Predicate {
     public void add(Predicate p) {
       terms.add(p);
     }
+    public int size() { return terms.size(); }
     public Predicate build() {
       if (terms.size() == 0) throw new RuntimeException();
       if (terms.size() == 1) return terms.get(0);
@@ -84,7 +87,14 @@ public abstract class Predicate {
   public static abstract class CollectionPredicate extends Predicate implements Iterable<Predicate> {
     public final CollectionType type;
     ArrayList<Predicate> terms;
-    CollectionPredicate(CollectionType type, ArrayList<Predicate> terms) {
+    CollectionPredicate(CollectionType type, Predicate p1, Predicate p2, Predicate ... remainder) {
+      this.type = type;
+      this.terms = new ArrayList<Predicate>();
+      terms.add(p1);
+      terms.add(p2);
+      terms.addAll(Arrays.asList(remainder));
+    }
+    CollectionPredicate(CollectionType type, List<Predicate> terms) {
       if (terms.size() < 2) throw new RuntimeException();
       
       this.type = type;
@@ -115,12 +125,18 @@ public abstract class Predicate {
   }
 
   public static class And extends CollectionPredicate {
+    public And(Predicate p1, Predicate p2, Predicate... remainder) {
+      super(CollectionType.AND, p1, p2, remainder);
+    }
     And(ArrayList<Predicate> clauses) {
       super(CollectionType.AND, clauses);
     }
     public void accept(Visitor v) { v.visitAnd(this); }
   }
   public static class Or extends CollectionPredicate {
+    public Or(Predicate p1, Predicate p2, Predicate... remainder) {
+      super(CollectionType.OR, p1, p2, remainder);
+    }
     Or(ArrayList<Predicate> terms) {
       super(CollectionType.OR, terms);
     }
