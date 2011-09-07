@@ -1,9 +1,9 @@
 package parser;
 
 //import java.io.BufferedReader;
-import java.io.BufferedWriter;
+//import java.io.BufferedWriter;
 //import java.io.FileReader;
-import java.io.FileWriter;
+//import java.io.FileWriter;
 /*import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import org.w3c.dom.Document;
@@ -79,7 +79,7 @@ public class UmlParser {
   }*/
   
   
-  public static void decisionTreeParser2(String decisionTree, String outputFile) throws IOException {
+/*  public static void decisionTreeParser2(String decisionTree, String outputFile) throws IOException {
     FileWriter fstream = new FileWriter(outputFile);
     BufferedWriter outFile = new BufferedWriter(fstream);
     StringWriter out=new StringWriter();
@@ -143,7 +143,7 @@ public class UmlParser {
     
     outFile.write(out.toString());
     
-  }
+  }*/
   
   
   
