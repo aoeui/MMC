@@ -36,10 +36,8 @@ public class Simulation {
       Net<DoubleProbability> net=XmlParser.XmlInput(xmlFileName,numOfPatient);
 
       Net.Builder<DoubleProbability> netBuild=new Net.Builder<DoubleProbability>();
-
       Machine<DoubleProbability> dischargeModel=constructDischargeModel(numOfPatient,net);
       Machine<DoubleProbability> arrivalModel=constructArrivalModel(numOfPatient, new DoubleProbability(1,4));
-
       
       Iterator<Machine<DoubleProbability>> tempItr=net.iterator();
       while(tempItr.hasNext()){
@@ -104,7 +102,6 @@ public class Simulation {
         int sum=0;
         for (State<DoubleProbability> s:states){
           if (s.getLabel("Cost")!=null) sum+=Integer.parseInt(s.getLabel("Cost"));
-
           combinedStateName=(combinedStateName.equals("empty")) ? s.name : combinedStateName+Machine.MULTIPLY_STRING+s.name;
         }
         costTable[stateNameList.get(combinedStateName)]=sum;
@@ -152,7 +149,6 @@ public class Simulation {
    
 
   }
-  
 
   private Machine<DoubleProbability> constructArrivalModel(int numOfPatient,DoubleProbability p){
     final String modelName="ArrivalModel";
@@ -223,6 +219,7 @@ public class Simulation {
       alternative=branch;
       code.add(i);
     }
+
 
     
     Machine.Builder<DoubleProbability> machineBuild = new Machine.Builder<DoubleProbability>(modelName);
