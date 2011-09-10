@@ -14,10 +14,6 @@ import java.util.Map.Entry;
 import com.jmatio.io.*;
 import com.jmatio.types.*;
 
-
-import markov.DecisionTree.Branch;
-import markov.DecisionTree.Terminal;
-import markov.DecisionTree.Visitor;
 import markov.State.Builder;
 import markov.TransitionMatrix.RandomBuilder;
 import parser.XmlParser;
@@ -299,8 +295,6 @@ public class Simulation {
         }
       }
       stateNum=temp;
-      TransitionVector.Builder<DoubleProbability> b=new TransitionVector.Builder<DoubleProbability>(modelName);
-      
       if (numOfEmpty==0) {
         //kick the patient out if state is Arrival
       }else{
