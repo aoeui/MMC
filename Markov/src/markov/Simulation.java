@@ -15,6 +15,8 @@ import com.jmatio.io.*;
 import com.jmatio.types.*;
 
 
+import markov.DecisionTree.Branch;
+import markov.DecisionTree.Terminal;
 import markov.TransitionMatrix.RandomBuilder;
 import parser.XmlParser;
 import util.Ptr;
@@ -37,13 +39,15 @@ public class Simulation {
 
       Net.Builder<FractionProbability> netBuild=new Net.Builder<FractionProbability>();
 
-      Machine<FractionProbability> dischargeModel=constructDischargeModel(numOfPatient);
+      Machine<FractionProbability> dischargeModel=constructDischargeModel(numOfPatient,net);
+      Machine<FractionProbability> arrivalModel=constructArrivalModel(numOfPatient, new FractionProbability(1,4));
       
       Iterator<Machine<FractionProbability>> tempItr=net.iterator();
       while(tempItr.hasNext()){
         netBuild.addMachine(tempItr.next());
       }
       netBuild.addMachine(dischargeModel);
+      netBuild.addMachine(arrivalModel);
       net=netBuild.build();
 
       Iterator<Machine<FractionProbability>> itr=net.iterator();
@@ -100,7 +104,7 @@ public class Simulation {
         String combinedStateName="empty";
         int sum=0;
         for (State<FractionProbability> s:states){
-          sum+=Integer.parseInt(s.getLabel("Cost"));
+          if (s.getLabel("Cost")!=null) sum+=Integer.parseInt(s.getLabel("Cost"));
           combinedStateName=(combinedStateName.equals("empty")) ? s.name : combinedStateName+Machine.MULTIPLY_STRING+s.name;
         }
         costTable[stateNameList.get(combinedStateName)]=sum;
@@ -149,11 +153,37 @@ public class Simulation {
 
   }
   
-  private Machine<FractionProbability> constructDischargeModel(int numOfPatient) {
+  private Machine<FractionProbability> constructArrivalModel(int numOfPatient,FractionProbability p){
+    final String modelName="ArrivalModel";
+    TransitionVector.Builder<FractionProbability> b=new TransitionVector.Builder<FractionProbability>(modelName);
+    b.setProbability("NoArrival", p);
+    b.setProbability("Arrival",new FractionProbability(p.p.den-p.p.num,p.p.den));
+    TransitionVector<FractionProbability> pVector=b.build();
+    DecisionTree.Terminal<TransitionVector<FractionProbability>> term= new DecisionTree.Terminal<TransitionVector<FractionProbability>>(pVector);
+    Machine.Builder<FractionProbability> machineBuild = new Machine.Builder<FractionProbability>(modelName);
+    State.Builder<FractionProbability> stateBuild=new State.Builder<FractionProbability>(modelName,"Arrival",term);
+    stateBuild.setLabel("Arrival", "T");
+    State<FractionProbability> stateA=stateBuild.build();
+
+    stateBuild=new State.Builder<FractionProbability>(modelName,"NoArrival",term);
+    stateBuild.setLabel("Arrival", "F");
+    State<FractionProbability> stateB=stateBuild.build();
+    
+    machineBuild.addState(stateA);
+    machineBuild.addState(stateB);
+    Machine<FractionProbability> out=machineBuild.build();
+    return out;
+    
+  }
+  
+  
+  private Machine<FractionProbability> constructDischargeModel(int numOfPatient, Net<FractionProbability> net) {
     final String modelName="DischargeModel";
     int numOfState=(int) Math.pow(2,numOfPatient);
     DecisionTree<TransitionVector<FractionProbability>> alternative=null;
     ArrayList<String> stateNames=new ArrayList<String>();
+    ArrayList<Integer> code=new ArrayList<Integer>();
+    //with no arrivals
     for (int i=0;i<numOfState;i++){
       String stateName="";
       ArrayList<Predicate> predArray=new ArrayList<Predicate>();
@@ -162,14 +192,16 @@ public class Simulation {
         tempArray.add(new Predicate.Atom("Patient"+j+":ICP", "ICP", "E"));
         tempArray.add(new Predicate.Atom("Patient"+j+":ICP", "ICP", "D"));
         Predicate pred=new Predicate.Or(tempArray);
-        if (Math.floor(i/Math.pow(2, j))==0) pred=new Predicate.Neg(pred);
+        
+        byte stateCode = (byte) ((i & (int)(Math.pow(2, j)))>>j);
+        if (stateCode!=0) pred=new Predicate.Neg(pred);
         predArray.add(pred);
         
-        String nextStateName=(Math.floor(i/Math.pow(2, j))==0)? (j+"_Occupied"):(j+"_Empty");
+        String nextStateName=(stateCode!=0)? (j+"_Occupied"):(j+"_Empty");
         stateName=(stateName.equals(""))? nextStateName : stateName+this.STATE_MULTIPLY_STRING+nextStateName;
         
       }
-
+      
       Predicate predicate=new Predicate.And(predArray);
       stateNames.add(stateName);
       
@@ -187,11 +219,25 @@ public class Simulation {
       DecisionTree.Branch<TransitionVector<FractionProbability>> branch=new DecisionTree.Branch<TransitionVector<FractionProbability>>(predicate, consequent, alternative);
       
       alternative=branch;
+      code.add(i);
     }
-
+    
     Machine.Builder<FractionProbability> machineBuild = new Machine.Builder<FractionProbability>(modelName);
+    Iterator<Integer> itrTemp=code.iterator();
     for(String s:stateNames){
-      State.Builder<FractionProbability> stateBuild=new State.Builder<FractionProbability>(modelName,s,alternative);
+      Net.Builder<FractionProbability> netUnused=new Net.Builder<FractionProbability>();
+      State.Builder<FractionProbability> stateUnused=new State.Builder<FractionProbability>(modelName,s,alternative);
+      Machine.Builder<FractionProbability> machineUnused = new Machine.Builder<FractionProbability>(modelName);
+      machineUnused.addState(stateUnused.build());
+      Iterator<Machine<FractionProbability>> tempItr=net.iterator();
+      while(tempItr.hasNext()){
+        netUnused.addMachine(tempItr.next());
+      }
+      netUnused.addMachine(machineUnused.build());
+      
+      DecisionTree<TransitionVector<FractionProbability>> head=replaceTerminals(alternative,s,netUnused.build().dictionary); 
+      
+      State.Builder<FractionProbability> stateBuild=new State.Builder<FractionProbability>(modelName,s,head);
       String[] machines=s.split(this.STATE_MULTIPLY_STRING);
       int value=0;
       for (String sM:machines){
@@ -199,9 +245,82 @@ public class Simulation {
       }
       
       stateBuild.setLabel("Cost", Integer.toString(value));
+      stateBuild.setLabel("Code", itrTemp.next().toString());
       machineBuild.addState(stateBuild.build());
     }
     return machineBuild.build();
+  }
+
+  private DecisionTree<TransitionVector<FractionProbability>> replaceTerminals(
+      DecisionTree<TransitionVector<FractionProbability>> alternative, final String s, final Dictionary dictionary) {
+    
+    final String modelName="DischargeModel";
+    DecisionTreeVisitor dv=new DecisionTreeVisitor(s,modelName,dictionary,alternative);
+    alternative.accept(dv);
+    return dv.alternative;
+  }
+  
+  class DecisionTreeVisitor implements DecisionTree.Visitor<TransitionVector<FractionProbability>>{
+    String s;
+    String modelName;
+    Dictionary dictionary;
+    DecisionTree<TransitionVector<FractionProbability>> alternative;
+    int kickOutPatientNum;
+    
+    DecisionTreeVisitor(String s,String model,Dictionary dict,DecisionTree<TransitionVector<FractionProbability>> alt){
+      this.s=s;
+      this.modelName=model;
+      this.dictionary=dict;
+      this.alternative=alt;
+      this.kickOutPatientNum=0;
+    }
+    
+    public void visitTerminal(DecisionTree.Terminal<TransitionVector<FractionProbability>> term) {
+      String[] state=s.split("::");
+      int numOfEmpty=0;
+      ArrayList<Integer> stateNum=new ArrayList<Integer>();
+      stateNum.add(0);
+      ArrayList<Integer> temp=new ArrayList<Integer>();
+      for(int i=0;i<state.length;i++){
+        if (state[i].contains("Empty")) {
+          numOfEmpty++;
+          for (int s:stateNum){
+            temp.add((int) (s+Math.pow(2, i)));
+          }
+        }
+      }
+      stateNum=temp;
+      TransitionVector.Builder<FractionProbability> b=new TransitionVector.Builder<FractionProbability>(modelName);
+      FractionProbability p=new FractionProbability(1,numOfEmpty);
+      if (numOfEmpty==0) {
+        //kick the patient out if state is Arrival
+      }else{
+        TransitionVector.Builder<FractionProbability> tb=new TransitionVector.Builder<FractionProbability>(modelName);
+        for (int s:stateNum){
+          String stateName="";
+          for(int j=0;j<state.length;j++){
+            byte stateCode = (byte) ((s & (int)(Math.pow(2, j)))>>j);
+            String nextStateName=(stateCode==0)? state[j]:(j+"_Occupied");
+            stateName=(stateName.equals(""))? nextStateName : stateName+STATE_MULTIPLY_STRING+nextStateName;
+          }
+          tb.setProbability(stateName, p);
+        }
+        TransitionVector<FractionProbability> pVector = tb.build();
+        Predicate.Atom atom=new Predicate.Atom("ArrivalModel", "Arrival", "T");
+        DecisionTree.Terminal<TransitionVector<FractionProbability>> conseq=new DecisionTree.Terminal<TransitionVector<FractionProbability>>(pVector);
+        DecisionTree.Terminal<TransitionVector<FractionProbability>> alter=new DecisionTree.Terminal<TransitionVector<FractionProbability>>(term.output);
+        alternative=new DecisionTree.Branch<TransitionVector<FractionProbability>>(atom, conseq, alter);
+      }
+    }
+
+    public void visitBranch(DecisionTree.Branch<TransitionVector<FractionProbability>> walker) {
+      DecisionTree<TransitionVector<FractionProbability>> conseq = replaceTerminals(walker.consequent,s,dictionary);
+      DecisionTree<TransitionVector<FractionProbability>> alter = replaceTerminals(walker.alternative,s,dictionary);
+      Predicate pred=walker.predicate;
+      alternative=new DecisionTree.Branch<TransitionVector<FractionProbability>>(pred, conseq, alter);
+    }
+  
+    
   }
 
   private double[][] matrixToDouble() {
