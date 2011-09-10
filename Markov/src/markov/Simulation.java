@@ -17,6 +17,8 @@ import com.jmatio.types.*;
 
 import markov.DecisionTree.Branch;
 import markov.DecisionTree.Terminal;
+import markov.DecisionTree.Visitor;
+import markov.State.Builder;
 import markov.TransitionMatrix.RandomBuilder;
 import parser.XmlParser;
 import util.Ptr;
@@ -25,7 +27,7 @@ import util.Stack;
 public class Simulation {
   
   public TreeMap<String,Integer> headlist;
-  public TransitionMatrix<FractionProbability> matrix;
+  public TransitionMatrix<DoubleProbability> matrix;
   private final String STATE_MULTIPLY_STRING="::";
   
   public static void main(String[] args) {
@@ -35,14 +37,15 @@ public class Simulation {
   public Simulation(String xmlFileName){
       int numOfPatient=2;
       
-      Net<FractionProbability> net=XmlParser.XmlInput(xmlFileName,numOfPatient);
+      Net<DoubleProbability> net=XmlParser.XmlInput(xmlFileName,numOfPatient);
 
-      Net.Builder<FractionProbability> netBuild=new Net.Builder<FractionProbability>();
+      Net.Builder<DoubleProbability> netBuild=new Net.Builder<DoubleProbability>();
 
-      Machine<FractionProbability> dischargeModel=constructDischargeModel(numOfPatient,net);
-      Machine<FractionProbability> arrivalModel=constructArrivalModel(numOfPatient, new FractionProbability(1,4));
+      Machine<DoubleProbability> dischargeModel=constructDischargeModel(numOfPatient,net);
+      Machine<DoubleProbability> arrivalModel=constructArrivalModel(numOfPatient, new DoubleProbability(1,4));
+
       
-      Iterator<Machine<FractionProbability>> tempItr=net.iterator();
+      Iterator<Machine<DoubleProbability>> tempItr=net.iterator();
       while(tempItr.hasNext()){
         netBuild.addMachine(tempItr.next());
       }
@@ -50,7 +53,7 @@ public class Simulation {
       netBuild.addMachine(arrivalModel);
       net=netBuild.build();
 
-      Iterator<Machine<FractionProbability>> itr=net.iterator();
+      Iterator<Machine<DoubleProbability>> itr=net.iterator();
       
       /****** Initialization ***********************************************************
        * 1. Order Machines by machineName and create iterator based on ordered machines
@@ -59,21 +62,21 @@ public class Simulation {
        * 4. Get a list of machine names
        * **************************************************************************/
       //sort machines
-      TreeMap<String,Machine<FractionProbability>> sortList=new TreeMap<String,Machine<FractionProbability>>();
+      TreeMap<String,Machine<DoubleProbability>> sortList=new TreeMap<String,Machine<DoubleProbability>>();
       while (itr.hasNext()){
-        Machine<FractionProbability> temp=itr.next();
+        Machine<DoubleProbability> temp=itr.next();
         sortList.put(temp.name,temp);
       }
       itr=sortList.values().iterator();
       
       HashMap<String,Integer> stateNameList=new HashMap<String, Integer>();
-      Stack<Machine<FractionProbability>> stack= Stack.<Machine<FractionProbability>>emptyInstance();
-      ArrayList<State<FractionProbability>> stateArray=new ArrayList<State<FractionProbability>>();
-      HashSet<ArrayList<State<FractionProbability>>> accu=new HashSet<ArrayList<State<FractionProbability>>>();
+      Stack<Machine<DoubleProbability>> stack= Stack.<Machine<DoubleProbability>>emptyInstance();
+      ArrayList<State<DoubleProbability>> stateArray=new ArrayList<State<DoubleProbability>>();
+      HashSet<ArrayList<State<DoubleProbability>>> accu=new HashSet<ArrayList<State<DoubleProbability>>>();
       ArrayList<String> machineName=new ArrayList<String>();
       
-      Machine<FractionProbability>tempB=null;
-      Machine<FractionProbability>tempA=itr.next();
+      Machine<DoubleProbability>tempB=null;
+      Machine<DoubleProbability>tempA=itr.next();
       stack=stack.push(tempA);
       machineName.add(tempA.name);
       
@@ -93,18 +96,19 @@ public class Simulation {
       //get combinedState and return them in accu
       constructStateList(stateArray,stack,accu);
       
-      TransitionMatrix.RandomBuilder<FractionProbability> builder =new TransitionMatrix.RandomBuilder<FractionProbability>(stateNameList.size());
+      TransitionMatrix.RandomBuilder<DoubleProbability> builder =new TransitionMatrix.RandomBuilder<DoubleProbability>(stateNameList.size());
       
       
-      Iterator<ArrayList<State<FractionProbability>>> itrStates=accu.iterator();
+      Iterator<ArrayList<State<DoubleProbability>>> itrStates=accu.iterator();
       int[] costTable=new int[stateNameList.keySet().size()];
       while(itrStates.hasNext()){
-        ArrayList<State<FractionProbability>> states=itrStates.next();
+        ArrayList<State<DoubleProbability>> states=itrStates.next();
         
         String combinedStateName="empty";
         int sum=0;
-        for (State<FractionProbability> s:states){
+        for (State<DoubleProbability> s:states){
           if (s.getLabel("Cost")!=null) sum+=Integer.parseInt(s.getLabel("Cost"));
+
           combinedStateName=(combinedStateName.equals("empty")) ? s.name : combinedStateName+Machine.MULTIPLY_STRING+s.name;
         }
         costTable[stateNameList.get(combinedStateName)]=sum;
@@ -153,34 +157,36 @@ public class Simulation {
 
   }
   
-  private Machine<FractionProbability> constructArrivalModel(int numOfPatient,FractionProbability p){
-    final String modelName="ArrivalModel";
-    TransitionVector.Builder<FractionProbability> b=new TransitionVector.Builder<FractionProbability>(modelName);
-    b.setProbability("NoArrival", p);
-    b.setProbability("Arrival",new FractionProbability(p.p.den-p.p.num,p.p.den));
-    TransitionVector<FractionProbability> pVector=b.build();
-    DecisionTree.Terminal<TransitionVector<FractionProbability>> term= new DecisionTree.Terminal<TransitionVector<FractionProbability>>(pVector);
-    Machine.Builder<FractionProbability> machineBuild = new Machine.Builder<FractionProbability>(modelName);
-    State.Builder<FractionProbability> stateBuild=new State.Builder<FractionProbability>(modelName,"Arrival",term);
-    stateBuild.setLabel("Arrival", "T");
-    State<FractionProbability> stateA=stateBuild.build();
 
-    stateBuild=new State.Builder<FractionProbability>(modelName,"NoArrival",term);
+  private Machine<DoubleProbability> constructArrivalModel(int numOfPatient,DoubleProbability p){
+    final String modelName="ArrivalModel";
+    TransitionVector.Builder<DoubleProbability> b=new TransitionVector.Builder<DoubleProbability>(modelName);
+    b.setProbability("NoArrival", p);
+    b.setProbability("Arrival",new DoubleProbability(1-p.p));
+    TransitionVector<DoubleProbability> pVector=b.build();
+    DecisionTree.Terminal<TransitionVector<DoubleProbability>> term= new DecisionTree.Terminal<TransitionVector<DoubleProbability>>(pVector);
+    Machine.Builder<DoubleProbability> machineBuild = new Machine.Builder<DoubleProbability>(modelName);
+    State.Builder<DoubleProbability> stateBuild=new State.Builder<DoubleProbability>(modelName,"Arrival",term);
+    stateBuild.setLabel("Arrival", "T");
+    State<DoubleProbability> stateA=stateBuild.build();
+
+    stateBuild=new State.Builder<DoubleProbability>(modelName,"NoArrival",term);
     stateBuild.setLabel("Arrival", "F");
-    State<FractionProbability> stateB=stateBuild.build();
+    State<DoubleProbability> stateB=stateBuild.build();
     
     machineBuild.addState(stateA);
     machineBuild.addState(stateB);
-    Machine<FractionProbability> out=machineBuild.build();
+    Machine<DoubleProbability> out=machineBuild.build();
     return out;
     
   }
   
   
-  private Machine<FractionProbability> constructDischargeModel(int numOfPatient, Net<FractionProbability> net) {
+  private Machine<DoubleProbability> constructDischargeModel(int numOfPatient, Net<DoubleProbability> net) {
+
     final String modelName="DischargeModel";
     int numOfState=(int) Math.pow(2,numOfPatient);
-    DecisionTree<TransitionVector<FractionProbability>> alternative=null;
+    DecisionTree<TransitionVector<DoubleProbability>> alternative=null;
     ArrayList<String> stateNames=new ArrayList<String>();
     ArrayList<Integer> code=new ArrayList<Integer>();
     //with no arrivals
@@ -206,38 +212,41 @@ public class Simulation {
       stateNames.add(stateName);
       
       if (alternative==null){
-        TransitionVector.Builder<FractionProbability> b=new TransitionVector.Builder<FractionProbability>(modelName);
-        b.setProbability(stateName, new FractionProbability(1, 1));
-        TransitionVector<FractionProbability> unused=b.build();
-        alternative= new DecisionTree.Terminal<TransitionVector<FractionProbability>>(unused) ;
+        TransitionVector.Builder<DoubleProbability> b=new TransitionVector.Builder<DoubleProbability>(modelName);
+        b.setProbability(stateName, new DoubleProbability(1, 1));
+        TransitionVector<DoubleProbability> unused=b.build();
+        alternative= new DecisionTree.Terminal<TransitionVector<DoubleProbability>>(unused) ;
       }
-      TransitionVector.Builder<FractionProbability>b=new TransitionVector.Builder<FractionProbability>(modelName);
-      b.setProbability(stateName, new FractionProbability(1, 1));
-      TransitionVector<FractionProbability> prob=b.build();
-      DecisionTree.Terminal<TransitionVector<FractionProbability>> consequent=new DecisionTree.Terminal<TransitionVector<FractionProbability>>(prob);
+      TransitionVector.Builder<DoubleProbability>b=new TransitionVector.Builder<DoubleProbability>(modelName);
+      b.setProbability(stateName, new DoubleProbability(1, 1));
+      TransitionVector<DoubleProbability> prob=b.build();
+      DecisionTree.Terminal<TransitionVector<DoubleProbability>> consequent=new DecisionTree.Terminal<TransitionVector<DoubleProbability>>(prob);
       
-      DecisionTree.Branch<TransitionVector<FractionProbability>> branch=new DecisionTree.Branch<TransitionVector<FractionProbability>>(predicate, consequent, alternative);
+      DecisionTree.Branch<TransitionVector<DoubleProbability>> branch=new DecisionTree.Branch<TransitionVector<DoubleProbability>>(predicate, consequent, alternative);
       
       alternative=branch;
       code.add(i);
     }
+
     
-    Machine.Builder<FractionProbability> machineBuild = new Machine.Builder<FractionProbability>(modelName);
+    Machine.Builder<DoubleProbability> machineBuild = new Machine.Builder<DoubleProbability>(modelName);
     Iterator<Integer> itrTemp=code.iterator();
+
     for(String s:stateNames){
-      Net.Builder<FractionProbability> netUnused=new Net.Builder<FractionProbability>();
-      State.Builder<FractionProbability> stateUnused=new State.Builder<FractionProbability>(modelName,s,alternative);
-      Machine.Builder<FractionProbability> machineUnused = new Machine.Builder<FractionProbability>(modelName);
+      Net.Builder<DoubleProbability> netUnused=new Net.Builder<DoubleProbability>();
+      Builder<DoubleProbability> stateUnused=new State.Builder<DoubleProbability>(modelName,s,alternative);
+      Machine.Builder<DoubleProbability> machineUnused = new Machine.Builder<DoubleProbability>(modelName);
       machineUnused.addState(stateUnused.build());
-      Iterator<Machine<FractionProbability>> tempItr=net.iterator();
+      Iterator<Machine<DoubleProbability>> tempItr=net.iterator();
       while(tempItr.hasNext()){
         netUnused.addMachine(tempItr.next());
       }
       netUnused.addMachine(machineUnused.build());
       
-      DecisionTree<TransitionVector<FractionProbability>> head=replaceTerminals(alternative,s,netUnused.build().dictionary); 
+      DecisionTree<TransitionVector<DoubleProbability>> head=replaceTerminals(alternative,s,netUnused.build().dictionary); 
       
-      State.Builder<FractionProbability> stateBuild=new State.Builder<FractionProbability>(modelName,s,head);
+      State.Builder<DoubleProbability> stateBuild=new State.Builder<DoubleProbability>(modelName,s,head);
+
       String[] machines=s.split(this.STATE_MULTIPLY_STRING);
       int value=0;
       for (String sM:machines){
@@ -251,8 +260,8 @@ public class Simulation {
     return machineBuild.build();
   }
 
-  private DecisionTree<TransitionVector<FractionProbability>> replaceTerminals(
-      DecisionTree<TransitionVector<FractionProbability>> alternative, final String s, final Dictionary dictionary) {
+  private DecisionTree<TransitionVector<DoubleProbability>> replaceTerminals(
+      DecisionTree<TransitionVector<DoubleProbability>> alternative, final String s, final Dictionary dictionary) {
     
     final String modelName="DischargeModel";
     DecisionTreeVisitor dv=new DecisionTreeVisitor(s,modelName,dictionary,alternative);
@@ -260,22 +269,22 @@ public class Simulation {
     return dv.alternative;
   }
   
-  class DecisionTreeVisitor implements DecisionTree.Visitor<TransitionVector<FractionProbability>>{
+  class DecisionTreeVisitor implements DecisionTree.Visitor<TransitionVector<DoubleProbability>>{
     String s;
     String modelName;
     Dictionary dictionary;
-    DecisionTree<TransitionVector<FractionProbability>> alternative;
+    DecisionTree<TransitionVector<DoubleProbability>> alternative;
     int kickOutPatientNum;
     
-    DecisionTreeVisitor(String s,String model,Dictionary dict,DecisionTree<TransitionVector<FractionProbability>> alt){
+    DecisionTreeVisitor(String s,String model,Dictionary dict,DecisionTree<TransitionVector<DoubleProbability>> alternative2){
       this.s=s;
       this.modelName=model;
       this.dictionary=dict;
-      this.alternative=alt;
+      this.alternative=alternative2;
       this.kickOutPatientNum=0;
     }
     
-    public void visitTerminal(DecisionTree.Terminal<TransitionVector<FractionProbability>> term) {
+    public void visitTerminal(DecisionTree.Terminal<TransitionVector<DoubleProbability>> term) {
       String[] state=s.split("::");
       int numOfEmpty=0;
       ArrayList<Integer> stateNum=new ArrayList<Integer>();
@@ -290,12 +299,13 @@ public class Simulation {
         }
       }
       stateNum=temp;
-      TransitionVector.Builder<FractionProbability> b=new TransitionVector.Builder<FractionProbability>(modelName);
-      FractionProbability p=new FractionProbability(1,numOfEmpty);
+      TransitionVector.Builder<DoubleProbability> b=new TransitionVector.Builder<DoubleProbability>(modelName);
+      
       if (numOfEmpty==0) {
         //kick the patient out if state is Arrival
       }else{
-        TransitionVector.Builder<FractionProbability> tb=new TransitionVector.Builder<FractionProbability>(modelName);
+        DoubleProbability p=new DoubleProbability(1,numOfEmpty);
+        TransitionVector.Builder<DoubleProbability> tb=new TransitionVector.Builder<DoubleProbability>(modelName);
         for (int s:stateNum){
           String stateName="";
           for(int j=0;j<state.length;j++){
@@ -305,19 +315,19 @@ public class Simulation {
           }
           tb.setProbability(stateName, p);
         }
-        TransitionVector<FractionProbability> pVector = tb.build();
+        TransitionVector<DoubleProbability> pVector = tb.build();
         Predicate.Atom atom=new Predicate.Atom("ArrivalModel", "Arrival", "T");
-        DecisionTree.Terminal<TransitionVector<FractionProbability>> conseq=new DecisionTree.Terminal<TransitionVector<FractionProbability>>(pVector);
-        DecisionTree.Terminal<TransitionVector<FractionProbability>> alter=new DecisionTree.Terminal<TransitionVector<FractionProbability>>(term.output);
-        alternative=new DecisionTree.Branch<TransitionVector<FractionProbability>>(atom, conseq, alter);
+        DecisionTree.Terminal<TransitionVector<DoubleProbability>> conseq=new DecisionTree.Terminal<TransitionVector<DoubleProbability>>(pVector);
+        DecisionTree.Terminal<TransitionVector<DoubleProbability>> alter=new DecisionTree.Terminal<TransitionVector<DoubleProbability>>(term.output);
+        alternative=new DecisionTree.Branch<TransitionVector<DoubleProbability>>(atom, conseq, alter);
       }
     }
 
-    public void visitBranch(DecisionTree.Branch<TransitionVector<FractionProbability>> walker) {
-      DecisionTree<TransitionVector<FractionProbability>> conseq = replaceTerminals(walker.consequent,s,dictionary);
-      DecisionTree<TransitionVector<FractionProbability>> alter = replaceTerminals(walker.alternative,s,dictionary);
+    public void visitBranch(DecisionTree.Branch<TransitionVector<DoubleProbability>> walker) {
+      DecisionTree<TransitionVector<DoubleProbability>> conseq = replaceTerminals(walker.consequent,s,dictionary);
+      DecisionTree<TransitionVector<DoubleProbability>> alter = replaceTerminals(walker.alternative,s,dictionary);
       Predicate pred=walker.predicate;
-      alternative=new DecisionTree.Branch<TransitionVector<FractionProbability>>(pred, conseq, alter);
+      alternative=new DecisionTree.Branch<TransitionVector<DoubleProbability>>(pred, conseq, alter);
     }
   
     
@@ -329,7 +339,7 @@ public class Simulation {
     
     for (int i=0;i<this.matrix.N;i++){
       for (int j=0;j<this.matrix.N;j++){
-        out[i][j]=(double)this.matrix.get(i, j).p.num / (double)this.matrix.get(i, j).p.den;
+        out[i][j]= this.matrix.get(i, j).p;
       }
     }
     return out;
@@ -337,26 +347,26 @@ public class Simulation {
 
   private void retrieveProbability(
       ArrayList<String> machineName,
-      ArrayList<State<FractionProbability>> states, Dictionary dictionary, HashMap<String, Integer> stateNameList, RandomBuilder<FractionProbability> builder) {
+      ArrayList<State<DoubleProbability>> states, Dictionary dictionary, HashMap<String, Integer> stateNameList, RandomBuilder<DoubleProbability> builder) {
     
-    ArrayList<Ptr<TransitionVector<FractionProbability>>> ptrs=new ArrayList<Ptr<TransitionVector<FractionProbability>>>();
-    TransitionVector<FractionProbability> out=null;
+    ArrayList<Ptr<TransitionVector<DoubleProbability>>> ptrs=new ArrayList<Ptr<TransitionVector<DoubleProbability>>>();
+    TransitionVector<DoubleProbability> out=null;
     String combinedStateName="empty";
     
     for (int machineCounter=0;machineCounter<machineName.size();machineCounter++){
-      ArrayList<State<FractionProbability>> stateCopy= new ArrayList<State<FractionProbability>>(states);
+      ArrayList<State<DoubleProbability>> stateCopy= new ArrayList<State<DoubleProbability>>(states);
       ArrayList<String> machineNameCopy=new ArrayList<String>(machineName);
       
-      State<FractionProbability> Astate =states.get(machineCounter);
-      DecisionTree<TransitionVector<FractionProbability>> decisionTreeA=Astate.getTransitionFunction();
-      Romdd<TransitionVector<FractionProbability>> eva = decisionTreeA.toRomdd(dictionary);
-      Romdd<TransitionVector<FractionProbability>> root = eva;
+      State<DoubleProbability> Astate =states.get(machineCounter);
+      DecisionTree<TransitionVector<DoubleProbability>> decisionTreeA=Astate.getTransitionFunction();
+      Romdd<TransitionVector<DoubleProbability>> eva = decisionTreeA.toRomdd(dictionary);
+      Romdd<TransitionVector<DoubleProbability>> root = eva;
       
       stateCopy.remove(machineCounter);
       machineNameCopy.remove(machineCounter);
     
       for(int i=0;i<stateCopy.size();i++){
-        State<FractionProbability> s=stateCopy.get(i);
+        State<DoubleProbability> s=stateCopy.get(i);
         Iterator<String> itrLabel=s.labelNameIterator();
         while(itrLabel.hasNext()){
           String labelName=itrLabel.next();
@@ -365,14 +375,14 @@ public class Simulation {
         }
       }
       
-      final Ptr<TransitionVector<FractionProbability>> ptr=new Ptr<TransitionVector<FractionProbability>>();
-      root.accept(new Romdd.Visitor<TransitionVector<FractionProbability>>() {
+      final Ptr<TransitionVector<DoubleProbability>> ptr=new Ptr<TransitionVector<DoubleProbability>>();
+      root.accept(new Romdd.Visitor<TransitionVector<DoubleProbability>>() {
 
-        public void visitTerminal(Romdd.Terminal<TransitionVector<FractionProbability>> term) {
+        public void visitTerminal(Romdd.Terminal<TransitionVector<DoubleProbability>> term) {
           ptr.value=term.output;
         }
 
-        public void visitNode(Romdd.Node<TransitionVector<FractionProbability>> walker) {
+        public void visitNode(Romdd.Node<TransitionVector<DoubleProbability>> walker) {
           ptr.value=null;
           System.err.println("End up in walker!!");
         }
@@ -390,15 +400,15 @@ public class Simulation {
     
     int rowNum=stateNameList.get(combinedStateName);
     
-    Iterator<Map.Entry<String, FractionProbability>> itrMergedLabel=out.iterator();
-    ArrayList<FractionProbability> row=new ArrayList<FractionProbability>();
+    Iterator<Map.Entry<String, DoubleProbability>> itrMergedLabel=out.iterator();
+    ArrayList<DoubleProbability> row=new ArrayList<DoubleProbability>();
     
     for (int i=0;i<stateNameList.size();i++){
-      row.add(i, FractionProbability.ZERO);
+      row.add(i, DoubleProbability.ZERO);
     }
-    FractionProbability sum=FractionProbability.ZERO;
+    DoubleProbability sum=DoubleProbability.ZERO;
     while(itrMergedLabel.hasNext()){
-      Entry<String, FractionProbability> temp = itrMergedLabel.next();
+      Entry<String, DoubleProbability> temp = itrMergedLabel.next();
       int colNum=(stateNameList.get(temp.getKey())!=null)?stateNameList.get(temp.getKey()):-1;
       if (colNum>-1){
         row.set(colNum, temp.getValue());
@@ -413,17 +423,17 @@ public class Simulation {
   }
 
   private void constructStateList(
-      ArrayList<State<FractionProbability>> stateArray,
-      Stack<Machine<FractionProbability>> stack, HashSet<ArrayList<State<FractionProbability>>> accu) {
+      ArrayList<State<DoubleProbability>> stateArray,
+      Stack<Machine<DoubleProbability>> stack, HashSet<ArrayList<State<DoubleProbability>>> accu) {
     //output: accu is HashSet which every element is ArrayList of stateArray
     if (stack.isEmpty()){
       accu.add(stateArray);
       return;
     }
-    Iterator<State<FractionProbability>> itr=stack.head().iterator();
+    Iterator<State<DoubleProbability>> itr=stack.head().iterator();
     while(itr.hasNext()){
-      State<FractionProbability> s=itr.next();
-      ArrayList<State<FractionProbability>> stateArrayTemp = new ArrayList<State<FractionProbability>>(stateArray);
+      State<DoubleProbability> s=itr.next();
+      ArrayList<State<DoubleProbability>> stateArrayTemp = new ArrayList<State<DoubleProbability>>(stateArray);
       stateArrayTemp.add(s);
       constructStateList(stateArrayTemp,stack.tail(),accu);
     }
@@ -431,18 +441,18 @@ public class Simulation {
   }
   
   private void initializeStates(
-      Machine<FractionProbability> A,
-      Machine<FractionProbability> B,
+      Machine<DoubleProbability> A,
+      Machine<DoubleProbability> B,
       HashMap<String, Integer> stateNameList) {
     HashMap<String, Integer> out=new HashMap<String, Integer>();
     
     if (!stateNameList.isEmpty()){
 
-      Iterator<State<FractionProbability>> itrBState= B.iterator();
+      Iterator<State<DoubleProbability>> itrBState= B.iterator();
       int count=0;
 
       while (itrBState.hasNext()){
-        State<FractionProbability> tempB = itrBState.next();
+        State<DoubleProbability> tempB = itrBState.next();
         Iterator<String> itrAState=stateNameList.keySet().iterator();
         while(itrAState.hasNext()){
           String tempAName = itrAState.next();
@@ -457,16 +467,16 @@ public class Simulation {
     }
     else {
 
-      Iterator<State<FractionProbability>> itrBState= B.iterator();
+      Iterator<State<DoubleProbability>> itrBState= B.iterator();
       int count=0;
 
       while (itrBState.hasNext()){
-        State<FractionProbability> tempB = itrBState.next();
-        Iterator<State<FractionProbability>> itrAState=A.iterator();
+        State<DoubleProbability> tempB = itrBState.next();
+        Iterator<State<DoubleProbability>> itrAState=A.iterator();
       
         while(itrAState.hasNext()){
           
-          State<FractionProbability> tempA = itrAState.next();
+          State<DoubleProbability> tempA = itrAState.next();
           stateNameList.put((tempA.name+Machine.MULTIPLY_STRING+tempB.name),new Integer(count));
           count++;
         }       

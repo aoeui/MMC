@@ -5,7 +5,7 @@ import java.util.Iterator;
 import markov.Machine;
 import markov.Net;
 import markov.Predicate;
-import markov.FractionProbability;
+import markov.DoubleProbability;
 import markov.State;
 import markov.TransitionVector;
 import markov.DecisionTree;
@@ -23,19 +23,19 @@ public class XmlParser {
       
       public XmlParser() {
         
-        Net<FractionProbability> net = XmlInput("xml/umlVersion3.xml");
+        Net<DoubleProbability> net = XmlInput("xml/umlVersion3.xml");
         System.out.println(net.toString());
        
       }
       
       /****** This method can be used in other class to retrieve machines **********/
-      public static Net<FractionProbability> XmlInput(String fileName){
+      public static Net<DoubleProbability> XmlInput(String fileName){
         return XmlInput(fileName,1);
       }
-      public static Net<FractionProbability> XmlInput(String fileName, int numOfPatient) {
+      public static Net<DoubleProbability> XmlInput(String fileName, int numOfPatient) {
         try {
           
-          Net.Builder<FractionProbability> netBuild=new Net.Builder<FractionProbability>();
+          Net.Builder<DoubleProbability> netBuild=new Net.Builder<DoubleProbability>();
           
           for (int patientNum=0;patientNum<numOfPatient;patientNum++){
             //Read in XML file
@@ -57,7 +57,7 @@ public class XmlParser {
               String machineNames[]=machineXml.getAttribute("name").split(":");
               machineNames[0]=machineNames[0].substring(1);
               String machineName=machineNames[0]+patientNum+":"+machineNames[1];
-              Machine.Builder<FractionProbability> machineBuild = new Machine.Builder<FractionProbability>(machineName);
+              Machine.Builder<DoubleProbability> machineBuild = new Machine.Builder<DoubleProbability>(machineName);
 //              ArrayList<String> labelName=new ArrayList<String>();
               
               NodeList stateList = machineXml.getElementsByTagName("state");
@@ -80,9 +80,9 @@ public class XmlParser {
 
             
                 //getDecisionTreeInfo  under state using 3rd under alternative or consequence use 1st of the Elements's childrenNode
-                DecisionTree<TransitionVector<FractionProbability>> decisionTree=getDecisionTreeInfo(machineBuild.name, stateXml,patientNum);
+                DecisionTree<TransitionVector<DoubleProbability>> decisionTree=getDecisionTreeInfo(machineBuild.name, stateXml,patientNum);
             
-                State.Builder<FractionProbability> stateBuild=new State.Builder<FractionProbability>(machineName,stateXml.getAttribute("name"),decisionTree);
+                State.Builder<DoubleProbability> stateBuild=new State.Builder<DoubleProbability>(machineName,stateXml.getAttribute("name"),decisionTree);
                 
                 for (int temp=0; temp<labels.getLength();temp++)
                 {
@@ -92,15 +92,15 @@ public class XmlParser {
 //                    labelName.add(labelVector.getAttribute("name"));
                   }
                 }
-                State<FractionProbability> state=stateBuild.build();
+                State<DoubleProbability> state=stateBuild.build();
                 machineBuild.addState(state);
               }
-              Machine<FractionProbability> machine=machineBuild.build();
+              Machine<DoubleProbability> machine=machineBuild.build();
               netBuild.addMachine(machine);
                                                              
             }
           }
-            Net<FractionProbability> net=netBuild.build();
+            Net<DoubleProbability> net=netBuild.build();
             
             return net;
           
@@ -202,7 +202,7 @@ public class XmlParser {
       }*/
       
       
-      private static DecisionTree<TransitionVector<FractionProbability>> getDecisionTreeInfo(String machineName, Element parent, int patientNum){
+      private static DecisionTree<TransitionVector<DoubleProbability>> getDecisionTreeInfo(String machineName, Element parent, int patientNum){
         
         Element decisionTreeXml=null;
         //if DecisionTree is under state use the 4th item of childNodes 
@@ -235,8 +235,8 @@ public class XmlParser {
             System.err.println("!!Predicate not parsed!");
           }
           
-          DecisionTree<TransitionVector<FractionProbability>> consequent=null;
-          DecisionTree<TransitionVector<FractionProbability>> alternative=null;         
+          DecisionTree<TransitionVector<DoubleProbability>> consequent=null;
+          DecisionTree<TransitionVector<DoubleProbability>> alternative=null;         
           Element consequentXml = (Element) decisionTreeXml.getChildNodes().item(0).getChildNodes().item(1);
           consequent = getDecisionTreeInfo (machineName, consequentXml,patientNum);
           if (decisionTreeXml.getChildNodes().item(0).getChildNodes().getLength()<3){
@@ -249,7 +249,7 @@ public class XmlParser {
           if (consequent==null || alternative==null)
             System.err.println("!Consequence or alternative not parsed!");
           
-          DecisionTree.Branch<TransitionVector<FractionProbability>> branch=new DecisionTree.Branch<TransitionVector<FractionProbability>>(predicate,consequent,alternative);
+          DecisionTree.Branch<TransitionVector<DoubleProbability>> branch=new DecisionTree.Branch<TransitionVector<DoubleProbability>>(predicate,consequent,alternative);
           
           return branch;  
         }
@@ -257,7 +257,7 @@ public class XmlParser {
           Element probabilityXml = (Element)decisionTreeXml.getChildNodes().item(0);
           NodeList stateNameXml = probabilityXml.getElementsByTagName("stateName");
           NodeList pValueXml = probabilityXml.getElementsByTagName("pValue");
-          TransitionVector.Builder<FractionProbability> b=new TransitionVector.Builder<FractionProbability>(machineName);
+          TransitionVector.Builder<DoubleProbability> b=new TransitionVector.Builder<DoubleProbability>(machineName);
 
           for (int temp=0; temp<stateNameXml.getLength();temp++){
 //           System.out.println("  stateName:"+stateNameXml.item(temp).getChildNodes().item(0).getNodeValue()+",pValue:"+pValueXml.item(temp).getChildNodes().item(0).getNodeValue());
@@ -268,13 +268,13 @@ public class XmlParser {
               System.err.println("pValue input error! Should have format <num>,<den>");
             Long num=Long.parseLong(pValue[0]);
             Long den=Long.parseLong(pValue[1]);
-            FractionProbability probability=new FractionProbability(num,den);
+            DoubleProbability probability=new DoubleProbability(num,den);
             b.setProbability(stateName, probability);
 
           }
         
-          TransitionVector<FractionProbability> transitionVector=b.build();
-          DecisionTree.Terminal<TransitionVector<FractionProbability>> terminal= new DecisionTree.Terminal<TransitionVector<FractionProbability>>(transitionVector);
+          TransitionVector<DoubleProbability> transitionVector=b.build();
+          DecisionTree.Terminal<TransitionVector<DoubleProbability>> terminal= new DecisionTree.Terminal<TransitionVector<DoubleProbability>>(transitionVector);
           return terminal;
           
         }else{

@@ -6,17 +6,17 @@ import java.util.List;
 
 import markov.TransitionMatrix;
 import markov.Lumping;
-import markov.FractionProbability;
+import markov.DoubleProbability;
 
-import static markov.FractionProbability.ZERO;
-import static markov.FractionProbability.ONE;
-import static markov.FractionProbability.HALF;
+import static markov.DoubleProbability.ZERO;
+import static markov.DoubleProbability.ONE;
+import static markov.DoubleProbability.HALF;
 
 public class TestLumping {
   public static void main(String[] args) {
 
-    TransitionMatrix.Builder<FractionProbability> builder =
-        TransitionMatrix.<FractionProbability>create(8);
+    TransitionMatrix.Builder<DoubleProbability> builder =
+        TransitionMatrix.<DoubleProbability>create(8);
 
     builder.addRow(ZERO, ZERO, ZERO, ONE, ZERO, ZERO, ZERO, ZERO);
     builder.addRow(ZERO, ZERO, ONE, ZERO, ZERO, ZERO, ZERO, ZERO);
@@ -27,13 +27,13 @@ public class TestLumping {
     builder.addRow(ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ONE, ZERO);
     builder.addRow(ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ZERO, ONE);
 
-    TransitionMatrix<FractionProbability> matrix = builder.build();
+    TransitionMatrix<DoubleProbability> matrix = builder.build();
 
     ArrayList<List<Integer>> lumps = new ArrayList<List<Integer>>();
     lumps.add(Arrays.asList(0,1,2,3,4,5,6,7));
 
-    Lumping<FractionProbability> lumper =
-        new Lumping<FractionProbability>(matrix, lumps);
+    Lumping<DoubleProbability> lumper =
+        new Lumping<DoubleProbability>(matrix, lumps);
     lumper.runLumping();
     System.out.println(lumper);
 
@@ -43,7 +43,7 @@ public class TestLumping {
     lumps.add(Arrays.asList(3));
     lumps.add(Arrays.asList(6));
 
-    lumper = new Lumping<FractionProbability>(matrix, lumps);
+    lumper = new Lumping<DoubleProbability>(matrix, lumps);
     lumper.runLumping();
     System.out.println(lumper);
   }

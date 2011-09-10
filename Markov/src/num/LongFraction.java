@@ -11,6 +11,11 @@ public class LongFraction implements Comparable<LongFraction> {
     this.num = num;
     this.den = den;
   }
+  
+  public double doubleValue() {
+    if (den == 0) throw new RuntimeException();
+    return (double)num/(double)den;
+  }
 
   public static LongFraction create(long num, long den) {
     if (den == 0) { return DIVIDE_BY_ZERO; }
