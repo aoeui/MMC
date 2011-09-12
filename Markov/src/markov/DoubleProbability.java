@@ -30,7 +30,7 @@ public class DoubleProbability extends Probability<DoubleProbability> {
   }
 
   public DoubleProbability product(DoubleProbability prob) {
-    return new DoubleProbability(p+prob.p);
+    return new DoubleProbability(p*prob.p);
   }
 
   public boolean equals(Object o) {
