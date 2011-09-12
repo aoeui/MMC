@@ -3,10 +3,12 @@ package markov;
 import num.LongFraction;
 
 public class DoubleProbability extends Probability<DoubleProbability> {
+  public final static SumOp SUM = new SumOp();
+  public final static ProdOp PROD = new ProdOp();
+
   public final static double MARGIN = 1e-9;
 
-  public final static DoubleProbability ZERO =
-      new DoubleProbability(LongFraction.ZERO);
+  public final static DoubleProbability ZERO = new DoubleProbability(LongFraction.ZERO);
   public final static DoubleProbability ONE = new DoubleProbability(1,1);
   public final static DoubleProbability HALF = new DoubleProbability(1,2);
 
@@ -54,5 +56,26 @@ public class DoubleProbability extends Probability<DoubleProbability> {
 
   public String toString() {
     return Double.toString(p);
+  }
+  
+
+  private static class SumOp implements Romdd.Op<DoubleProbability> { 
+    private SumOp() {}
+    public DoubleProbability apply(DoubleProbability v1, DoubleProbability v2) {
+      return v1.sum(v2);
+    }
+    public boolean isDominant(DoubleProbability value) {
+      return false;
+    }
+  }
+
+  private static class ProdOp implements Romdd.Op<DoubleProbability> {
+    private ProdOp() {}
+    public DoubleProbability apply(DoubleProbability v1, DoubleProbability v2) {
+      return v1.product(v2);
+    }
+    public boolean isDominant(DoubleProbability value) {
+      return value.isZero();
+    }
   }
 }

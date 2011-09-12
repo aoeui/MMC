@@ -90,6 +90,7 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
   
   public <S extends Comparable<? super S>> Romdd<S> remap(final Mapping<T,S> mapper) { 
     final class Remapper extends RomddCacher<S >{
+      TreeMap<Node<T>,Romdd<S>> mapCache = new TreeMap<Node<T>, Romdd<S>>();
       Romdd<S> remap() {
         return recurse(Romdd.this);
       }
@@ -100,11 +101,15 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
             rvPtr.value = checkCache(new Terminal<S>(mapper.transform(term.output)));
           }
           public void visitNode(Node<T> node) {
-            DiffTrackingArrayList<Romdd<S>> newChildren = new DiffTrackingArrayList<Romdd<S>>();
-            for (Romdd<T> child : node) {
-              newChildren.add(recurse(child));
+            rvPtr.value = mapCache.get(node);
+            if (rvPtr.value == null) {
+              DiffTrackingArrayList<Romdd<S>> newChildren = new DiffTrackingArrayList<Romdd<S>>();
+              for (Romdd<T> child : node) {
+                newChildren.add(recurse(child));
+              }
+              rvPtr.value = newChildren.isAllSame() ? newChildren.get(0) : checkCache(new Node<S>(node.alpha, newChildren));
+              mapCache.put(node, rvPtr.value);
             }
-            rvPtr.value = newChildren.isAllSame() ? newChildren.get(0) : checkCache(new Node<S>(node.alpha, newChildren));
           }
         });
         return rvPtr.value;
