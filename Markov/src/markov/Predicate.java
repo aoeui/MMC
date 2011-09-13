@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+
+import util.Stack;
 import util.UnmodifiableIterator;
 
 public abstract class Predicate {
@@ -185,49 +187,56 @@ public abstract class Predicate {
       return subject.toRomdd(dict).remap(Romdd.INVERT);
     }
   }
+
   public static class Atom extends Predicate implements Comparable<Atom> {
-    public final String machineName;
-    public final String labelName;
-    public final String character;
+    public final Stack<String> name;
+
+    public final String value;
     
-    public final String varName;
-    
-    public Atom(String machineName, String labelName, String instance) {
-      this.machineName = machineName;
-      this.labelName = labelName;
-      this.character = instance;
-      
-      this.varName = machineName + "." + labelName;
+    // Last string is considered instance
+    public Atom(String name1, String name2, String ... spec) {
+      Stack<String> stack = Stack.<String>emptyInstance();
+      for (int i = spec.length-2; i >= 0; i--) {
+        stack = stack.push(spec[i]);
+      }
+      if (spec.length == 0) {
+        this.name = stack.push(name1);
+        this.value = name2;
+      } else {
+        this.name = stack.push(name2).push(name1);
+        this.value = spec[spec.length-1];
+      }
     }
+
     public void accept(Visitor v) { v.visitAtom(this); }
 
     public boolean isSameVariable(Atom atom) {
-      return varName.equals(atom.varName);
+      return Stack.STRING_COMP.compare(name, atom.name) == 0;
     }
     
     protected String computeString() {
-      return varName + "=" + character;
+      return name.toString("::") + "=" + value;
     }
     
     public int compareTo(Atom other) {
-      int rv = varName.compareTo(other.varName);
-      if (rv == 0) return character.compareTo(other.character);
+      int rv = Stack.STRING_COMP.compare(name, other.name);
+      if (rv == 0) return value.compareTo(other.value);
       return rv;
     }
     
     public boolean equals(Object o) {
       try {
-        Atom other = (Atom)o;
-        return varName.equals(other.varName) && character.equals(other.character);
+        return compareTo((Atom)o) == 0;
       } catch (Exception e) { return false; }
     }
     
     public Romdd<Boolean> toRomdd(Dictionary dict) {
-      Alphabet alpha = dict.get(machineName).get(labelName);
+      int varId = dict.getId(name);
+      Alphabet alpha = dict.getAlpha(varId);
       ArrayList<Romdd<Boolean>> children = new ArrayList<Romdd<Boolean>>();
       boolean found = false;
       for (int i = 0; i < alpha.size(); i++) {
-        if (alpha.get(i).equals(character)) {
+        if (alpha.get(i).equals(value)) {
           if (found) throw new RuntimeException();
           children.add(Romdd.TRUE);
           found = true;
@@ -237,7 +246,7 @@ public abstract class Predicate {
       }
       if (!found) throw new RuntimeException();
       
-      return new Romdd.Node<Boolean>(alpha, children);
+      return new Romdd.Node<Boolean>(dict, varId, children);
     }
   }
 
@@ -248,15 +257,5 @@ public abstract class Predicate {
     public void visitNeg(Neg predicate);
     public void visitImplies(Implies predicate);
     public void visitAtom(Atom predicate);
-  }
-
-  public abstract static class VisitorAdapter implements Visitor {
-    public abstract void visit(Predicate p);
-    public void visitCollection(CollectionPredicate p) { visit(p); }
-    public void visitAnd(And p) { visitCollection(p); }
-    public void visitOr(Or p) { visitCollection(p); }
-    public void visitNeg(Neg p) { visit(p); }
-    public void visitImplies(Implies p) { visit(p); }
-    public void visitAtom(Atom p) { visit(p); }
   }
 }
