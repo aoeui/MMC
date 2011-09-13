@@ -25,6 +25,14 @@ public abstract class Stack<T> implements Iterable<T> {
     return (Stack<T>)Empty.instance;
   }
   
+  // Warning, uses equals to test for containment.
+  public boolean contains(Stack<T> stack) {
+    if (stack.isEmpty()) return true;
+    if (isEmpty()) return false;  // stack is not empty
+    
+    return head().equals(stack.head()) ? tail().contains(stack.tail()) : false;
+  }
+  
   public Iterator<T> iterator() {
     return new StackIterator<T>(this);
   }

@@ -5,7 +5,6 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
-import util.Joiner;
 import util.Stack;
 import util.UnmodifiableIterator;
 
@@ -216,7 +215,7 @@ public abstract class Predicate {
     }
     
     protected String computeString() {
-      return  Joiner.join(name, "::") + "=" + value;
+      return name.toString("::") + "=" + value;
     }
     
     public int compareTo(Atom other) {

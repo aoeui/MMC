@@ -13,6 +13,8 @@ import util.Indenter;
 import util.TerminatedIterator;
 import util.UnmodifiableIterator;
 
+import util.Stack;
+
 public class Net<T extends Probability<T>> implements Iterable<Machine<T>> {
   public final int N;
 
@@ -31,10 +33,14 @@ public class Net<T extends Probability<T>> implements Iterable<Machine<T>> {
     Dictionary.Builder dBuilder = new Dictionary.Builder();
     for (Machine<T> m : machines) {
       machineTable.put(m.name, m);
-      dBuilder.add(new Domain.Builder(m).build());
+      State<T> protoState = m.iterator().next();
+      for (Iterator<String> labelIt = protoState.labelNameIterator(); labelIt.hasNext(); ) {
+        Alphabet.Builder alphaBuilder = new Alphabet.Builder(m, labelIt.next());
+        dBuilder.add(alphaBuilder.build());
+      }
     }
-
     this.dictionary = dBuilder.build();
+
     this.N = machineTable.size();
     idxToMachine = new ArrayList<String>(machineTable.keySet());
     Collections.sort(idxToMachine);
@@ -59,7 +65,7 @@ public class Net<T extends Probability<T>> implements Iterable<Machine<T>> {
     for (State<T> state : machine) {
       TerminatedIterator<Predicate.Atom> it = state.getTransitionFunction().atomIterator();
       while (it.hasNext()) {
-        accu.add(it.next().machineName);
+        accu.add(it.next().name.head());
       }
     }
   }
@@ -72,10 +78,6 @@ public class Net<T extends Probability<T>> implements Iterable<Machine<T>> {
   
   public Machine<T> getMachine(String name) {
     return machineTable.get(name);
-  }
-  
-  public Domain getDomain(String name) {
-    return dictionary.get(name);
   }
   
   public TreeSet<String> getNeighbors(String str) {
@@ -120,7 +122,7 @@ public class Net<T extends Probability<T>> implements Iterable<Machine<T>> {
       if (isFirstMachine) isFirstMachine = false;
       else indenter.println();
       indenter.print(machineTable.get(name));
-      indenter.println("dictionary:").indent().println(dictionary.get(name)).deindent();
+      indenter.println("dictionary:").indent().println(dictionary.print(Stack.<String>emptyInstance().push(name))).deindent();
       indenter.print("neighbors = [");
       boolean isFirst = true;
       for (String neighbor : getNeighbors(name)) {

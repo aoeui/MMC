@@ -12,7 +12,6 @@ import java.util.Formatter;
 
 import markov.Alphabet;
 import markov.Dictionary;
-import markov.Domain;
 import markov.Predicate;
 import markov.Predicate.CollectionType;
 import markov.Romdd;
@@ -20,6 +19,7 @@ import markov.Romdd;
 import util.Coroutine;
 import util.Pair;
 import util.Partition;
+import util.Stack;
 import util.TerminatedIterator;
 
 public class Sudoku {
@@ -252,11 +252,14 @@ public class Sudoku {
     public String toString() {
       return name + " = " + val;
     }
+    
+    public Stack<String> getId() {
+      return Stack.<String>emptyInstance().push(Integer.toString(col)).push(Integer.toString(row));
+    }
   }
   
-  public static Pair<Integer> toPair(String name) {
-    String[] names = name.split("\\.");
-    return new Pair<Integer>(Integer.parseInt(names[0]),Integer.parseInt(names[1]));  
+  public static Pair<Integer> toPair(Stack<String> name) {
+    return new Pair<Integer>(Integer.parseInt(name.head()),Integer.parseInt(name.tail().head()));  
   }
 
   public boolean isNeighbor(Pair<Integer> p1, Pair<Integer> p2) {
@@ -350,7 +353,7 @@ public class Sudoku {
        setMarked(fixed.row, fixed.col);
     
        // System.out.print("restricting " + fixed);
-       constraints = constraints.restrict(fixed.row + "." + fixed.col, Integer.toString(fixed.val));
+       constraints = constraints.restrict(fixed.getId(), Integer.toString(fixed.val));
        // System.out.println(" complete");
     
        Predicate.CollectionBuilder pBuilder = new Predicate.CollectionBuilder(CollectionType.AND);
@@ -437,11 +440,11 @@ public class Sudoku {
     public String getVarString(Romdd<Boolean> romdd) {
       StringBuilder builder = new StringBuilder("[");
       boolean isFirst = true;
-      for (String varName : romdd.listVarNames()) {
+      for (Alphabet var : romdd.listVarNames()) {
         if (isFirst) isFirst = false;
         else builder.append(", ");
-        builder.append(varName);
-        Pair<Integer> pair = toPair(varName);
+        builder.append(var.name);
+        Pair<Integer> pair = toPair(var.name);
         if (isMarked(pair)) builder.append('*');
       }
       builder.append(']');
@@ -466,7 +469,7 @@ public class Sudoku {
       Partition.Builder<ValueTable> builder = Partition.<ValueTable>naturalBuilder();
       for (TerminatedIterator<Pair<Integer>> it = unmarkedIterator(); it.hasNext(); ) {
         Pair<Integer> next = it.next();
-        TreeSet<String> values = tree.findChildrenReaching(next.first + "." + next.second, true);
+        TreeSet<String> values = tree.findChildrenReaching(Stack.<String>emptyInstance().push(Integer.toString(next.second)).push(Integer.toString(next.first)), true);
         // System.out.println("Possible values for " + next + " = " + values);
         ValueTable table = new ValueTable(next, values);
         builder.add(table);
@@ -524,15 +527,13 @@ public class Sudoku {
     private Dictionary buildDictionary() {
       Dictionary.Builder builder = new Dictionary.Builder();
       for (int row = 0; row < N; row++) {
-        Domain.AltBuilder domBuilder = new Domain.AltBuilder(Integer.toString(row));
         for (int col = 0; col < N; col++) {
           Alphabet.AltBuilder alphaBuilder = new Alphabet.AltBuilder(Integer.toString(row), Integer.toString(col));
           for (int i = 1; i <= N; i++) {
             alphaBuilder.addCharacter(Integer.toString(i));
           }
-          domBuilder.add(alphaBuilder.build());
+          builder.add(alphaBuilder.build());
         }
-        builder.add(domBuilder.build());
       }
       return builder.build();
     }

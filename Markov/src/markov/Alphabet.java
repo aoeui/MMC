@@ -91,7 +91,7 @@ public class Alphabet implements Comparable<Alphabet> {
   
   public String toString() {
     StringBuilder builder = new StringBuilder();
-    Joiner.appendJoin(builder, name, "::");
+    builder.append(name.toString("::"));
     builder.append("->{");
     Joiner.appendJoin(builder, characters, ", ");
     builder.append('}');

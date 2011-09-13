@@ -362,7 +362,7 @@ public class Simulation {
         while(itrLabel.hasNext()){
           String labelName=itrLabel.next();
           String instance=s.getLabel(labelName);
-          root=root.restrict(machineNameCopy.get(i) + "." + labelName, instance);
+          root=root.restrict(Stack.<String>emptyInstance().push(labelName).push(machineNameCopy.get(i)), instance);
         }
       }
       

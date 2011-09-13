@@ -1,5 +1,6 @@
 package markov;
 
+import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -36,6 +37,21 @@ public class Dictionary {
 
   public boolean isCompleteSet(Stack<String> name, SortedSet<String> characters) {
     return getAlpha(name).isCharSetEqual(characters); 
+  }
+  
+  public String print(Stack<String> restrict) {
+    StringBuilder builder = new StringBuilder('{');
+    boolean isFirst = true;
+    for (Map.Entry<Stack<String>, Tuple> entry : data.entrySet()) {
+      if (!entry.getKey().contains(restrict)) continue;
+
+      if (isFirst) isFirst = false;
+      else builder.append(", ");
+
+      builder.append(entry.getValue().alpha.toString());
+    }
+    builder.append('}');
+    return builder.toString();
   }
   
   public static class Builder {

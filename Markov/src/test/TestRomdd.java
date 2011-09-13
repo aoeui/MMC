@@ -40,13 +40,13 @@ public class TestRomdd {
       Stack<String> restrict =  Stack.<String>emptyInstance().push(Integer.toString(i % N)).push(Integer.toString(i / N));
       next = next.restrict(restrict, Integer.toString(i+1));
       System.out.println("After restricting " + Joiner.join(restrict, "::") + " to " + (i+1));
-      printTableOfReachableValues(romdd);
+      printTableOfReachableValues(next);
     }
     
     System.out.println("Checking summations");
     next = romdd;
-    for (int i = 0; i < N-1; i++) {
-      next = next.sum(Romdd.OR, Stack.<String>emptyInstance().push(Integer.toString(i)));
+    for (int i = 0; i < N*N; i++) {
+      next = next.sum(Romdd.OR, Stack.<String>emptyInstance().push(Integer.toString(i % N)).push(Integer.toString(i / N)));
       System.out.println("After summing out " + i);
       printTableOfReachableValues(next);
     }

@@ -42,4 +42,8 @@ public class Pair<T extends Comparable<? super T>> implements Comparable<Pair<T>
     }
     return rv;
   }
+  
+  public Stack<T> toStack() {
+    return Stack.<T>emptyInstance().push(second).push(first);
+  }
 }
