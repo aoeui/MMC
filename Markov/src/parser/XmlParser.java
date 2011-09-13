@@ -37,14 +37,14 @@ public class XmlParser {
           
           Net.Builder<DoubleProbability> netBuild=new Net.Builder<DoubleProbability>();
           
-          for (int patientNum=0;patientNum<numOfPatient;patientNum++){
-            //Read in XML file
-            DocumentBuilderFactory dbfac = DocumentBuilderFactory.newInstance();
-            DocumentBuilder docBuilder = dbfac.newDocumentBuilder();
-            Document doc = docBuilder.parse(fileName);
+          
+          //Read in XML file
+          DocumentBuilderFactory dbfac = DocumentBuilderFactory.newInstance();
+          DocumentBuilder docBuilder = dbfac.newDocumentBuilder();
+          Document doc = docBuilder.parse(fileName);
 
-            doc.getDocumentElement().normalize();
-            
+          doc.getDocumentElement().normalize();
+          for (int patientNum=0;patientNum<numOfPatient;patientNum++){  
 //            System.out.println("Root element :" + doc.getDocumentElement().getNodeName());
             NodeList machineList = doc.getElementsByTagName("machine");
       
