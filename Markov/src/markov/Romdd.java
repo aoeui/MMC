@@ -12,6 +12,7 @@ import util.LexicalCompare;
 import util.Pair;
 import util.Partition;
 import util.Ptr;
+import util.Stack;
 
 /* T corresponds to terminal values. */
 public abstract class Romdd<T extends Comparable<? super T>> implements Comparable<Romdd<T>> {
@@ -21,7 +22,7 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
   public final static Op<Boolean> AND = AndOp.INSTANCE;
   public final static Op<Boolean> OR = OrOp.INSTANCE;
   public final static Mapping<Boolean,Boolean> INVERT = Invert.INSTANCE;
-
+  
   private Romdd() { }
   public abstract void accept(Visitor<T> visitor);
   
@@ -42,49 +43,89 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
   public static <T extends Comparable<? super T>> Romdd<T> branch(final Romdd<Boolean> condition, final Romdd<T> consequent, final Romdd<T> alternative) {
     final class Brancher extends RomddCacher<T> {
       Romdd<T> branch() {
-        return recurse(condition, consequent, alternative);
+        final Ptr<Romdd<T>> rvPtr = new Ptr<Romdd<T>>();
+        condition.accept(new Visitor<Boolean>() {
+          public void visitTerminal(Terminal<Boolean> term) {
+            rvPtr.value = term.output ? consequent : alternative;
+          }
+          public void visitNode(Node<Boolean> node) {
+            rvPtr.value = recurse(node.dict, condition, consequent, alternative);
+          }
+        });
+        return rvPtr.value;
       }
-      Romdd<T> recurse(Romdd<Boolean> pred, Romdd<T> cons, Romdd<T> alt) {
-        Alphabet alpha = findMinAlpha(pred, cons, alt);
+      Romdd<T> recurse(Dictionary dict, Romdd<Boolean> pred, Romdd<T> cons, Romdd<T> alt) {
+        Integer alpha = findMinAlpha(pred, cons, alt);
         if (alpha == null) {  // implies all searches at terminal
           return checkCache(pred.getOutput() ? cons : alt); 
         } else {
           DiffTrackingArrayList<Romdd<T>> newChildren = new DiffTrackingArrayList<Romdd<T>>();
-          for (int i = 0; i < alpha.size(); i++) {
-            newChildren.add(recurse(choose(alpha, i, pred), choose(alpha, i, cons), choose(alpha, i, alt)));
+          for (int i = 0; i < dict.getAlpha(alpha).size(); i++) {
+            newChildren.add(recurse(dict, choose(alpha, i, pred), choose(alpha, i, cons), choose(alpha, i, alt)));
           }
-          return newChildren.isAllSame() ? newChildren.get(0) : checkCache(new Node<T>(alpha, newChildren));
+          return newChildren.isAllSame() ? newChildren.get(0) : checkCache(new Node<T>(dict, alpha, newChildren));
         }
       }
-      <S extends Comparable<? super S>> Romdd<S> choose(final Alphabet alpha, final int idx, Romdd<S> romdd) {
+      <S extends Comparable<? super S>> Romdd<S> choose(final int varId, final int idx, Romdd<S> romdd) {
         final Ptr<Romdd<S>> rvPtr = new Ptr<Romdd<S>>();
         romdd.accept(new Visitor<S>() {
           public void visitTerminal(Terminal<S> term) {
             rvPtr.value = term;
           }
           public void visitNode(Node<S> node) {
-            rvPtr.value = alpha.name.equals(node.alpha.name) ? node.getChild(idx) : node;
+            rvPtr.value = varId == node.varId ? node.getChild(idx) : node;
           }
         });
         return rvPtr.value;
       }
-      Alphabet findMinAlpha(Romdd<?> ... romdds) {
-        Alphabet rv = null;
-        for (Romdd<?> romdd : romdds) {
-          Alphabet test = romdd.getAlphabet();
-          if (test != null && (rv == null || test.compareTo(rv) < 0)) {
-            rv = test;
-          }
+      @SuppressWarnings({ "rawtypes", "unchecked" })
+      Integer findMinAlpha(Romdd ... romdds) {
+        final Ptr<Integer> rvPtr = new Ptr<Integer>();
+        for (Romdd romdd : romdds) {
+          romdd.accept(new Visitor() {
+            public void visitTerminal(Terminal term) { }
+            public void visitNode(Node node) {
+              if (rvPtr.value == null) {
+                rvPtr.value = node.varId;
+              } else {
+                if (rvPtr.value > node.varId) {
+                  rvPtr.value = node.varId;
+                }
+              }
+            }
+          });
         }
-        return rv;
+        return rvPtr.value;
       }
     }
     return new Brancher().branch();
   }
   
-  public TreeSet<String> listVarNames() {
-    TreeSet<String> rv = new TreeSet<String>();
-    recurseVarNames(rv);
+  public Alphabet[] listVarNames() {
+    final TreeSet<Integer> rvIdx = new TreeSet<Integer>();
+    final Ptr<Dictionary> dictPtr = new Ptr<Dictionary>();
+    class Lister implements Visitor<T> {
+      TreeSet<Romdd<T>> visited = new TreeSet<Romdd<T>>();
+      void doList(Romdd<T> romdd) {
+        romdd.accept(this);
+      }
+      public void visitTerminal(Terminal<T> term) { }
+      public void visitNode(Node<T> node) {
+        if (visited.contains(node)) return;
+        if (dictPtr.value == null) dictPtr.value = node.dict;
+        visited.add(node);
+        rvIdx.add(node.varId);
+        for (Romdd<T> child : node) {
+          doList(child);
+        }
+      }
+    }
+    new Lister().doList(this);
+    Alphabet[] rv = new Alphabet[rvIdx.size()];
+    int idx = 0;
+    for (int next : rvIdx) {
+      rv[idx++] = dictPtr.value.getAlpha(next);
+    }
     return rv;
   }
   
@@ -102,14 +143,14 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
           }
           public void visitNode(Node<T> node) {
             rvPtr.value = mapCache.get(node);
-            if (rvPtr.value == null) {
-              DiffTrackingArrayList<Romdd<S>> newChildren = new DiffTrackingArrayList<Romdd<S>>();
-              for (Romdd<T> child : node) {
-                newChildren.add(recurse(child));
-              }
-              rvPtr.value = newChildren.isAllSame() ? newChildren.get(0) : checkCache(new Node<S>(node.alpha, newChildren));
-              mapCache.put(node, rvPtr.value);
+            if (rvPtr.value != null) return;
+
+            DiffTrackingArrayList<Romdd<S>> newChildren = new DiffTrackingArrayList<Romdd<S>>();
+            for (Romdd<T> child : node) {
+              newChildren.add(recurse(child));
             }
+            rvPtr.value = newChildren.isAllSame() ? newChildren.get(0) : checkCache(new Node<S>(node.dict, node.varId, newChildren));
+            mapCache.put(node, rvPtr.value);
           }
         });
         return rvPtr.value;
@@ -118,26 +159,20 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
     return new Remapper().remap();
   }
   
-  void recurseVarNames(TreeSet<String> accu) {}
-  
-  public static class LabeledNode<T extends Comparable<? super T>> {
-    public final String label;
-    public final Romdd<T> node;
-
-    public LabeledNode(String label, Romdd<T> node) {
-      this.label = label;
-      this.node = node;
-    }
+  public TreeSet<String> findChildrenReaching(final Stack<String> varName, final T value) {
+    final Ptr<TreeSet<String>> rvPtr = new Ptr<TreeSet<String>>();
+    accept(new Visitor<T>() {
+      public void visitTerminal(Terminal<T> term) {
+        rvPtr.value = new TreeSet<String>();
+      }
+      public void visitNode(Node<T> node) {
+        rvPtr.value = findChildrenReaching(node.dict.getId(varName), value);
+      }
+    });
+    return rvPtr.value;
   }
   
-  public static class LabeledNodeComparator<T extends Comparable<? super T>> implements Comparator<LabeledNode<T>> {
-    public LabeledNodeComparator() {}
-    public int compare(LabeledNode<T> arg0, LabeledNode<T> arg1) {
-      return arg0.node.compareTo(arg1.node);
-    }
-  }
-  
-  public TreeSet<String> findChildrenReaching(final String varName, final T value) {
+  public TreeSet<String> findChildrenReaching(final int varId, final T value) {
     final TreeSet<String> rv = new TreeSet<String>();
     final class Finder {
       final TreeSet<Node<T>> cache1 = new TreeSet<Node<T>>();
@@ -152,9 +187,9 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
             if (cache1.contains(node)) return;
             cache1.add(node);
 
-            if (node.alpha.name.equals(varName)) {
-              for (int i = 0; i < node.alpha.size(); i++) {
-                isValueReachable(node.alpha.get(i), node.getChild(i));
+            if (node.varId == varId) {
+              for (int i = 0; i < node.getSize(); i++) {
+                isValueReachable(node.getAlphabet().get(i), node.getChild(i));
               }
             } else {
               for (Romdd<T> child : node) {
@@ -219,7 +254,7 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
             public void visitNode(final Node<T> leftNode) {
               right.accept(new Visitor<T>() {
                 public void visitNode(final Node<T> rightNode) {
-                  int comp = leftNode.alpha.compareTo(rightNode.alpha);
+                  int comp = leftNode.varId - rightNode.varId;
                   if (comp == 0) {
                     rvPtr.value = expandBoth(leftNode, rightNode);
                   } else {
@@ -263,22 +298,35 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
         for (Romdd<T> child : splitter) {
           children.add(splitterLeft ? recurse(child, node) : recurse(node, child));
         }
-        return children.isAllSame() ? children.get(0) : checkCache(new Node<T>(splitter.alpha, children));
+        return children.isAllSame() ? children.get(0) : checkCache(new Node<T>(splitter.dict, splitter.varId, children));
       }
 
       public Romdd<T> expandBoth(final Node<T> left, final Node<T> right) {
-        assert(left.alpha.compareTo(right.alpha) == 0);
+        assert(left.varId == right.varId);
         DiffTrackingArrayList<Romdd<T>> children = new DiffTrackingArrayList<Romdd<T>>();
         for (int i = 0; i < left.getSize(); i++) {
           children.add(recurse(left.getChild(i), right.getChild(i)));
         }
-        return children.isAllSame() ? children.get(0) : checkCache(new Node<T>(left.alpha, children));
+        return children.isAllSame() ? children.get(0) : checkCache(new Node<T>(left.dict, left.varId, children));
       }
     }    
     return new Application(op, f, g).apply();
   }
+
+  public Romdd<T> sum(final Op<T> operation, final Stack<String> varName) {
+    final Ptr<Romdd<T>> rvPtr = new Ptr<Romdd<T>>();
+    accept(new Visitor<T>() {
+      public void visitTerminal(Terminal<T> term) {
+        rvPtr.value = term;
+      }
+      public void visitNode(Node<T> node) {
+        rvPtr.value = sum(operation, node.dict.getId(varName));
+      }
+    });
+    return rvPtr.value;
+  }
   
-  public Romdd<T> sum(final Op<T> operation, final String varName) {
+  public Romdd<T> sum(final Op<T> operation, final int varId) {
     final class Summation extends RomddCacher<T> {
       public Romdd<T> compute() {
         final Ptr<Romdd<T>> rvPtr = new Ptr<Romdd<T>>();
@@ -294,7 +342,7 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
       }
       
       public Romdd<T> recurse(Node<T> node) {
-        if (node.alpha.name.equals(varName)) {
+        if (node.varId == varId) {
           final Partition.Builder<Node<T>> builder = new Partition.Builder<Node<T>>(NodeAlphaComparator.INSTANCE);
           final Ptr<T> wPtr = new Ptr<T>();
           for (Romdd<T> child : node) {
@@ -320,22 +368,24 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
               }
             });
           }
-          return children.isAllSame() ? children.get(0) : checkCache(new Node<T>(node.alpha, children));
+          return children.isAllSame() ? children.get(0) : checkCache(new Node<T>(node.dict, node.varId, children));
         }
       }
 
       // Must deal with possibly null weight, size 0 partitions.
       // Each of the nodes reaching this part of the recursion are summed together, though branching is permitted.
+      // This is an implementation of N-way-apply
+      // We may  need to add caching for this query
       public Romdd<T> recurse(Partition<Node<T>> nodes, T weight) {
         if (nodes.size() == 0 || ((weight != null) && operation.isDominant(weight))) {
           if (weight == null) throw new RuntimeException();
           return checkCache(new Terminal<T>(weight));
         }
-        Partition<Node<T>>.Block block = nodes.getBlock(0);
+        Partition<Node<T>>.Block block = nodes.getBlock(0);  // the first block has least alpha, it gets branched first
         
         final DiffTrackingArrayList<Romdd<T>> children = new DiffTrackingArrayList<Romdd<T>>();
-        Alphabet alpha = nodes.get(0).alpha;
-        for (int i = 0; i < alpha.size(); i++) {
+        final int size = nodes.get(0).getSize();
+        for (int i = 0; i < size; i++) {
           final Ptr<T> wPtr = new Ptr<T>(weight);
           final Partition.Builder<Node<T>> builder = new Partition.Builder<Node<T>>(NodeAlphaComparator.INSTANCE);
           for (int j = block.start; j <= block.end; j++) {
@@ -349,41 +399,50 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
             });
           }
           for (int j = block.end+1; j < nodes.size(); j++) {
-            builder.add(nodes.get(j));
+            builder.add(nodes.get(j));  // non-branching nodes copied over
           }
           children.add(recurse(builder.build(), wPtr.value));
         }
-        return children.isAllSame() ? children.get(0) : checkCache(new Node<T>(alpha, children));
+        return children.isAllSame() ? children.get(0) : checkCache(new Node<T>(nodes.get(0).dict, nodes.get(0).varId, children));
       }
     }
     return new Summation().compute();
   }
 
-  public Romdd<T> restrict(final String varName, final String value) {
+  public Romdd<T> restrict(final Stack<String> varName, final String value) {
+    final Ptr<Romdd<T>> rvPtr = new Ptr<Romdd<T>>();
+    accept(new Visitor<T>() {
+      public void visitTerminal(Terminal<T> term) {
+        rvPtr.value = Romdd.this;
+      }
+      public void visitNode(Node<T> node) {
+        rvPtr.value = restrict(node.dict.getId(varName), value);
+      }
+    });
+    return rvPtr.value;
+  }
+  
+  public Romdd<T> restrict(final int varId, final String value) {
     class Restriction extends RomddCacher<T> {      
       TreeMap<Node<T>, Romdd<T>> map = new TreeMap<Node<T>, Romdd<T>>();
-      
-      public Romdd<T> build() {
-        return recurse(Romdd.this);
-      }
       
       private Romdd<T> recurse(Romdd<T> next) {
         final Ptr<Romdd<T>> rvPtr = new Ptr<Romdd<T>>();
         next.accept(new Visitor<T>() {
           public void visitNode(Node<T> node) {
             rvPtr.value = map.get(node);
-            if (rvPtr.value == null) {
-              if (node.getName().equals(varName)) {
-                rvPtr.value = recurse(node.getChild(node.alpha.indexOf(value)));
-              } else {
-                DiffTrackingArrayList<Romdd<T>> children = new DiffTrackingArrayList<Romdd<T>>();
-                for (Romdd<T> child : node) {
-                  children.add(recurse(child));
-                }
-                rvPtr.value = children.isAllSame() ? children.get(0) : checkCache(new Node<T>(node.alpha,children));
+            if (rvPtr.value != null) return;
+            
+            if (node.varId == varId) {
+              rvPtr.value = recurse(node.getChild(node.getAlphabet().indexOf(value)));
+            } else {
+              DiffTrackingArrayList<Romdd<T>> children = new DiffTrackingArrayList<Romdd<T>>();
+              for (Romdd<T> child : node) {
+                children.add(recurse(child));
               }
-              map.put(node, rvPtr.value);
+              rvPtr.value = children.isAllSame() ? children.get(0) : checkCache(new Node<T>(node.dict, node.varId, children));
             }
+            map.put(node, rvPtr.value);
           }
           public void visitTerminal(Terminal<T> term) {
             rvPtr.value = checkCache(term);
@@ -392,42 +451,36 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
         return rvPtr.value;
       }
     }
-    return new Restriction().build();
+    return new Restriction().recurse(this);
   }
 
   public static class Node<T extends Comparable<? super T>> extends Romdd<T> implements Iterable<Romdd<T>> {
-    public final Alphabet alpha;
+    public final Dictionary dict;
+    public final int varId;
 
     final ArrayList<Romdd<T>> children;  // These are ordered the same as the alphabet
     
-    public Node(Alphabet alpha, Collection<? extends Romdd<T>> children) {
-      this.alpha = alpha;
+    public Node(Dictionary dict, Stack<String> name, Collection<? extends Romdd<T>> children) {
+      this(dict, dict.getId(name), children);
+    }
+    
+    public Node(Dictionary dict, int varId, Collection<? extends Romdd<T>> children) {
+      this.dict = dict;
+      this.varId = varId;
+      if (children.size() != dict.getAlpha(varId).size()) throw new RuntimeException();
       this.children = new ArrayList<Romdd<T>>(children);
     }
-    
-    public boolean isTerminal() { return false; }
-    T getOutput() { return null; }
-    Alphabet getAlphabet() { return alpha; }
-    public Romdd<T> getChild(int i) { return children.get(i); }
-    public int getSize() { return alpha.size(); }
-    public Iterator<Romdd<T>> iterator() { return children.iterator(); }
 
-    public Partition<LabeledNode<T>> computeChildPartition() {
-      Partition.Builder<LabeledNode<T>> builder = new Partition.Builder<LabeledNode<T>>(new LabeledNodeComparator<T>());
-      for (int i = 0; i < alpha.size(); i++) {
-        builder.add(new LabeledNode<T>(alpha.get(i), children.get(i)));
-      }
-      return builder.build();
-    }
+    // cheat methods to avoid visitor
+    public boolean isTerminal() { return false; }
+    T getOutput() { throw new UnsupportedOperationException(); }
+    public Alphabet getAlphabet() { return dict.getAlpha(varId); }
+
+    public Romdd<T> getChild(int i) { return children.get(i); }
+    public int getSize() { return children.size(); }
+    public Iterator<Romdd<T>> iterator() { return children.iterator(); }
     
     public void accept(Visitor<T> visitor) { visitor.visitNode(this); }
-    
-    void recurseVarNames(TreeSet<String> accu) {
-      accu.add(alpha.name);
-      for (Romdd<T> child : children) {
-        child.recurseVarNames(accu);
-      }
-    }
 
     public int compareTo(Romdd<T> o) {
       if (this == o) return 0;
@@ -437,14 +490,14 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
           rvPtr[0] = 1;         
         }
         public void visitNode(Node<T> node) {
-          rvPtr[0] = alpha.name.compareTo(node.alpha.name);
+          rvPtr[0] = varId - node.varId;
           if (rvPtr[0] != 0) return;
           rvPtr[0] = LexicalCompare.compare(Node.this, node);
         }
       });
       return rvPtr[0];
     }    
-    public String getName() { return alpha.name; }
+    public Stack<String> getName() { return getAlphabet().name; }
   }
 
   public static class Terminal<T extends Comparable<? super T>> extends Romdd<T> {
@@ -489,7 +542,7 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
     
     private NodeAlphaComparator() {}
     public int compare(Node<?> first, Node<?> second) {
-      return first.alpha.compareTo(second.alpha);
+      return first.varId - second.varId;
     }
   }
   

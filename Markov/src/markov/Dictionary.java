@@ -1,44 +1,65 @@
 package markov;
 
-import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.SortedSet;
+import java.util.TreeMap;
 import java.util.TreeSet;
 
-public class Dictionary implements Iterable<Domain> {
-  private LinkedHashMap<String, Domain> data;
+import util.Stack;
+
+public class Dictionary {
+  private TreeMap<Stack<String>, Tuple> data = new TreeMap<Stack<String>, Tuple>(Stack.STRING_COMP);
+  private Alphabet[] alphabetIdx;
   
-  private Dictionary(TreeSet<Domain> codomains) {
-    data = new LinkedHashMap<String, Domain>();
-    for (Domain l : codomains) {
-      data.put(l.machineName, l);
+  private Dictionary(TreeSet<Alphabet> list) {
+    alphabetIdx = list.toArray(new Alphabet[0]);
+    for (int i = 0; i < alphabetIdx.length; i++) {
+      Alphabet alpha = alphabetIdx[i];
+      data.put(alpha.name, new Tuple(alpha, i));
     }
   }
   
-  public Domain get(String machineName) {
-    return data.get(machineName);
+  public Stack<String> getName(int id) {
+    return alphabetIdx[id].name;
   }
   
-  public boolean isCompleteSet(String machineName, String labelName, SortedSet<String> characters) {
-    return get(machineName).get(labelName).isCharSetEqual(characters); 
+  public Alphabet getAlpha(int id) {
+    return alphabetIdx[id];
   }
   
-  public Iterator<Domain> iterator() {
-    return new util.UnmodifiableIterator<Domain>(data.values().iterator());
+  public Alphabet getAlpha(Stack<String> name) {
+    return data.get(name).alpha;
   }
-    
+  
+  public int getId(Stack<String> name) {
+    return data.get(name).id;
+  }
+
+  public boolean isCompleteSet(Stack<String> name, SortedSet<String> characters) {
+    return getAlpha(name).isCharSetEqual(characters); 
+  }
+  
   public static class Builder {
-    TreeSet<Domain> list;
+    TreeSet<Alphabet> list;
     public Builder() {
-      this.list = new TreeSet<Domain>();
+      this.list = new TreeSet<Alphabet>();
     }
     
-    public void add(Domain label) {
-      list.add(label);
+    public void add(Alphabet alpha) {
+      list.add(alpha);
     }
     
     public Dictionary build() {
       return new Dictionary(list);
+    }
+  }
+  
+  private static class Tuple {
+    public final Alphabet alpha;
+    public final int id;
+    
+    public Tuple(Alphabet alpha, int id) {
+      this.alpha = alpha;
+      this.id = id;
     }
   }
 }

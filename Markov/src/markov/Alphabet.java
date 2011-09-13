@@ -5,27 +5,27 @@ import java.util.Collections;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import util.Joiner;
 import util.LexicalCompare;
+import util.Stack;
 
 public class Alphabet implements Comparable<Alphabet> {
-  public final String machineName;  // needed for generating fully qualified labels
-  public final String domainName;  // domain name
-
-  public final String name;  // unique identifier for this alphabet
+  public final Stack<String> name;  // every alphabet has a name
 
   private final ArrayList<String> characters;  // this is ordered, unique
   
-  private Alphabet(String machineName, String domainName, SortedSet<? extends String> chars) {
-    if (machineName.contains(Machine.SCOPE_OPERATOR) || domainName.contains(Machine.SCOPE_OPERATOR)) throw new RuntimeException();
-	  this.machineName = machineName;
-	  this.domainName = domainName;
-	  this.name = machineName + "." + domainName;
-	  this.characters = new ArrayList<String>(chars);
+  private Alphabet(SortedSet<? extends String> chars, String ... nameArr) {
+    Stack<String> stack = Stack.<String>emptyInstance();
+    for (int i = nameArr.length-1; i >= 0; i--) {
+      stack = stack.push(nameArr[i]);
+    }
+    this.name = stack;  // empty name is actually OK
+    this.characters = new ArrayList<String>(chars);
   }
   
   public int compareTo(Alphabet b) {
-    int rv = name.compareTo(b.name);
-    // Alphabets should be equal if machine.name is equal
+    int rv = Stack.STRING_COMP.compare(name, b.name);
+    // Alphabets are equal if names are equal
     assert(rv == 0 ? compareAlphabets(characters, b.characters) == 0 : true);
     return rv;
   }
@@ -65,20 +65,18 @@ public class Alphabet implements Comparable<Alphabet> {
         
     public Alphabet build() {
       for (State<?> state : machine) {
-        addCharacter(state.getLabel(domainName));
+        addCharacter(state.getLabel(args[1]));
       }
       return super.build();
     }
   }
   
   public static class AltBuilder {
-    public final String machineName;
-    public final String domainName;
+    public final String[] args;
     TreeSet<String> chars;
     
-    public AltBuilder(String machineName, String domainName) {
-      this.machineName = machineName;
-      this.domainName = domainName;
+    public AltBuilder(String ... args) {
+      this.args = args;
       this.chars = new TreeSet<String>();
     }
     
@@ -87,19 +85,15 @@ public class Alphabet implements Comparable<Alphabet> {
     }
     
     public Alphabet build() {
-      return new Alphabet(machineName, domainName, chars);
+      return new Alphabet(chars, args);
     }
   }
   
   public String toString() {
     StringBuilder builder = new StringBuilder();
-    builder.append(machineName + "." + domainName + "->{");
-    boolean isFirst = true;
-    for (String str : characters) {
-      if (isFirst) { isFirst = false; }
-      else { builder.append(", "); }
-      builder.append(str);
-    }
+    Joiner.appendJoin(builder, name, "::");
+    builder.append("->{");
+    Joiner.appendJoin(builder, characters, ", ");
     builder.append('}');
     return builder.toString();
   }
