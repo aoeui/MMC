@@ -34,6 +34,10 @@ public class Dictionary {
   public int getId(Stack<String> name) {
     return data.get(name).id;
   }
+  
+  public int getId(Alphabet alpha) {
+    return getId(alpha.name);
+  }
 
   public boolean isCompleteSet(Stack<String> name, SortedSet<String> characters) {
     return getAlpha(name).isCharSetEqual(characters); 

@@ -12,7 +12,7 @@ public class AggregateState<T extends Probability<T>> {
 
   public final Romdd<AggregateTransitionVector<T>> transitionFunction;
 
-  TreeMap<Integer,String> labelVector;
+  private TreeMap<Integer,String> labelVector;
 
   public AggregateState(Dictionary dict, Machine<T> machine, int idx) {
     this.index = idx;
@@ -24,6 +24,16 @@ public class AggregateState<T extends Probability<T>> {
       Map.Entry<String, String> entry = entryIt.next();
       labelVector.put(dict.getId(Stack.makeName(machine.name, entry.getKey())), entry.getValue());
     }
+  }
+  
+  public Stack<Integer> getLabelNames() {
+    return Stack.<Integer>makeStack(labelVector.keySet());
+  }
+  
+  public AggregateState<T> drop(int varId) {
+    TreeMap<Integer,String> newLabelVector = new TreeMap<Integer,String>(labelVector);
+    newLabelVector.remove(varId);
+    return new AggregateState<T>(index, size, transitionFunction, newLabelVector);
   }
   
   private AggregateState(int index, int size, Romdd<AggregateTransitionVector<T>> transitionFunction, TreeMap<Integer,String> labelVector) {

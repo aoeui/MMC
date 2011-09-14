@@ -2,27 +2,63 @@ package markov;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.TreeSet;
 
+import util.Stack;
 import util.UnmodifiableIterator;
 
-public class AggregateMachine<T extends Probability<T>> implements Iterable<AggregateState<T>> {
+public class AggregateMachine<T extends Probability<T>> implements Iterable<AggregateState<T>> { 
   private ArrayList<AggregateState<T>> states;
+  public final Stack<Integer> labels;
+  public final Stack<Integer> labelsReferenced;
   
   public AggregateMachine(Dictionary dict, Machine<T> machine) {
     states = new ArrayList<AggregateState<T>>(machine.size());
+    TreeSet<Integer> references = new TreeSet<Integer>();
     for (int i = 0; i < machine.size(); i++) {
-      states.add(new AggregateState<T>(dict, machine, i));
+      AggregateState<T> newState = new AggregateState<T>(dict, machine, i);
+      states.add(newState);
+      references.addAll(newState.transitionFunction.listVarIdx());
     }
+    this.labels = toLabelStack(dict, machine.name, machine.get(0).labelNameIterator());
+    this.labelsReferenced = Stack.<Integer>makeStack(references);
+  }
+  
+  private Stack<Integer> toLabelStack(Dictionary dict, String machineName, Iterator<String> it) {
+    if (!it.hasNext()) return Stack.<Integer>emptyInstance();
+    
+    int nextVal = dict.getId(Stack.makeName(machineName, it.next()));
+    return toLabelStack(dict, machineName, it).push(nextVal);
+  }
+  
+  private AggregateMachine(ArrayList<AggregateState<T>> states, Stack<Integer> labels, Stack<Integer> labelsReferenced) {
+    this.states = states;
+    this.labels = labels;
+    this.labelsReferenced = labelsReferenced;
   }
   
   private AggregateMachine(ArrayList<AggregateState<T>> states) {
     this.states = states;
+    TreeSet<Integer> references = new TreeSet<Integer>();
+    for (AggregateState<T> state : states) {
+      references.addAll(state.transitionFunction.listVarIdx());
+    }
+    this.labels = states.get(0).getLabelNames();
+    this.labelsReferenced = Stack.<Integer>makeStack(references);
   }
   
   public int size() { return states.size(); }
   public AggregateState<T> getState(int i) { return states.get(i); }
   public Iterator<AggregateState<T>> iterator() {
     return new UnmodifiableIterator<AggregateState<T>>(states.iterator());
+  }
+  
+  public AggregateMachine<T> drop(int varId) {
+    ArrayList<AggregateState<T>> newStates = new ArrayList<AggregateState<T>>(states.size());
+    for (int i = 0; i < states.size(); i++) {
+      newStates.add(states.get(i).drop(varId));
+    }
+    return new AggregateMachine<T>(newStates, labels.remove(varId), labelsReferenced);
   }
   
   public AggregateMachine<T> product(AggregateMachine<T> machine) {

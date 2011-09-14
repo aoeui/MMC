@@ -15,6 +15,9 @@ public abstract class Stack<T> implements Iterable<T> {
   public abstract T head();
   public abstract Stack<T> tail();
   public abstract boolean contains(T elt);
+  public abstract int size();
+  // returns a stack where the first occurrence of the given element is removed using equals
+  public abstract Stack<T> remove(T elt);
   
   public abstract Stack<T> reverse();
   
@@ -72,9 +75,12 @@ public abstract class Stack<T> implements Iterable<T> {
     public T head() { throw new UnsupportedOperationException(); }
     public Stack<T> tail() { throw new UnsupportedOperationException(); }
     public boolean contains(T elt) { return false; }
+    public int size() { return 0; }
+    public Stack<T> remove(T elt) { throw new java.util.NoSuchElementException(); }
     
     public Stack<T> reverse() { return this; }
     protected Stack<T> reverseImpl(Stack<T> stack) { return stack; }
+    
   }
   
   public static class Element<T> extends Stack<T> {
@@ -90,6 +96,13 @@ public abstract class Stack<T> implements Iterable<T> {
     public Stack<T> tail() { return tail; }
     public boolean isEmpty() { return false; }
     public boolean contains(T elt) { return head.equals(elt) || tail.contains(elt); }
+    public int size() { return 1+tail.size(); }
+    
+    public Stack<T> remove(T elt) {
+      if (head.equals(elt)) return tail;
+      
+      return tail.remove(elt).push(head);
+    }
 
     public Stack<T> reverse() {
       return reverseImpl(Stack.<T>emptyInstance());
@@ -105,6 +118,17 @@ public abstract class Stack<T> implements Iterable<T> {
   @SuppressWarnings("unchecked")
   public static <T extends Comparable<? super T>> Comparator<Stack<T>> lexicalComparatorInstance() {
     return LexicalStackComparator.INSTANCE;
+  }
+  
+  public static <T> Stack<T> makeStack(Iterator<T> it) {
+    if (!it.hasNext()) return Stack.<T>emptyInstance();
+    
+    T next = it.next();
+    return Stack.<T>makeStack(it).push(next);
+  }
+  
+  public static <T> Stack<T> makeStack(Iterable<T> iter) {
+    return Stack.<T>makeStack(iter.iterator());
   }
   
   // Too bad Java doesn't support generic arrays or varargs

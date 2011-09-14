@@ -5,6 +5,8 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
+import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
@@ -101,9 +103,26 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
     return new Brancher().branch();
   }
   
-  public Alphabet[] listVarNames() {
+  /** Returns a sorted array of the alphabets used by this Romdd */
+  public List<Alphabet> listVarNames() {
+    final Ptr<List<Alphabet>> rvPtr = new Ptr<List<Alphabet>>();
+    accept(new Visitor<T>() {
+      public void visitTerminal(Terminal<T> term) {
+        rvPtr.value = new ArrayList<Alphabet>();
+      }
+      public void visitNode(Node<T> node) {
+        SortedSet<Integer> vars = listVarIdx();
+        rvPtr.value = new ArrayList<Alphabet>(vars.size());
+        for (int id : vars) {
+          rvPtr.value.add(node.dict.getAlpha(id));
+        }
+      }
+    });
+    return rvPtr.value;
+  }
+  
+  public SortedSet<Integer> listVarIdx() {
     final TreeSet<Integer> rvIdx = new TreeSet<Integer>();
-    final Ptr<Dictionary> dictPtr = new Ptr<Dictionary>();
     class Lister implements Visitor<T> {
       TreeSet<Romdd<T>> visited = new TreeSet<Romdd<T>>();
       void doList(Romdd<T> romdd) {
@@ -112,7 +131,6 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
       public void visitTerminal(Terminal<T> term) { }
       public void visitNode(Node<T> node) {
         if (visited.contains(node)) return;
-        if (dictPtr.value == null) dictPtr.value = node.dict;
         visited.add(node);
         rvIdx.add(node.varId);
         for (Romdd<T> child : node) {
@@ -121,12 +139,7 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
       }
     }
     new Lister().doList(this);
-    Alphabet[] rv = new Alphabet[rvIdx.size()];
-    int idx = 0;
-    for (int next : rvIdx) {
-      rv[idx++] = dictPtr.value.getAlpha(next);
-    }
-    return rv;
+    return rvIdx;
   }
   
   public <S extends Comparable<? super S>> Romdd<S> remap(final Mapping<T,S> mapper) { 
