@@ -4,6 +4,9 @@ import util.Ptr;
 
 // Assume that probabilities are all Double
 public class SymbolicProbability extends Probability<SymbolicProbability> { 
+  public final static SymbolicProbability ZERO = new SymbolicProbability(new Romdd.Terminal<DoubleProbability>(DoubleProbability.ZERO));
+  public final static SymbolicProbability ONE = new SymbolicProbability(new Romdd.Terminal<DoubleProbability>(DoubleProbability.ONE));
+
   public final Romdd<DoubleProbability> prob;
   private final DoubleProbability value;  // this is null if prob is not a constant 
 
@@ -22,6 +25,8 @@ public class SymbolicProbability extends Probability<SymbolicProbability> {
     });
     value = vPtr.value;
   }
+  
+  public SymbolicProbability zeroInstance() { return ZERO; }
 
   public int compareTo(SymbolicProbability o) {
     return prob.compareTo(o.prob);

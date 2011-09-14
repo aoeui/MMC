@@ -1,5 +1,7 @@
 package markov;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.TreeMap;
 
@@ -9,33 +11,50 @@ public class Machine<T extends Probability<T>> implements Iterable<State<T>> {
   public final static String MULTIPLY_STRING = " X ";
   public final static String SCOPE_OPERATOR = ".";
   public final String name;
-  TreeMap<String, State<T>> states;
+  
+  ArrayList<String> stateNames;
+  ArrayList<State<T>> states;
 
   private Machine(String name, TreeMap<String, State<T>> states) {
     if (name.contains(SCOPE_OPERATOR)) throw new RuntimeException("Machine name cannot contain " + SCOPE_OPERATOR);
     this.name = name;
-    this.states = states;
+    this.stateNames = new ArrayList<String>(states.keySet());
+    this.states = new ArrayList<State<T>>(states.values());
   }
   
   public State<T> get(String name) {
-    return states.get(name);
+    Integer idx = indexForState(name);
+    return idx == null ? null : states.get(idx);
+  }
+  
+  public State<T> get(int idx) {
+    return states.get(idx);
+  }
+  
+  // Returns null if name not found
+  public Integer indexForState(String name) {
+    int rv = Collections.binarySearch(stateNames, name);
+    if (rv >= 0) return rv;
+    return null;
   }
   
   public int getStateNum(){
     return states.size();
   }
   
+  public int size() { return states.size(); }
+  
   public String toString() {
     StringBuilder builder = new StringBuilder();
     builder.append("Machine:").append(name);
-    for (State<T> state : states.values()) {
+    for (State<T> state : states) {
       builder.append('\n').append(state);
     }
     return builder.toString();
   }
 
   public Iterator<State<T>> iterator() {
-    return new UnmodifiableIterator<State<T>>(states.values().iterator());
+    return new UnmodifiableIterator<State<T>>(states.iterator());
   }
 
   public boolean equals(Object o) {

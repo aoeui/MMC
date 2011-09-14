@@ -13,6 +13,8 @@ public class FractionProbability extends Probability<FractionProbability> {
   public FractionProbability(LongFraction prob) {
     this.p = prob;
   }
+  
+  public FractionProbability zeroInstance() { return ZERO; }
 
   public FractionProbability(long num, long den) {
     this.p = LongFraction.create(num, den);

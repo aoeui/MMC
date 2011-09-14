@@ -26,6 +26,8 @@ public class DoubleProbability extends Probability<DoubleProbability> {
     this((double)num/(double)den);
     if (den == 0) throw new RuntimeException("Divide by Zero.");
   }
+  
+  public DoubleProbability zeroInstance() { return ZERO; }
 
   public DoubleProbability sum(DoubleProbability prob) {
     return new DoubleProbability(p+prob.p);
