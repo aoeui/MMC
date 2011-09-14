@@ -254,7 +254,7 @@ public class Sudoku {
     }
     
     public Stack<String> getId() {
-      return Stack.<String>emptyInstance().push(Integer.toString(col)).push(Integer.toString(row));
+      return Stack.makeName(Integer.toString(row), Integer.toString(col));
     }
   }
   
@@ -469,7 +469,7 @@ public class Sudoku {
       Partition.Builder<ValueTable> builder = Partition.<ValueTable>naturalBuilder();
       for (TerminatedIterator<Pair<Integer>> it = unmarkedIterator(); it.hasNext(); ) {
         Pair<Integer> next = it.next();
-        TreeSet<String> values = tree.findChildrenReaching(Stack.<String>emptyInstance().push(Integer.toString(next.second)).push(Integer.toString(next.first)), true);
+        TreeSet<String> values = tree.findChildrenReaching(Stack.makeName(Integer.toString(next.first), Integer.toString(next.second)), true);
         // System.out.println("Possible values for " + next + " = " + values);
         ValueTable table = new ValueTable(next, values);
         builder.add(table);

@@ -15,11 +15,7 @@ public class Alphabet implements Comparable<Alphabet> {
   private final ArrayList<String> characters;  // this is ordered, unique
   
   private Alphabet(SortedSet<? extends String> chars, String ... nameArr) {
-    Stack<String> stack = Stack.<String>emptyInstance();
-    for (int i = nameArr.length-1; i >= 0; i--) {
-      stack = stack.push(nameArr[i]);
-    }
-    this.name = stack;  // empty name is actually OK
+    this.name = Stack.makeName(nameArr);  // empty name OK
     this.characters = new ArrayList<String>(chars);
   }
   

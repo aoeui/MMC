@@ -37,7 +37,7 @@ public class TestRomdd {
     System.out.println("Checking restrictions");
     Romdd<Boolean> next = romdd;
     for (int i = 0; i < N*N; i++) {
-      Stack<String> restrict =  Stack.<String>emptyInstance().push(Integer.toString(i % N)).push(Integer.toString(i / N));
+      Stack<String> restrict =  Stack.makeName(Integer.toString(i / N), Integer.toString(i % N));
       next = next.restrict(restrict, Integer.toString(i+1));
       System.out.println("After restricting " + Joiner.join(restrict, "::") + " to " + (i+1));
       printTableOfReachableValues(next);
@@ -46,7 +46,7 @@ public class TestRomdd {
     System.out.println("Checking summations");
     next = romdd;
     for (int i = 0; i < N*N; i++) {
-      next = next.sum(Romdd.OR, Stack.<String>emptyInstance().push(Integer.toString(i % N)).push(Integer.toString(i / N)));
+      next = next.sum(Romdd.OR, Stack.makeName(Integer.toString(i / N), Integer.toString(i % N)));
       System.out.println("After summing out " + i);
       printTableOfReachableValues(next);
     }

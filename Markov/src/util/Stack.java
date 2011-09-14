@@ -107,6 +107,15 @@ public abstract class Stack<T> implements Iterable<T> {
     return LexicalStackComparator.INSTANCE;
   }
   
+  // Too bad Java doesn't support generic arrays or varargs
+  public static Stack<String> makeName(String ...strings) {
+    Stack<String> rv = Stack.<String>emptyInstance();
+    for (int i = strings.length-1; i >= 0; i--) {
+      rv = rv.push(strings[i]);
+    }
+    return rv;
+  }
+  
   public static class LexicalStackComparator<T extends Comparable<? super T>> implements Comparator<Stack<T>> {
     @SuppressWarnings("rawtypes")
     private static final LexicalStackComparator INSTANCE = new LexicalStackComparator();
