@@ -22,6 +22,8 @@ public class AggregateTransitionVector<T extends Probability<T>> implements Comp
       if (sum == null) {
         sum = entry.getValue();
         zeroInstance = sum.zeroInstance();  // workaround
+      } else {
+        sum = sum.sum(entry.getValue());
       }
     }
     if (!sum.isOne()) throw new RuntimeException();  // transition vectors must sum to one
