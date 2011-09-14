@@ -192,7 +192,7 @@ public class Lumping<T extends Probability<T>> {
         // Split B1 to B1 + B2 based on candidate
         for (int i = b1.start; i < b1.border; i++) {
           int state = elems.get(i);
-          if (!w.get(state).equals(candidate)) {
+          if (w.get(state).compareTo(candidate) != 0) {
             boolean swapped = (i != b1.border-1);
             b1.mark(i);
             if (swapped) { i--; }  // need to repeat if a swap was performed
@@ -262,7 +262,7 @@ public class Lumping<T extends Probability<T>> {
     int next = current.start+1;
     boolean found = false;
     while (next <= current.end && !found) {
-      if (w.get(elems.get(next)).equals(weight)) {
+      if (w.get(elems.get(next)).compareTo(weight) == 0) {
         next++;
       } else {
         found = true;

@@ -14,11 +14,11 @@ public class AggregateState<T extends Probability<T>> {
 
   private TreeMap<Integer,String> labelVector;
 
-  public AggregateState(Dictionary dict, Machine<T> machine, int idx) {
+  public AggregateState(Dictionary dict, T zeroInstance, Machine<T> machine, int idx) {
     this.index = idx;
     this.size = machine.size();
     State<T> state = machine.get(idx);
-    this.transitionFunction = state.getTransitionFunction().toRomdd(dict).remap(new VectorTransformer<T>(machine));
+    this.transitionFunction = state.getTransitionFunction().toRomdd(dict).remap(new VectorTransformer<T>(machine, zeroInstance));
     labelVector = new TreeMap<Integer,String>();
     for (Iterator<Map.Entry<String, String>> entryIt = state.labelIterator(); entryIt.hasNext(); ) {
       Map.Entry<String, String> entry = entryIt.next();
@@ -71,11 +71,13 @@ public class AggregateState<T extends Probability<T>> {
   
   private static class VectorTransformer<P extends Probability<P>> implements Romdd.Mapping<TransitionVector<P>, AggregateTransitionVector<P>> {
     Machine<P> machine;
-    public VectorTransformer(Machine<P> m) {
+    P zeroInstance;
+    public VectorTransformer(Machine<P> m, P zeroInstance) {
       this.machine = m;
+      this.zeroInstance = zeroInstance;
     }
     public AggregateTransitionVector<P> transform(TransitionVector<P> input) {
-      return new AggregateTransitionVector<P>(machine, input);
+      return new AggregateTransitionVector<P>(machine, zeroInstance, input);
     }
   }
 }

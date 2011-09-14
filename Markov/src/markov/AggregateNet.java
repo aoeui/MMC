@@ -10,12 +10,15 @@ public class AggregateNet<T extends Probability<T>> implements Iterable<Aggregat
   public final Dictionary dict;
   ArrayList<AggregateMachine<T>> machines;
   
-  public AggregateNet(Net<T> net) {
+  // The problem is that transition vectors in Machine have implied zero. Because of the
+  // parameterization of Probability, it is very hard to get static information out.
+  // Zero has to be passed explicitly here.
+  public AggregateNet(Net<T> net, T zeroInstance) {
     this.dict = net.dictionary;
     
     this.machines = new ArrayList<AggregateMachine<T>>(net.N);
     for (Machine<T> machine : net) {
-      machines.add(new AggregateMachine<T>(dict, machine));
+      machines.add(new AggregateMachine<T>(dict, zeroInstance, machine));
     }
   }
   

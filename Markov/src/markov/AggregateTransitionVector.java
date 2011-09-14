@@ -10,21 +10,15 @@ import util.UnmodifiableIterator;
 public class AggregateTransitionVector<T extends Probability<T>> implements Comparable<AggregateTransitionVector<T>>, Iterable<T> {
   ArrayList<T> prob;  // Be careful: null entries mean ZEROs.
   
-  public AggregateTransitionVector(Machine<T> machine, TransitionVector<T> vector) {
+  public AggregateTransitionVector(Machine<T> machine, T zeroInstance, TransitionVector<T> vector) {
     this.prob = new ArrayList<T>();
     for (int i = 0; i < machine.size(); i++) prob.add(null);
-    T zeroInstance = null;
 
-    T sum = null;
+    T sum = zeroInstance;
     for (Map.Entry<String, T> entry : vector) {
       int idx = machine.indexForState(entry.getKey());
       prob.set(idx, entry.getValue());
-      if (sum == null) {
-        sum = entry.getValue();
-        zeroInstance = sum.zeroInstance();  // workaround
-      } else {
-        sum = sum.sum(entry.getValue());
-      }
+      sum = sum.sum(entry.getValue());
     }
     if (!sum.isOne()) throw new RuntimeException();  // transition vectors must sum to one
     for (int i = 0; i < machine.size(); i++) {

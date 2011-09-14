@@ -44,15 +44,19 @@ public class TransitionMatrix<T extends Probability<T>> {
 
     public TransitionMatrix<T> build() {
       if (rows.size() != N) {
-        throw new BuildException("Wrong number of rows n = "
-            + N + " != " + rows.size());
+        throw new BuildException("Wrong number of rows n = " + N + " != " + rows.size());
       }
       for (int i = 0; i < N; i++) {
         ArrayList<T> row = rows.get(i);
         if (row.size() != N) {
-          throw new BuildException("Row " + i + " has size "
-              + row.size() + " != " + N);
+          throw new BuildException("Row " + i + " has size " + row.size() + " != " + N);
         }
+        // Check that the row elements sum to 1.
+        T prob = row.get(0);
+        for (int dest = 1; dest < N; dest++) {
+          prob = prob.sum(row.get(dest));
+        }
+        if (!prob.isOne()) throw new BuildException("Probabilities of row " + i + " don't sum to 1.");
       }
       ArrayList<T> data = new ArrayList<T>();
       for (ArrayList<T> row : rows) {

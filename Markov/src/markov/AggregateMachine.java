@@ -12,11 +12,11 @@ public class AggregateMachine<T extends Probability<T>> implements Iterable<Aggr
   public final Stack<Integer> labels;
   public final Stack<Integer> labelsReferenced;
   
-  public AggregateMachine(Dictionary dict, Machine<T> machine) {
+  public AggregateMachine(Dictionary dict, T zeroInstance, Machine<T> machine) {
     states = new ArrayList<AggregateState<T>>(machine.size());
     TreeSet<Integer> references = new TreeSet<Integer>();
     for (int i = 0; i < machine.size(); i++) {
-      AggregateState<T> newState = new AggregateState<T>(dict, machine, i);
+      AggregateState<T> newState = new AggregateState<T>(dict, zeroInstance, machine, i);
       states.add(newState);
       references.addAll(newState.transitionFunction.listVarIdx());
     }
@@ -69,5 +69,18 @@ public class AggregateMachine<T extends Probability<T>> implements Iterable<Aggr
       }
     }
     return new AggregateMachine<T>(newStates);
+  }
+  
+  public TransitionMatrix<SymbolicProbability<T>> computeTransitionMatrix() {
+    TransitionMatrix.Builder<SymbolicProbability<T>> builder = new TransitionMatrix.Builder<SymbolicProbability<T>>(states.size());
+    for (int src = 0; src < states.size(); src++) {
+      Romdd<AggregateTransitionVector<T>> srcVector = states.get(src).transitionFunction;
+      ArrayList<SymbolicProbability<T>> row = new ArrayList<SymbolicProbability<T>>();
+      for (int dest = 0; dest < states.size(); dest++) {
+        row.add(new SymbolicProbability<T>(srcVector, dest));
+      }
+      builder.addRow(row);
+    }
+    return builder.build();
   }
 }

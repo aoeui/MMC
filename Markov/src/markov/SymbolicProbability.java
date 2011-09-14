@@ -3,41 +3,41 @@ package markov;
 import util.Ptr;
 
 // Assume that probabilities are all Double
-public class SymbolicProbability extends Probability<SymbolicProbability> { 
-  public final static SymbolicProbability ZERO = new SymbolicProbability(new Romdd.Terminal<DoubleProbability>(DoubleProbability.ZERO));
-  public final static SymbolicProbability ONE = new SymbolicProbability(new Romdd.Terminal<DoubleProbability>(DoubleProbability.ONE));
+public class SymbolicProbability<T extends Probability<T>> extends Probability<SymbolicProbability<T>> { 
+  public final static SymbolicProbability<DoubleProbability> ZERO = new SymbolicProbability<DoubleProbability>(new Romdd.Terminal<DoubleProbability>(DoubleProbability.ZERO));
+  public final static SymbolicProbability<DoubleProbability> ONE = new SymbolicProbability<DoubleProbability>(new Romdd.Terminal<DoubleProbability>(DoubleProbability.ONE));
 
-  public final Romdd<DoubleProbability> prob;
-  private final DoubleProbability value;  // this is null if prob is not a constant 
+  public final Romdd<T> prob;
+  private final T value;  // this is null if prob is not a constant 
 
-  public SymbolicProbability(Romdd<TransitionVector<DoubleProbability>> stateTransition, String stateName) {
-    this(stateTransition.remap(new TransitionFilter(stateName)));
+  /** Given the transition function of a particular state and an index, this constructor returns a mapping from
+   * the input label space to probabilities.  */
+  public SymbolicProbability(Romdd<AggregateTransitionVector<T>> stateTransition, int stateIdx) {
+    this(stateTransition.remap(new TransitionFilter<T>(stateIdx)));
   }
   
-  public SymbolicProbability(Romdd<DoubleProbability> vect) {
+  public SymbolicProbability(Romdd<T> vect) {
     this.prob = vect;
-    final Ptr<DoubleProbability> vPtr = new Ptr<DoubleProbability>();
-    prob.accept(new Romdd.Visitor<DoubleProbability>() {
-      public void visitTerminal(Romdd.Terminal<DoubleProbability> term) {
+    final Ptr<T> vPtr = new Ptr<T>();
+    prob.accept(new Romdd.Visitor<T>() {
+      public void visitTerminal(Romdd.Terminal<T> term) {
         vPtr.value = term.output;
       }
-      public void visitNode(Romdd.Node<DoubleProbability> node) { }
+      public void visitNode(Romdd.Node<T> node) { }
     });
     value = vPtr.value;
   }
-  
-  public SymbolicProbability zeroInstance() { return ZERO; }
 
-  public int compareTo(SymbolicProbability o) {
+  public int compareTo(SymbolicProbability<T> o) {
     return prob.compareTo(o.prob);
   }
 
-  public SymbolicProbability sum(SymbolicProbability p) {
-    return new SymbolicProbability(Romdd.<DoubleProbability>apply(DoubleProbability.SUM, prob, p.prob));
+  public SymbolicProbability<T> sum(SymbolicProbability<T> p) {
+    return new SymbolicProbability<T>(Romdd.<T>apply(Probability.<T>sumInstance(), prob, p.prob));
   }
 
-  public SymbolicProbability product(SymbolicProbability p) {
-    return new SymbolicProbability(Romdd.<DoubleProbability>apply(DoubleProbability.PROD, prob, p.prob));
+  public SymbolicProbability<T> product(SymbolicProbability<T> p) {
+    return new SymbolicProbability<T>(Romdd.<T>apply(Probability.<T>productInstance(), prob, p.prob));
   }
 
   public boolean isZero() {
@@ -47,23 +47,14 @@ public class SymbolicProbability extends Probability<SymbolicProbability> {
   public boolean isOne() {
     return value != null && value.isOne();
   }
-
-  public boolean equals(Object o) {
-    try {
-      return compareTo((SymbolicProbability)o) == 0;
-    } catch (Exception e) {
-      return false;
-    }
-  }
   
-  public static class TransitionFilter implements Romdd.Mapping<TransitionVector<DoubleProbability>, DoubleProbability> {
-    public final String name;
-    public TransitionFilter(String name) {
-      this.name = name;
+  public static class TransitionFilter<T extends Probability<T>> implements Romdd.Mapping<AggregateTransitionVector<T>, T> {
+    public final int stateIdx;
+    public TransitionFilter(int stateIdx) {
+      this.stateIdx = stateIdx;
     }
-    public DoubleProbability transform(TransitionVector<DoubleProbability> input) {
-      DoubleProbability rv = input.getProbability(name);
-      return rv == null ? DoubleProbability.ZERO : rv;
+    public T transform(AggregateTransitionVector<T> input) {
+      return input.get(stateIdx);  // this is never null for AggregateTransitionVector
     }
   }
 }
