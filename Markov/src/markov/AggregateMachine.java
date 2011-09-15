@@ -1,9 +1,11 @@
 package markov;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.TreeSet;
 
+import util.Partition;
 import util.Stack;
 import util.UnmodifiableIterator;
 
@@ -69,6 +71,18 @@ public class AggregateMachine<T extends Probability<T>> implements Iterable<Aggr
       }
     }
     return new AggregateMachine<T>(newStates);
+  }
+  
+  public Partition<Integer> getStatePartition() {
+    Partition.Builder<Integer> builder = new Partition.Builder<Integer>(new Comparator<Integer>() {
+      public int compare(Integer v1, Integer v2) {
+        return AggregateState.VAL_COMP.compare(states.get(v1), states.get(v2));
+      }
+    });
+    for (int i = 0; i < states.size(); i++) {
+      builder.add(i);
+    }
+    return builder.build();
   }
   
   public TransitionMatrix<SymbolicProbability<T>> computeTransitionMatrix() {

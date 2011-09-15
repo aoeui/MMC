@@ -6,12 +6,12 @@ import java.util.Comparator;
 import java.util.Formatter;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Random;
 
 import util.IndexGenerator;
 import util.MajorityVote;
+import util.Partition;
 
 public class Lumping<T extends Probability<T>> {
   TransitionMatrix<T> matrix;
@@ -113,8 +113,7 @@ public class Lumping<T extends Probability<T>> {
 	return true;
   }
 
-  public Lumping(TransitionMatrix<T> matrix,
-      List<? extends List<Integer>> partition) {
+  public Lumping(TransitionMatrix<T> matrix, Partition<Integer> partition) {
     this.matrix = matrix;
     this.N = matrix.N;
     elems = new ArrayList<Integer>(Collections.<Integer>nCopies(N, null));
@@ -122,8 +121,8 @@ public class Lumping<T extends Probability<T>> {
     stateToBlock = new int[N];
     blocks = new ArrayList<BlockInfo>();
     int idx = 0;
-    for (int i = 0; i < partition.size(); i++) {
-      List<Integer> block = partition.get(i);
+    for (int i = 0; i < partition.getNumBlocks(); i++) {
+      Partition<Integer>.Block block = partition.getBlock(i);
       blocks.add(new BlockInfo(idx, idx+block.size()-1));
       for (int j = 0; j < block.size(); j++) {
         int state = block.get(j);

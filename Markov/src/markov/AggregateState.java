@@ -1,10 +1,13 @@
 package markov;
 
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
 
+import util.LexicalCompare;
 import util.Stack;
+import util.UnmodifiableIterator;
 
 public class AggregateState<T extends Probability<T>> {
   public final int index;  // this index exists within the context of this product
@@ -28,6 +31,10 @@ public class AggregateState<T extends Probability<T>> {
   
   public Stack<Integer> getLabelNames() {
     return Stack.<Integer>makeStack(labelVector.keySet());
+  }
+  
+  public Iterator<String> getLabelValueIterator() {
+    return new UnmodifiableIterator<String>(labelVector.values().iterator());
   }
   
   public AggregateState<T> drop(int varId) {
@@ -78,6 +85,15 @@ public class AggregateState<T extends Probability<T>> {
     }
     public AggregateTransitionVector<P> transform(TransitionVector<P> input) {
       return new AggregateTransitionVector<P>(machine, zeroInstance, input);
+    }
+  }
+  
+  public final static Comparator<AggregateState<?>> VAL_COMP = new StateComparator();
+  
+  private static class StateComparator implements Comparator<AggregateState<?>> {
+    // Assume this is called on states from the same machine.
+    public int compare(AggregateState<?> o1, AggregateState<?> o2) {
+      return LexicalCompare.compare(o1.getLabelValueIterator(), o2.getLabelValueIterator());
     }
   }
 }

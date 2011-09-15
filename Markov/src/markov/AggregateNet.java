@@ -48,7 +48,10 @@ public class AggregateNet<T extends Probability<T>> implements Iterable<Aggregat
   }
   
   public void reduce(int machineIndex) {
-    // Okay, here's where the lumping code will have to be called
+    AggregateMachine<T> machine = machines.get(machineIndex);
+    Lumping<SymbolicProbability<T>> lumper = new Lumping<SymbolicProbability<T>>(machine.computeTransitionMatrix(), machine.getStatePartition());
+    lumper.runLumping();
+    // TODO process results of lumping
   }
   
   public void sum(Stack<String> name) {
