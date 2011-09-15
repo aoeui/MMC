@@ -280,6 +280,17 @@ public class Lumping<T extends Probability<T>> {
   public void runLumping() {
     runLumping(new Random(0));
   }
+  
+  public Partition<Integer> getPartition() {
+    final int[] category = new int[elems.size()];
+    for (int blockNum = 0; blockNum < blocks.size(); blockNum++) {
+      BlockInfo b = blocks.get(blockNum);
+      for (int i = b.start; i <= b.end; i++) {
+        category[elems.get(i)] = blockNum;
+      }
+    }
+    return Partition.createFromCategories(category);
+  }
 
   public String toString() {
     Formatter f = new Formatter();

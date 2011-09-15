@@ -7,10 +7,16 @@ options {
 @header {
   package dsl;
   
+  import java.util.ArrayList;
+  
   import markov.DecisionTree;
   import markov.TransitionVector;
   import markov.Predicate;
-  import markov.FractionProbability;
+  import markov.DoubleProbability;
+  import markov.State;
+  import markov.Machine;
+
+  import util.Pair;
 }
 
 @lexer::header {
@@ -18,21 +24,38 @@ options {
 }
 
 @members {
-  String machineName; 
 }
 
-decisionTree returns [DecisionTree<TransitionVector<FractionProbability>> dt]
-    : '(' IDENT { machineName = $IDENT.text; } ')' expression EOF { $dt = $expression.dt ;}
+machine
+    : 'Machine:' machineName=IDENT '{' state[machineName] ( ';' state[machineName] )* '}'
     ;
 
-expression returns [DecisionTree<TransitionVector<FractionProbability>> dt]
-    : v=probabilityVector { $dt = new DecisionTree.Terminal<TransitionVector<FractionProbability>>($v.tv); }
-    | conditional { $dt = $conditional.dt; }
+state [String machineName] returns [State<DoubleProbability> state]
+    : '{' seq=labelSequence ';' tree=decisionTree[machineName] '}'
     ;
 
-conditional returns [DecisionTree.Branch<TransitionVector<FractionProbability>> dt]
-    : 'if' predicate 'then' cons=expression 'else' alt=expression 'end'
-    { $dt = new DecisionTree.Branch<TransitionVector<FractionProbability>>($predicate.pred, $cons.dt, $alt.dt); ;} 
+labelSequence returns [ArrayList<Pair<String>> labels]
+    : 'labels:'
+      { labels = new ArrayList<Pair<String>>(); }
+      li0=labelInstance { labels.add($li0.labelPair); } (',' lik=labelInstance { labels.add($lik.labelPair) } )*
+    ; 
+
+labelInstance returns [Pair<String> labelPair]
+    : label=IDENT '->' instance=IDENT { labelPair = new Pair<String>($label.text, $instance.text); }
+    ;
+
+decisionTree [String machineName] returns [DecisionTree<TransitionVector<DoubleProbability>> dt]
+    : expression[machineName] EOF { $dt = $expression.dt ;}
+    ;
+
+expression [String machineName] returns [DecisionTree<TransitionVector<DoubleProbability>> dt]
+    : v=probabilityVector[machineName] { $dt = new DecisionTree.Terminal<TransitionVector<DoubleProbability>>($v.tv); }
+    | conditional[machineName] { $dt = $conditional.dt; }
+    ;
+
+conditional [String machineName] returns [DecisionTree.Branch<TransitionVector<DoubleProbability>> dt]
+    : 'if' predicate 'then' cons=expression[machineName] 'else' alt=expression[machineName] 'end'
+    { $dt = new DecisionTree.Branch<TransitionVector<DoubleProbability>>($predicate.pred, $cons.dt, $alt.dt); ;} 
     ;
 
 term returns [Predicate pred]
@@ -65,16 +88,16 @@ atom returns [Predicate.Atom atom]
     : mName=IDENT '.' lName=IDENT '=' label=IDENT { atom = new Predicate.Atom($mName.text, $lName.text, $label.text);  } 
     ;
 
-probabilityVector returns [TransitionVector<FractionProbability> tv]
+probabilityVector [String machineName] returns [TransitionVector<DoubleProbability> tv]
     :
-    { TransitionVector.Builder<FractionProbability> builder = new TransitionVector.Builder<FractionProbability>(machineName); }
+    { TransitionVector.Builder<DoubleProbability> builder = new TransitionVector.Builder<DoubleProbability>(machineName); }
     p1=probability {builder.setProbability($p1.stateName, $p1.fp); } (',' p2=probability { builder.setProbability($p2.stateName, $p2.fp); })*
     { tv = builder.build(); }
     ;
 
-probability returns [String stateName, FractionProbability fp]
+probability returns [String stateName, DoubleProbability fp]
     : 'p[' IDENT ']' '=' num=NUMBER '/' den=NUMBER
-    { $stateName = $IDENT.text; $fp = new FractionProbability(Long.parseLong($num.text), Long.parseLong($den.text)); }
+    { $stateName = $IDENT.text; $fp = new DoubleProbability(Long.parseLong($num.text), Long.parseLong($den.text)); }
     ;
 
 IDENT : ALPHA (ALPHA|'0'..'9')* ;

@@ -5,7 +5,21 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 
+import util.Joiner;
+
 public class Partition<T> implements Iterable<Partition<T>.Block> {
+  private static class CategoryComparator implements Comparator<Integer> {
+    int[] categories;
+    public CategoryComparator(int ... categories) {
+      this.categories = new int[categories.length];
+      System.arraycopy(categories, 0, this.categories, 0, categories.length);
+    }
+    
+    public int compare(Integer v1, Integer v2) {
+      return categories[v1] - categories[v2];
+    }
+  }
+  
   private static class NaturalComparator<S extends Comparable<? super S>> implements Comparator<S> {
     public NaturalComparator() {}
     public int compare(S s1, S s2) {
@@ -81,10 +95,25 @@ public class Partition<T> implements Iterable<Partition<T>.Block> {
       public T next() { return elements.get(next++); }
       public void remove() { throw new UnsupportedOperationException(); }
     }
+    public String toString() {
+      return "{" + Joiner.join(this) + "}";
+    }
+  }
+  
+  public String toString() {
+    return Joiner.join(this);
   }
   
   public static <T extends Comparable<? super T>> Builder<T> naturalBuilder() {
     return new Builder<T>(new NaturalComparator<T>());
+  }
+  
+  public static Partition<Integer> createFromCategories(int ... categories) {
+    Builder<Integer> builder = new Builder<Integer>(new CategoryComparator(categories));
+    for (int i = 0; i < categories.length; i++) {
+      builder.add(i);
+    }
+    return builder.build();
   }
   
   public static class Builder<T> {

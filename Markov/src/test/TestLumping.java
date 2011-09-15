@@ -1,7 +1,5 @@
 package test;
 
-import java.util.Comparator;
-
 import markov.TransitionMatrix;
 import markov.Lumping;
 import markov.DoubleProbability;
@@ -28,31 +26,18 @@ public class TestLumping {
 
     TransitionMatrix<DoubleProbability> matrix = mBuilder.build();
 
-    Partition.Builder<Integer> lumpBuilder = new Partition.Builder<Integer>(new Comparator<Integer>() {
-      public int compare(Integer v1, Integer v2) { return 0; }
-    });
-    for (int i = 0; i < 8; i++) {
-      lumpBuilder.add(i);
-    }
-    Partition<Integer> lumps = lumpBuilder.build();
+    Partition<Integer> lumps = Partition.createFromCategories(0,0,0,0,0,0,0,0);
 
     Lumping<DoubleProbability> lumper = new Lumping<DoubleProbability>(matrix, lumps);
     lumper.runLumping();
     System.out.println(lumper);
+    System.out.println(lumper.getPartition());
 
-    final int[] category = new int[] {1,0,1,2,0,1,3,1};
-    lumpBuilder = new Partition.Builder<Integer>(new Comparator<Integer>() {
-      public int compare(Integer v1, Integer v2) {
-        return category[v1] - category[v2];
-      }
-    });
-    for (int i = 0; i < 8; i++) {
-      lumpBuilder.add(i);
-    }
-    lumps = lumpBuilder.build();
+    lumps = Partition.createFromCategories(1,0,1,2,0,1,3,1);
 
     lumper = new Lumping<DoubleProbability>(matrix, lumps);
     lumper.runLumping();
     System.out.println(lumper);
+    System.out.println(lumper.getPartition());
   }
 }
