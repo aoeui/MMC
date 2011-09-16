@@ -52,9 +52,8 @@ public class Dictionary {
       if (isFirst) isFirst = false;
       else builder.append(", ");
 
-      builder.append(entry.getValue().alpha.toString());
+      builder.append(entry.getValue().alpha.toStringCropMachineName());
     }
-    builder.append('}');
     return builder.toString();
   }
   

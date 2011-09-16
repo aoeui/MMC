@@ -5,47 +5,56 @@ options {
 }
 
 @header {
-  package dsl;
-  
-  import java.util.ArrayList;
-  
-  import markov.DecisionTree;
-  import markov.TransitionVector;
-  import markov.Predicate;
-  import markov.DoubleProbability;
-  import markov.State;
-  import markov.Machine;
+package dsl;
 
-  import util.Pair;
+// import java.util.ArrayList;  // already included by antlr
+
+import markov.DecisionTree;
+import markov.DoubleProbability;
+import markov.Machine;
+import markov.Net;
+import markov.Predicate;
+import markov.State;
+import markov.TransitionVector;
+
+import util.Pair;
 }
 
 @lexer::header {
-  package dsl;
+package dsl;
 }
 
-@members {
-}
+@members { }
 
-machine
-    : 'Machine:' machineName=IDENT '{' state[machineName] ( ';' state[machineName] )* '}'
+net returns [Net<DoubleProbability> mNet]
+    : {Net.Builder<DoubleProbability> netBuilder = new Net.Builder<DoubleProbability>(); }
+    (machine { netBuilder.addMachine($machine.mMachine); } )+
+    { mNet = netBuilder.build(); } 
     ;
 
-state [String machineName] returns [State<DoubleProbability> state]
-    : '{' seq=labelSequence ';' tree=decisionTree[machineName] '}'
+machine returns [Machine<DoubleProbability> mMachine]
+   : 'Machine:' machineName=IDENT { Machine.Builder<DoubleProbability> builder = new Machine.Builder<DoubleProbability>($machineName.text); }
+     s1=state[$machineName.text] { builder.addState($s1.mState); } ( s2=state[$machineName.text] { builder.addState($s2.mState); } )*
+     { mMachine = builder.build(); }
+   ;
+
+state [String machineName] returns [State<DoubleProbability> mState]
+    : 'State:' stateName=IDENT lSeq=labelSequence dTree=expression[machineName]
+      { State.Builder<DoubleProbability> builder = new State.Builder<DoubleProbability>(machineName, $stateName.text, $dTree.dt);
+        for (Pair<String> pair : $lSeq.labels) {
+          builder.setLabel(pair.first, pair.second);
+        }
+        mState = builder.build();
+      }
     ;
 
 labelSequence returns [ArrayList<Pair<String>> labels]
-    : 'labels:'
-      { labels = new ArrayList<Pair<String>>(); }
-      li0=labelInstance { labels.add($li0.labelPair); } (',' lik=labelInstance { labels.add($lik.labelPair) } )*
+    : 'labels:' { labels = new ArrayList<Pair<String>>(); }
+      li0=labelInstance { labels.add($li0.labelPair); } (',' lik=labelInstance { labels.add($lik.labelPair); } )*
     ; 
 
 labelInstance returns [Pair<String> labelPair]
-    : label=IDENT '->' instance=IDENT { labelPair = new Pair<String>($label.text, $instance.text); }
-    ;
-
-decisionTree [String machineName] returns [DecisionTree<TransitionVector<DoubleProbability>> dt]
-    : expression[machineName] EOF { $dt = $expression.dt ;}
+    : label=IDENT '=' instance=IDENT { labelPair = new Pair<String>($label.text, $instance.text); }
     ;
 
 expression [String machineName] returns [DecisionTree<TransitionVector<DoubleProbability>> dt]
@@ -54,8 +63,8 @@ expression [String machineName] returns [DecisionTree<TransitionVector<DoublePro
     ;
 
 conditional [String machineName] returns [DecisionTree.Branch<TransitionVector<DoubleProbability>> dt]
-    : 'if' predicate 'then' cons=expression[machineName] 'else' alt=expression[machineName] 'end'
-    { $dt = new DecisionTree.Branch<TransitionVector<DoubleProbability>>($predicate.pred, $cons.dt, $alt.dt); ;} 
+    : 'if' predicate '{' cons=expression[machineName] '}' 'else' '{' alt=expression[machineName] '}'
+    { $dt = new DecisionTree.Branch<TransitionVector<DoubleProbability>>($predicate.pred, $cons.dt, $alt.dt); } 
     ;
 
 term returns [Predicate pred]
@@ -85,7 +94,7 @@ predicate returns [Predicate pred]
     ;
 
 atom returns [Predicate.Atom atom]
-    : mName=IDENT '.' lName=IDENT '=' label=IDENT { atom = new Predicate.Atom($mName.text, $lName.text, $label.text);  } 
+    : mName=IDENT '::' lName=IDENT '=' label=IDENT { atom = new Predicate.Atom($mName.text, $lName.text, $label.text);  } 
     ;
 
 probabilityVector [String machineName] returns [TransitionVector<DoubleProbability> tv]
@@ -96,13 +105,19 @@ probabilityVector [String machineName] returns [TransitionVector<DoubleProbabili
     ;
 
 probability returns [String stateName, DoubleProbability fp]
-    : 'p[' IDENT ']' '=' num=NUMBER '/' den=NUMBER
-    { $stateName = $IDENT.text; $fp = new DoubleProbability(Long.parseLong($num.text), Long.parseLong($den.text)); }
+    : 'p[' nextState=IDENT ']' { $stateName = $nextState.text; } '='
+    // (( num=IDENT '/' den=IDENT { $fp = new DoubleProbability(Long.parseLong($num.text), Long.parseLong($den.text)); } )
+    doub=IDENT {$fp = new DoubleProbability(Double.parseDouble($doub.text)); }
     ;
 
-IDENT : ALPHA (ALPHA|'0'..'9')* ;
-NUMBER : '1'..'9' '0'..'9'* ;
+IDENT : (ALPHA|DIGIT|'_'|'.')+;
+
+COMMENT
+  : '//' (~('\n'|'\r'))*
+    { $channel = HIDDEN; }
+  ;
 
 WHITESPACE : ( '\t' | ' ' | '\r' | '\n'| '\f' )+  { $channel = HIDDEN; } ;
 
 fragment ALPHA : ('a'..'z'|'A'..'Z');
+fragment DIGIT : '0'..'9';

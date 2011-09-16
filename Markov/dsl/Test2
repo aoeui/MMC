@@ -1,0 +1,40 @@
+Machine: DischargeModel
+State: 0_Empty__1_Empty
+  labels: Code=0, Cost=0
+  if ((-((Patient0_ICP::ICP=E) \/ (Patient0_ICP::ICP=D))) /\ (-((Patient1_ICP::ICP=E) \/ (Patient1_ICP::ICP=D)))) {
+    if (ArrivalModel::Arrival=T) {
+      p[0_Empty__1_Occupied]=0.5, p[0_Occupied__1_Empty]=0.5
+    } else {
+      p[0_Occupied__1_Occupied]=1.0
+    }
+  } else {
+    if (((Patient0_ICP::ICP=E) \/ (Patient0_ICP::ICP=D)) /\ (-((Patient1_ICP::ICP=E) \/ (Patient1_ICP::ICP=D)))) {
+      if (ArrivalModel::Arrival=T) {
+        p[0_Empty__1_Occupied]=0.5, p[0_Occupied__1_Empty]=0.5
+      } else {
+        p[0_Empty__1_Occupied]=1.0
+      }
+    } else {
+      if ((-((Patient0_ICP::ICP=E) \/ (Patient0_ICP::ICP=D))) /\ ((Patient1_ICP::ICP=E) \/ (Patient1_ICP::ICP=D))) {
+        if (ArrivalModel::Arrival=T) {
+          p[0_Empty__1_Occupied]=0.5, p[0_Occupied__1_Empty]=0.5
+        } else {
+          p[0_Occupied__1_Empty]=1.0
+        }
+      } else {
+        if (((Patient0_ICP::ICP=E) \/ (Patient0_ICP::ICP=D)) /\ ((Patient1_ICP::ICP=E) \/ (Patient1_ICP::ICP=D))) {
+          if (ArrivalModel::Arrival=T) {
+            p[0_Empty__1_Occupied]=0.5, p[0_Occupied__1_Empty]=0.5
+          } else {
+            p[0_Empty__1_Empty]=1.0
+          }
+        } else {
+          if (ArrivalModel::Arrival=T) {
+            p[0_Empty__1_Occupied]=0.5, p[0_Occupied__1_Empty]=0.5
+          } else {
+            p[0_Empty__1_Empty]=1.0
+          }
+        }
+      }
+    }
+  }

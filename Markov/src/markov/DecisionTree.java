@@ -19,6 +19,26 @@ public abstract class DecisionTree<T extends Comparable<? super T>> {
   
   public abstract Romdd<T> toRomdd(Dictionary dict);
   
+  public TerminatedIterator<T> outputIterator() {
+    class TerminalIterator extends Coroutine<T> {
+      public void init() {
+        recurse(DecisionTree.this);
+      }
+      void recurse(DecisionTree<T> tree) {
+        tree.accept(new Visitor<T>() {
+          public void visitTerminal(Terminal<T> term) {
+            yield(term.output);
+          }
+          public void visitBranch(Branch<T> branch) {
+            recurse(branch.consequent);
+            recurse(branch.alternative);
+          }
+        });
+      }
+    }
+    return new TerminalIterator().iterator();
+  }
+  
   public TerminatedIterator<Predicate.Atom> atomIterator() {
     class AtomIterator extends Coroutine<Predicate.Atom> {
       public final DecisionTree<T> root;
@@ -93,17 +113,13 @@ public abstract class DecisionTree<T extends Comparable<? super T>> {
     }
     
     public String toString() {
-      StringBuilder builder = new StringBuilder();
-      builder.append("if (").append(predicate).append(") {\n");
-      builder.append(consequent);
-      builder.append("\n} else {");
-      builder.append(alternative);
-      builder.append("}\n");
-      return builder.toString();
+      Indenter indenter = new Indenter();
+      indent(indenter);
+      return indenter.toString();
     }
     
     public void indent(Indenter indenter) {
-      indenter.print("if (").print(predicate).print(") {\n");
+      indenter.print("if ").print(predicate).print(" {\n");
       indenter.indent();
       consequent.indent(indenter);
       indenter.deindent();

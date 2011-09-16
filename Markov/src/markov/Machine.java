@@ -3,8 +3,11 @@ package markov;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.TreeMap;
 
+import util.Indenter;
+import util.TerminatedIterator;
 import util.UnmodifiableIterator;
 
 public class Machine<T extends Probability<T>> implements Iterable<State<T>> {
@@ -46,10 +49,14 @@ public class Machine<T extends Probability<T>> implements Iterable<State<T>> {
   
   public String toString() {
     StringBuilder builder = new StringBuilder();
-    builder.append("Machine:").append(name);
+    builder.append("Machine:").append(name).append('\n');
+    Indenter indenter = new Indenter();
+    indenter.indent();
     for (State<T> state : states) {
-      builder.append('\n').append(state);
+      state.indent(indenter);
+      // builder.append('\n').append(state);
     }
+    builder.append(indenter.toString());
     return builder.toString();
   }
 
@@ -84,6 +91,15 @@ public class Machine<T extends Probability<T>> implements Iterable<State<T>> {
     
     public Machine<T> build() {
       if (states.size() == 0) throw new RuntimeException("Machine needs at least one state");
+      for (State<T> state : states.values()) {
+        for (TerminatedIterator<TransitionVector<T>> it = state.getTransitionFunction().outputIterator(); it.hasNext(); ) {
+          TransitionVector<T> vect = it.next();
+          for (Iterator<Map.Entry<String, T>> probIt = vect.zeroIncludingIterator(); probIt.hasNext(); ) {
+            String stateName = probIt.next().getKey();
+            if (!states.containsKey(stateName)) throw new RuntimeException("Invalid state " + stateName + " referred to by transition function of\n" + state);
+          }
+        }
+      }
       return new Machine<T>(name, new TreeMap<String,State<T>>(states));
     }
   }

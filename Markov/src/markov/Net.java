@@ -122,7 +122,7 @@ public class Net<T extends Probability<T>> implements Iterable<Machine<T>> {
       if (isFirstMachine) isFirstMachine = false;
       else indenter.println();
       indenter.print(machineTable.get(name));
-      indenter.println("dictionary:").indent().println(dictionary.print(Stack.makeName(name))).deindent();
+      indenter.print("dictionary: ").indent().println(dictionary.print(Stack.makeName(name))).deindent();
       indenter.print("neighbors = [");
       boolean isFirst = true;
       for (String neighbor : getNeighbors(name)) {

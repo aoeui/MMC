@@ -93,4 +93,13 @@ public class Alphabet implements Comparable<Alphabet> {
     builder.append('}');
     return builder.toString();
   }
+  
+  String toStringCropMachineName() {
+    StringBuilder builder = new StringBuilder();
+    builder.append(name.tail().toString("::"));
+    builder.append("->{");
+    Joiner.appendJoin(builder, characters, ", ");
+    builder.append('}');
+    return builder.toString();
+  }
 }
