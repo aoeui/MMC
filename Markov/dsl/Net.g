@@ -1,4 +1,4 @@
-grammar DecisionTree;
+grammar Net;
 
 options {
   language = Java;
