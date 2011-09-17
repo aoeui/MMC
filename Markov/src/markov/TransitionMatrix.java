@@ -87,7 +87,7 @@ public class TransitionMatrix<T extends Probability<T>> {
         for (int dest = 1; dest < N; dest++) {
           prob = prob.sum(row.get(dest));
         }
-        if (!prob.isOne()) throw new BuildException("Probabilities of row " + i + " don't sum to 1.");
+        if (!prob.isOne()) throw new BuildException("Probabilities of row " + i + " don't sum to 1: " + prob);
       }
       ArrayList<T> data = new ArrayList<T>();
       for (ArrayList<T> row : rows) {

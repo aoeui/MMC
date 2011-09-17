@@ -1,28 +1,22 @@
 Machine:TitForTat
   State:A    labels: behavior=attack, cost=1, id=A
-    if -Opponent::behavior=attack {
+    if -Opponent::behavior=attack
       p[B]=1.0
-    } else {
-      p[A]=1.0
-    }
+    else p[A]=1.0
+
   State: B   labels: behavior=cooperate, cost=0, id=B
-    if Opponent::behavior=attack {
+    if Opponent::behavior=attack
       p[A]=1.0
-    } else {
-      p[B]=1.0
-    }
+    else p[B]=1.0
 
  Machine:Opponent
    // Opponent is similar to TitForTat but noisy
    State: Attack      labels: behavior=attack, cost=1
-     if TitForTat::behavior = attack {
+     if TitForTat::behavior = attack
        p[Attack] = 0.9, p[Cooperate] = 0.1
-     } else {
-       p[Cooperate] = 0.9, p[Attack] = 0.1
-     }
+     else p[Cooperate] = 0.9, p[Attack] = 0.1
+
    State: Cooperate   labels: behavior=cooperate, cost=0
-     if TitForTat::behavior=cooperate {
+     if TitForTat::behavior=cooperate
        p[Attack] = 0.15, p[Cooperate] = 0.85
-     } else {
-       p[Attack] = 0.9, p[Cooperate] = 0.1
-     }
+     else p[Attack] = 0.9, p[Cooperate] = 0.1

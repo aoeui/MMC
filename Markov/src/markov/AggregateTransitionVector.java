@@ -28,6 +28,19 @@ public class AggregateTransitionVector<T extends Probability<T>> implements Comp
     }
   }
   
+  public AggregateTransitionVector<T> remap(int range, Map<Integer,Integer> map) {
+    ArrayList<T> rv = new ArrayList<T>(range);
+    for (int i = 0; i < range; i++) {
+      rv.add(null);
+    }
+    for (int i = 0; i < prob.size(); i++) {
+      int dest = map.get(i);
+      T elt = rv.get(dest);
+      rv.set(dest, elt == null ? prob.get(i) : elt.sum(prob.get(i)));
+    }
+    return new AggregateTransitionVector<T>(rv);
+  }
+  
   private AggregateTransitionVector(ArrayList<T> arr) {
     this.prob = arr;
   }

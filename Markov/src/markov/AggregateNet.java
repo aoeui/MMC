@@ -3,7 +3,6 @@ package markov;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-import util.Partition;
 import util.Stack;
 import util.UnmodifiableIterator;
 
@@ -54,14 +53,7 @@ public class AggregateNet<T extends Probability<T>> implements Iterable<Aggregat
   }
   
   public void reduce(int machineIndex) {
-    AggregateMachine<T> machine = machines.get(machineIndex);
-    Partition<Integer> initialPartition = machine.getStatePartition();
-    System.out.println("input partition: " + initialPartition);
-    Lumping<SymbolicProbability<T>> lumper = new Lumping<SymbolicProbability<T>>(machine.computeTransitionMatrix(), initialPartition);
-    lumper.runLumping();
-    // TODO process results of lumping
-    Partition<Integer> partition = lumper.getPartition();
-    System.out.println("output partition: " + partition);
+    machines.set(machineIndex, machines.get(machineIndex).reduce());
   }
   
   public void sum(Stack<String> name) {

@@ -2,6 +2,7 @@ package markov;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.TreeSet;
 
@@ -55,6 +56,33 @@ public class AggregateMachine<T extends Probability<T>> implements Iterable<Aggr
     return new UnmodifiableIterator<AggregateState<T>>(states.iterator());
   }
   
+  public AggregateMachine<T> reduce() {
+    Partition<Integer> initialPartition = getStatePartition();
+    System.out.println("input partition: " + initialPartition);
+    Lumping<SymbolicProbability<T>> lumper = new Lumping<SymbolicProbability<T>>(computeTransitionMatrix(), initialPartition);
+    lumper.runLumping();
+
+    Partition<Integer> partition = lumper.getPartition();    
+    System.out.println("output partition: " + partition);
+
+    ArrayList<AggregateState<T>> newStates = new ArrayList<AggregateState<T>>(partition.getNumBlocks());
+    HashMap<Integer,Integer> mapping = partitionToMap(partition);
+    for (int i = 0; i < partition.getNumBlocks(); i++) {
+      newStates.add(states.get(partition.getBlock(i).get(0)).remap(partition.getNumBlocks(), mapping));
+    }
+    return new AggregateMachine<T>(newStates);
+  }
+  
+  public static HashMap<Integer,Integer> partitionToMap(Partition<Integer> partition) {
+    HashMap<Integer,Integer> rv = new HashMap<Integer,Integer>();
+    for (int i = 0; i < partition.getNumBlocks(); i++) {
+      for (Integer v : partition.getBlock(i)) {
+        rv.put(v, i);
+      }
+    }
+    return rv;
+  }
+  
   public AggregateMachine<T> drop(int varId) {
     ArrayList<AggregateState<T>> newStates = new ArrayList<AggregateState<T>>(states.size());
     for (int i = 0; i < states.size(); i++) {
@@ -66,7 +94,7 @@ public class AggregateMachine<T extends Probability<T>> implements Iterable<Aggr
   public AggregateMachine<T> product(AggregateMachine<T> machine) {
     ArrayList<AggregateState<T>> newStates = new ArrayList<AggregateState<T>>(size() * machine.size());
     for (int i = 0; i < size(); i++) {
-      for (int j = 0; j < size(); j++) {
+      for (int j = 0; j < machine.size(); j++) {
         newStates.add(states.get(i).combine(machine.getState(j)));
       }
     }

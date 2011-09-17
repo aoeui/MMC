@@ -6,7 +6,7 @@ public class DoubleProbability extends Probability<DoubleProbability> {
   public final static SumOp SUM = new SumOp();
   public final static ProdOp PROD = new ProdOp();
 
-  public final static double MARGIN = 1e-9;
+  public final static double MARGIN = 1e-5;
 
   public final static DoubleProbability ZERO = new DoubleProbability(LongFraction.ZERO);
   public final static DoubleProbability ONE = new DoubleProbability(1,1);
@@ -40,6 +40,11 @@ public class DoubleProbability extends Probability<DoubleProbability> {
   public boolean equals(Object o) {
     try {
       DoubleProbability prob = (DoubleProbability)o;
+      if (Math.abs(p) < MARGIN) {
+        return Math.abs(prob.p) < MARGIN;
+      } else if (Math.abs(prob.p) < MARGIN) {
+        return false;
+      }
       return Math.abs((p-prob.p)/(p+prob.p)) < MARGIN;
     } catch (Exception e) {
       return false;
@@ -51,7 +56,7 @@ public class DoubleProbability extends Probability<DoubleProbability> {
 
   public int compareTo(DoubleProbability other) {
     double diff = p - other.p;
-    if (Math.abs(diff/(p+other.p)) < MARGIN) return 0;
+    if (Math.abs(diff) < MARGIN || Math.abs(diff / (p+other.p)) < MARGIN) return 0;
     
     return diff > 0 ? 1 : -1;
   }

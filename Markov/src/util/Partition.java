@@ -50,8 +50,8 @@ public class Partition<T> implements Iterable<Partition<T>.Block> {
     blocks.add(new Block(start, elements.size()-1));
   }
 
-  public int size() { return elements.size(); }
-  public T get(int idx) { return elements.get(idx); }
+  public int getNumElts() { return elements.size(); }
+  public T getElt(int idx) { return elements.get(idx); }
 
   public int getNumBlocks() { return blocks.size(); }
   public Block getBlock(int idx) { return blocks.get(idx); }

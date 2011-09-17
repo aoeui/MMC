@@ -201,10 +201,10 @@ public class Lumping<T extends Probability<T>> {
         if (b1.hasMarked()) {  // b1 certainly has unmarked because of pmc
           BlockInfo b2 = b1.split();
           // sort and partition B2 based on w[s]
-          Collections.sort(elems.subList(b2.start, b2.end+1),
+          Collections.sort(elems.subList(b2.start, b2.end),
               new Comparator<Integer>() {
                 public int compare(Integer v1, Integer v2) {
-                  return w.get(elems.get(v1)).compareTo(w.get(elems.get(v2)));
+                  return w.get(v1).compareTo(w.get(v2));
                 }});
           // Since elems rearranged by sorting, need to reindex
           for (int i = b2.start; i <= b2.end; i++) {

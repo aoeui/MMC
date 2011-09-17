@@ -29,6 +29,16 @@ public class AggregateState<T extends Probability<T>> {
     }
   }
   
+  // Range is the size of the partition used to generate the map
+  public AggregateState<T> remap(final int range, final Map<Integer,Integer> map) {
+    class VectorMapper implements Romdd.Mapping<AggregateTransitionVector<T>, AggregateTransitionVector<T>> {
+      public AggregateTransitionVector<T> transform(AggregateTransitionVector<T> input) {
+        return input.remap(range, map);
+      }
+    }
+    return new AggregateState<T>(map.get(index), range, transitionFunction.remap(new VectorMapper()), labelVector);
+  }
+  
   public Stack<Integer> getLabelNames() {
     return Stack.<Integer>makeStack(labelVector.keySet());
   }

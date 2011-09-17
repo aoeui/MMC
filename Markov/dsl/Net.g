@@ -26,10 +26,9 @@ package dsl;
 
 @members { }
 
-net returns [Net<DoubleProbability> mNet]
-    : {Net.Builder<DoubleProbability> netBuilder = new Net.Builder<DoubleProbability>(); }
+net returns [Net.Builder<DoubleProbability> netBuilder]
+    : {netBuilder = new Net.Builder<DoubleProbability>(); }
     (machine { netBuilder.addMachine($machine.mMachine); } )+
-    { mNet = netBuilder.build(); } 
     ;
 
 machine returns [Machine<DoubleProbability> mMachine]
@@ -63,7 +62,7 @@ expression [String machineName] returns [DecisionTree<TransitionVector<DoublePro
     ;
 
 conditional [String machineName] returns [DecisionTree.Branch<TransitionVector<DoubleProbability>> dt]
-    : 'if' predicate '{' cons=expression[machineName] '}' 'else' '{' alt=expression[machineName] '}'
+    : 'if' predicate cons=expression[machineName] 'else' alt=expression[machineName]
     { $dt = new DecisionTree.Branch<TransitionVector<DoubleProbability>>($predicate.pred, $cons.dt, $alt.dt); } 
     ;
 

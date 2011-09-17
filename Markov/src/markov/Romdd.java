@@ -391,19 +391,19 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
       // This is an implementation of N-way-apply
       // We may  need to add caching for this query
       public Romdd<T> recurse(Partition<Node<T>> nodes, T weight) {
-        if (nodes.size() == 0 || ((weight != null) && operation.isDominant(weight))) {
+        if (nodes.getNumElts() == 0 || ((weight != null) && operation.isDominant(weight))) {
           if (weight == null) throw new RuntimeException();
           return checkCache(new Terminal<T>(weight));
         }
         Partition<Node<T>>.Block block = nodes.getBlock(0);  // the first block has least alpha, it gets branched first
         
         final DiffTrackingArrayList<Romdd<T>> children = new DiffTrackingArrayList<Romdd<T>>();
-        final int size = nodes.get(0).getSize();
+        final int size = nodes.getElt(0).getSize();
         for (int i = 0; i < size; i++) {
           final Ptr<T> wPtr = new Ptr<T>(weight);
           final Partition.Builder<Node<T>> builder = new Partition.Builder<Node<T>>(NodeAlphaComparator.INSTANCE);
           for (int j = block.start; j <= block.end; j++) {
-            nodes.get(j).getChild(i).accept(new Visitor<T>() {
+            nodes.getElt(j).getChild(i).accept(new Visitor<T>() {
               public void visitTerminal(Terminal<T> term) {
                 wPtr.value = wPtr.value == null ? term.output : operation.apply(wPtr.value, term.output);
               }
@@ -412,12 +412,12 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
               }
             });
           }
-          for (int j = block.end+1; j < nodes.size(); j++) {
-            builder.add(nodes.get(j));  // non-branching nodes copied over
+          for (int j = block.end+1; j < nodes.getNumElts(); j++) {
+            builder.add(nodes.getElt(j));  // non-branching nodes copied over
           }
           children.add(recurse(builder.build(), wPtr.value));
         }
-        return children.isAllSame() ? children.get(0) : checkCache(new Node<T>(nodes.get(0).dict, nodes.get(0).varId, children));
+        return children.isAllSame() ? children.get(0) : checkCache(new Node<T>(nodes.getElt(0).dict, nodes.getElt(0).varId, children));
       }
     }
     return new Summation().compute();

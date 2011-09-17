@@ -119,15 +119,14 @@ public abstract class DecisionTree<T extends Comparable<? super T>> {
     }
     
     public void indent(Indenter indenter) {
-      indenter.print("if ").print(predicate).print(" {\n");
+      indenter.print("if ").print(predicate).print("\n");
       indenter.indent();
       consequent.indent(indenter);
       indenter.deindent();
-      indenter.print("} else {\n").indent();
+      indenter.print("else ");
       alternative.indent(indenter);
-      indenter.deindent().print("}\n");
     }
-  }  
+  }
   
   public static class Terminal<T extends Comparable<? super T>> extends DecisionTree<T> {
     public final T output;
