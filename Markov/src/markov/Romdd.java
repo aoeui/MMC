@@ -10,6 +10,7 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import util.Joiner;
 import util.LexicalCompare;
 import util.Pair;
 import util.Partition;
@@ -543,6 +544,35 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
     }
     
     public String toString() { return output.toString(); }
+  }
+  
+  public String toString() {
+    final StringBuilder builder = new StringBuilder();
+    final TreeSet<Romdd<T>> visited = new TreeSet<Romdd<T>>();
+    final TreeSet<String> varNames = new TreeSet<String>();
+    final TreeSet<T> vals = new TreeSet<T>();
+    class Stringifier {
+      void recurse(Romdd<T> romdd) {
+        romdd.accept(new Visitor<T>() {
+          public void visitTerminal(Terminal<T> term) {
+            vals.add(term.output);
+          }
+          public void visitNode(Node<T> node) {
+            if (visited.contains(node)) return;
+            visited.add(node);
+            
+            varNames.add(node.dict.getAlpha(node.varId).name.toString(Alphabet.SCOPE));
+            for (Romdd<T> child : node) {
+              recurse(child);
+            }
+          }
+        });
+      }
+    }
+    new Stringifier().recurse(this);
+    builder.append('(').append(Joiner.join(varNames, " X ")).append(") -> {");
+    builder.append(Joiner.join(vals)).append('}');
+    return builder.toString();
   }
 
   public static interface Visitor<T extends Comparable<? super T>> {

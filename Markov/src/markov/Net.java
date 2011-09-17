@@ -1,5 +1,6 @@
 package markov;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -9,10 +10,16 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.TreeSet;
 
+import org.antlr.runtime.ANTLRFileStream;
+import org.antlr.runtime.CommonTokenStream;
+import org.antlr.runtime.RecognitionException;
+
+import dsl.NetLexer;
+import dsl.NetParser;
+
 import util.Indenter;
 import util.TerminatedIterator;
 import util.UnmodifiableIterator;
-
 import util.Stack;
 
 public class Net<T extends Probability<T>> implements Iterable<Machine<T>> {
@@ -109,6 +116,14 @@ public class Net<T extends Probability<T>> implements Iterable<Machine<T>> {
     public Net<T> build() {
       return new Net<T>(machines.values());
     }
+  }
+  
+  public static Net<DoubleProbability> parse(String filename) throws IOException, RecognitionException {
+    NetLexer lex = new NetLexer(new ANTLRFileStream(filename));
+    CommonTokenStream tokens = new CommonTokenStream(lex);
+    NetParser parser = new NetParser(tokens);
+  
+    return parser.net();
   }
 
   public String toString() {

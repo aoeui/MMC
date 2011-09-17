@@ -97,4 +97,14 @@ public class AggregateMachine<T extends Probability<T>> implements Iterable<Aggr
     }
     return builder.build();
   }
+  
+  public String toString(Dictionary dict) {
+    StringBuilder builder = new StringBuilder();
+    for (AggregateState<T> state : states) {
+      builder.append(state.toString(dict)).append('\n');
+    }
+    TransitionMatrix<SymbolicProbability<T>> matrix = computeTransitionMatrix();
+    builder.append(matrix.toString());
+    return builder.toString();
+  }
 }

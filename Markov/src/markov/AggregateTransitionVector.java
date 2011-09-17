@@ -37,14 +37,15 @@ public class AggregateTransitionVector<T extends Probability<T>> implements Comp
     ArrayList<T> rv = new ArrayList<T>(prob.size() * vect.size());
     for (int i = 0; i < prob.size(); i++) {
       for (int j = 0; j < vect.prob.size(); j++) {
-        rv.set(i*vect.prob.size() + j, prob.get(i).product(vect.get(j)));
+        rv.add(prob.get(i).product(vect.get(j)));
       }
     }
+    if (rv.size() != size() * vect.size()) throw new RuntimeException();
     return new AggregateTransitionVector<T>(rv);
   }
   
   public T get(int idx) {
-    return get(idx);
+    return prob.get(idx);
   }
   
   public Iterator<T> iterator() {
@@ -57,5 +58,9 @@ public class AggregateTransitionVector<T extends Probability<T>> implements Comp
   
   public int compareTo(AggregateTransitionVector<T> vect) {
     return LexicalCompare.compare(prob, vect.prob); 
+  }
+  
+  public String toString() {
+    return prob.toString();
   }
 }

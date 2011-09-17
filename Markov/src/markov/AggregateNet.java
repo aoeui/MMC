@@ -30,6 +30,11 @@ public class AggregateNet<T extends Probability<T>> implements Iterable<Aggregat
     return new UnmodifiableIterator<AggregateMachine<T>>(machines.iterator());
   }
   
+  public void multiply(int idx1, int idx2) {
+    machines.set(idx1, machines.get(idx1).product(machines.get(idx2)));
+    machines.remove(idx2);
+  }
+  
   /** Returns the index of the machine that was affected. */
   public int sum(int varId) {
     AggregateMachine<T> provider = null;
@@ -50,14 +55,28 @@ public class AggregateNet<T extends Probability<T>> implements Iterable<Aggregat
   
   public void reduce(int machineIndex) {
     AggregateMachine<T> machine = machines.get(machineIndex);
-    Lumping<SymbolicProbability<T>> lumper = new Lumping<SymbolicProbability<T>>(machine.computeTransitionMatrix(), machine.getStatePartition());
+    Partition<Integer> initialPartition = machine.getStatePartition();
+    System.out.println("input partition: " + initialPartition);
+    Lumping<SymbolicProbability<T>> lumper = new Lumping<SymbolicProbability<T>>(machine.computeTransitionMatrix(), initialPartition);
     lumper.runLumping();
     // TODO process results of lumping
     Partition<Integer> partition = lumper.getPartition();
-    System.out.println(partition);
+    System.out.println("output partition: " + partition);
   }
   
   public void sum(Stack<String> name) {
     sum(dict.getId(name));
+  }
+  public void sum(String ...strings) {
+    sum(Stack.makeName(strings));
+  }
+  
+  public String toString() {
+    StringBuilder builder = new StringBuilder();
+    for (int i = 0; i < machines.size(); i++) {
+      if (i != 0) builder.append("\n\n");
+      builder.append(machines.get(i).toString(dict));
+    }
+    return builder.toString();
   }
 }

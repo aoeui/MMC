@@ -10,6 +10,8 @@ import util.LexicalCompare;
 import util.Stack;
 
 public class Alphabet implements Comparable<Alphabet> {
+  public final static String SCOPE = "::";
+
   public final Stack<String> name;  // every alphabet has a name
 
   private final ArrayList<String> characters;  // this is ordered, unique
@@ -87,7 +89,7 @@ public class Alphabet implements Comparable<Alphabet> {
   
   public String toString() {
     StringBuilder builder = new StringBuilder();
-    builder.append(name.toString("::"));
+    builder.append(name.toString(SCOPE));
     builder.append("->{");
     Joiner.appendJoin(builder, characters, ", ");
     builder.append('}');
@@ -96,7 +98,7 @@ public class Alphabet implements Comparable<Alphabet> {
   
   String toStringCropMachineName() {
     StringBuilder builder = new StringBuilder();
-    builder.append(name.tail().toString("::"));
+    builder.append(name.tail().toString(SCOPE));
     builder.append("->{");
     Joiner.appendJoin(builder, characters, ", ");
     builder.append('}');

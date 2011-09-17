@@ -48,6 +48,8 @@ public class SymbolicProbability<T extends Probability<T>> extends Probability<S
     return value != null && value.isOne();
   }
   
+  public String toString() { return prob.toString(); }
+  
   public static class TransitionFilter<T extends Probability<T>> implements Romdd.Mapping<AggregateTransitionVector<T>, T> {
     public final int stateIdx;
     public TransitionFilter(int stateIdx) {

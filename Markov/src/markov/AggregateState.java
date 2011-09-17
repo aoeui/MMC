@@ -66,6 +66,19 @@ public class AggregateState<T extends Probability<T>> {
     newLabelVector.putAll(state.labelVector);
     return new AggregateState<T>(index*state.size + state.index, size*state.size, result, newLabelVector);
   }
+  
+  // Does not output information about the transition vector, which is more complex
+  public String toString(Dictionary dict) {
+    StringBuilder builder = new StringBuilder();
+    builder.append("S[").append(index).append("]: ");
+    boolean isFirst = true;
+    for (Map.Entry<Integer, String> entry : labelVector.entrySet()) {
+      if (isFirst) isFirst = false;
+      else builder.append(", ");
+      builder.append(dict.getAlpha(entry.getKey()).name.toString(Alphabet.SCOPE)).append("=").append(entry.getValue());
+    }
+    return builder.toString();
+  }
 
   // Need to be careful with this because it is not commutative
   private static class MultiplyVectors<T extends Probability<T>> implements Romdd.Op<AggregateTransitionVector<T>> {
