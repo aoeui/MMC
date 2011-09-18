@@ -1,5 +1,7 @@
 package markov;
 
+import java.util.Formatter;
+
 import num.LongFraction;
 
 public class DoubleProbability extends Probability<DoubleProbability> {
@@ -62,7 +64,9 @@ public class DoubleProbability extends Probability<DoubleProbability> {
   }
 
   public String toString() {
-    return Double.toString(p);
+    Formatter f = new Formatter();
+    f.format("%5g", p);
+    return f.toString();
   }
   
 

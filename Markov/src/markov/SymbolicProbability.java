@@ -8,7 +8,7 @@ public class SymbolicProbability<T extends Probability<T>> extends Probability<S
   public final static SymbolicProbability<DoubleProbability> ONE = new SymbolicProbability<DoubleProbability>(new Romdd.Terminal<DoubleProbability>(DoubleProbability.ONE));
 
   public final Romdd<T> prob;
-  private final T value;  // this is null if prob is not a constant 
+  public final T value;  // this is null if prob is not a constant 
 
   /** Given the transition function of a particular state and an index, this constructor returns a mapping from
    * the input label space to probabilities.  */

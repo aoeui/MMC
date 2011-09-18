@@ -1,5 +1,9 @@
 package test;
 
+import Jama.EigenvalueDecomposition;
+import Jama.Matrix;
+
+import markov.AggregateMachine;
 import markov.AggregateNet;
 import markov.DecisionTree;
 import markov.DoubleProbability;
@@ -7,11 +11,13 @@ import markov.Machine;
 import markov.Net;
 import markov.Predicate;
 import markov.State;
+import markov.SymbolicProbability;
+import markov.TransitionMatrix;
 import markov.TransitionVector;
 
 public class TestAggregation2 {
   public final static int LEVELS=6;  // levels are 0...5
-  public final static int PLAYERS=3;  // players are p1...pk  w/ k = PLAYERS
+  public final static int PLAYERS=5;  // players are p1...pk  w/ k = PLAYERS
   public final static String COMMONS = "commons";
 
   public static DecisionTree<TransitionVector<DoubleProbability>> constructTree(int startLevel) {
@@ -72,26 +78,74 @@ public class TestAggregation2 {
       System.out.println(net);
       AggregateNet<DoubleProbability> aNet = new AggregateNet<DoubleProbability>(net, DoubleProbability.ZERO);
       System.out.println(aNet);
+      aNet.multiply(4, 5);
+      aNet.multiply(3, 4);
       aNet.multiply(2, 3);
+      aNet.multiply(1, 2);
+      aNet.multiply(0, 1);
+      aNet.sum("p5", "using");
+      aNet.sum("p4", "using");
+      aNet.sum("p3", "using");
+      aNet.sum("p2", "using");
+      aNet.sum("p1", "using");
+      aNet.reduce(0);
+      System.out.println(aNet);
+      AggregateMachine<DoubleProbability> machine = aNet.getMachine(0);
+      TransitionMatrix<SymbolicProbability<DoubleProbability>> prob = machine.computeTransitionMatrix();
+      Matrix matrix = new Matrix(prob.N, prob.N);
+      for (int i = 0; i < prob.N; i++) {
+        for (int j = 0; j < prob.N; j++) {
+          matrix.set(i, j, prob.get(i,j).value.p);
+        }
+      }
+      EigenvalueDecomposition eig = matrix.eig();
+      Matrix eigenVectors = eig.getV();
+      double[] stationary = new double[prob.N];
+      double sum = 0;
+      for (int i = 0; i < prob.N; i++) {
+        stationary[i] = eigenVectors.get(i, 0);
+        if (i != 0) System.out.print(", ");
+        System.out.print(stationary[i]);
+        sum += stationary[i];
+      }
+      System.out.println("\nsum = " + sum + " eigenvalue = " + eig.getRealEigenvalues()[0] + "," + eig.getImagEigenvalues()[0]);
+
+      double[] prod = new double[prob.N];
+      for (int i = 0; i < prob.N; i++) {
+        double rowSum = 0;
+        for (int j = 0; j < prob.N; j++) {
+          rowSum += stationary[j] * matrix.get(i, j);
+        }
+        prod[i] = rowSum;
+        if (i != 0) System.out.print(", ");
+        System.out.print(prod[i]);
+      }
+      System.out.println();
+      
+/*      aNet.multiply(3, 4);
+      System.out.println("\nAfter multiply\n" + aNet);
+      aNet.sum("p4", "using");
+      System.out.println("\nAfter summing\n" + aNet);
+      aNet.reduce(3);
+      
+      aNet.multiply(2,3);
       System.out.println("\nAfter multiply\n" + aNet);
       aNet.sum("p3", "using");
-      System.out.println("\nAfter summing\n" + aNet);
+      System.out.println("\nAfter summing\n" + aNet);      
       aNet.reduce(2);
+      System.out.println("\nAfter reducing\n" + aNet);
       
-      aNet.multiply(1,2);
-      System.out.println("\nAfter multiply\n" + aNet);
-      aNet.sum("p2", "using");
-      System.out.println("\nAfter summing\n" + aNet);
-      
+      aNet.multiply(1, 2);
+      System.out.println("\nAfter final multiply\n" + aNet);      
+      aNet.sum("p2","using");
       aNet.reduce(1);
       System.out.println("\nAfter reducing\n" + aNet);
       
       aNet.multiply(0, 1);
       System.out.println("\nAfter final multiply\n" + aNet);
-      
-      aNet.sum("p1","using");
+      aNet.sum("p1", "using");
       aNet.reduce(0);
-      System.out.println("\nAfter final reduce\n" + aNet);
+      System.out.println("\nAfter reducing\n" + aNet); */
       
       double elapsed = ((double)(System.nanoTime()-begin))/1e9;
       System.out.println("\nTime taken = " + elapsed);
