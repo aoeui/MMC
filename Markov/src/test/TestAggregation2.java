@@ -78,17 +78,9 @@ public class TestAggregation2 {
       System.out.println(net);
       AggregateNet<DoubleProbability> aNet = new AggregateNet<DoubleProbability>(net, DoubleProbability.ZERO);
       System.out.println(aNet);
-      aNet.multiply(4, 5);
-      aNet.multiply(3, 4);
-      aNet.multiply(2, 3);
-      aNet.multiply(1, 2);
-      aNet.multiply(0, 1);
-      aNet.sum("p5", "using");
-      aNet.sum("p4", "using");
-      aNet.sum("p3", "using");
-      aNet.sum("p2", "using");
-      aNet.sum("p1", "using");
-      aNet.reduce(0);
+      aNet = aNet.multiply(4, 5).multiply(3, 4).multiply(2, 3).multiply(1, 2).multiply(0, 1);
+      aNet = aNet.sum("p5", "using").sum("p4", "using").sum("p3", "using").sum("p2", "using").sum("p1", "using");
+      aNet = aNet.reduce(0);
       System.out.println(aNet);
       AggregateMachine<DoubleProbability> machine = aNet.getMachine(0);
       TransitionMatrix<SymbolicProbability<DoubleProbability>> prob = machine.computeTransitionMatrix();
@@ -107,6 +99,9 @@ public class TestAggregation2 {
         if (i != 0) System.out.print(", ");
         System.out.print(stationary[i]);
         sum += stationary[i];
+      }
+      for (int i = 0; i < prob.N; i++) {
+        stationary[i] /= sum;
       }
       System.out.println("\nsum = " + sum + " eigenvalue = " + eig.getRealEigenvalues()[0] + "," + eig.getImagEigenvalues()[0]);
 

@@ -39,12 +39,24 @@ public class AggregateState<T extends Probability<T>> {
     return new AggregateState<T>(map.get(index), range, transitionFunction.remap(new VectorMapper()), labelVector);
   }
   
+  public Romdd<AggregateTransitionVector<T>> applyRestrictions(Romdd<AggregateTransitionVector<T>> input) {
+    Romdd<AggregateTransitionVector<T>> rv = input;
+    for (Map.Entry<Integer,String> entry : labelVector.entrySet()) {
+      rv = rv.restrict(entry.getKey(), entry.getValue());
+    }
+    return rv;
+  }
+  
   public Stack<Integer> getLabelNames() {
     return Stack.<Integer>makeStack(labelVector.keySet());
   }
   
   public Iterator<String> getLabelValueIterator() {
     return new UnmodifiableIterator<String>(labelVector.values().iterator());
+  }
+  
+  public String getValue(int varId) {
+    return labelVector.get(varId);
   }
   
   public AggregateState<T> drop(int varId) {

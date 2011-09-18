@@ -27,6 +27,13 @@ public class AggregateMachine<T extends Probability<T>> implements Iterable<Aggr
     this.labelsReferenced = Stack.<Integer>makeStack(references);
   }
   
+  public boolean providesFor(AggregateMachine<?> machine) {
+    for (int label : machine.labelsReferenced) {
+      if (labels.contains(label)) return true;
+    }
+    return false;
+  }
+  
   private Stack<Integer> toLabelStack(Dictionary dict, String machineName, Iterator<String> it) {
     if (!it.hasNext()) return Stack.<Integer>emptyInstance();
     
@@ -50,7 +57,7 @@ public class AggregateMachine<T extends Probability<T>> implements Iterable<Aggr
     this.labelsReferenced = Stack.<Integer>makeStack(references);
   }
   
-  public int size() { return states.size(); }
+  public int getNumStates() { return states.size(); }
   public AggregateState<T> getState(int i) { return states.get(i); }
   public Iterator<AggregateState<T>> iterator() {
     return new UnmodifiableIterator<AggregateState<T>>(states.iterator());
@@ -92,9 +99,9 @@ public class AggregateMachine<T extends Probability<T>> implements Iterable<Aggr
   }
   
   public AggregateMachine<T> product(AggregateMachine<T> machine) {
-    ArrayList<AggregateState<T>> newStates = new ArrayList<AggregateState<T>>(size() * machine.size());
-    for (int i = 0; i < size(); i++) {
-      for (int j = 0; j < machine.size(); j++) {
+    ArrayList<AggregateState<T>> newStates = new ArrayList<AggregateState<T>>(getNumStates() * machine.getNumStates());
+    for (int i = 0; i < getNumStates(); i++) {
+      for (int j = 0; j < machine.getNumStates(); j++) {
         newStates.add(states.get(i).combine(machine.getState(j)));
       }
     }

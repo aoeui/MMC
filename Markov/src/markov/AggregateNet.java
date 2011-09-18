@@ -22,6 +22,11 @@ public class AggregateNet<T extends Probability<T>> implements Iterable<Aggregat
     }
   }
   
+  private AggregateNet(Dictionary dict, ArrayList<AggregateMachine<T>> machines) {
+    this.dict = dict;
+    this.machines = machines;
+  }
+  
   public int size() { return machines.size(); }
   public AggregateMachine<T> getMachine(int i) { return machines.get(i); }
   
@@ -29,38 +34,50 @@ public class AggregateNet<T extends Probability<T>> implements Iterable<Aggregat
     return new UnmodifiableIterator<AggregateMachine<T>>(machines.iterator());
   }
   
-  public void multiply(int idx1, int idx2) {
-    machines.set(idx1, machines.get(idx1).product(machines.get(idx2)));
-    machines.remove(idx2);
+  public AggregateNet<T> multiply(int idx1, int idx2) {
+    ArrayList<AggregateMachine<T>> newMachines = new ArrayList<AggregateMachine<T>>(machines);
+    newMachines.set(idx1, machines.get(idx1).product(machines.get(idx2)));
+    newMachines.remove(idx2);
+    return new AggregateNet<T>(dict, newMachines);
   }
   
-  /** Returns the index of the machine that was affected. */
-  public int sum(int varId) {
-    AggregateMachine<T> provider = null;
+  public int machineProviding(int varId) {
+    for (int i = 0; i < machines.size(); i++) {
+      if (machines.get(i).labels.contains(varId)) return i;
+    }
+    throw new RuntimeException();
+  }
+  
+  // Low level sum operator, 'sums' out variables that are not referenced.
+  // Does not compute products to make the sum feasible, though that *could* be done
+  public AggregateNet<T> sum(int varId) {
     int providerIndex = -1;
     for (int i = 0; i < machines.size(); i++) {
       AggregateMachine<T> machine = machines.get(i);
       if (machine.labelsReferenced.contains(varId)) throw new RuntimeException(); // cannot sum a variable that is still referenced
       if (machine.labels.contains(varId)) {
-        if (provider != null) throw new RuntimeException(); // cannot have two nodes supplying same variable
-        provider = machine;
+        if (providerIndex != -1) throw new RuntimeException(); // cannot have two nodes supplying same variable
         providerIndex = i;
       }
     }
+    if (providerIndex == -1) return this;
+    ArrayList<AggregateMachine<T>> newMachines = new ArrayList<AggregateMachine<T>>(machines);
     // Since the variable is not referenced, it can just be dropped!
-    machines.set(providerIndex, provider.drop(varId));
-    return providerIndex;
+    newMachines.set(providerIndex, machines.get(providerIndex).drop(varId));
+    return new AggregateNet<T>(dict, newMachines);
   }
   
-  public void reduce(int machineIndex) {
-    machines.set(machineIndex, machines.get(machineIndex).reduce());
+  public AggregateNet<T> reduce(int machineIndex) {
+    ArrayList<AggregateMachine<T>> newMachines = new ArrayList<AggregateMachine<T>>(machines);
+    newMachines.set(machineIndex, machines.get(machineIndex).reduce());
+    return new AggregateNet<T>(dict, newMachines);
   }
   
-  public void sum(Stack<String> name) {
-    sum(dict.getId(name));
+  public AggregateNet<T> sum(Stack<String> name) {
+    return sum(dict.getId(name));
   }
-  public void sum(String ...strings) {
-    sum(Stack.makeName(strings));
+  public AggregateNet<T> sum(String ...strings) {
+    return sum(Stack.makeName(strings));
   }
   
   public String toString() {

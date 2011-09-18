@@ -43,6 +43,12 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
     public S transform(T input);
   }
   
+  public static interface Query {
+    public int getChoice(int varId);
+  }
+  
+  public abstract T eval(Query q);
+  
   public static <T extends Comparable<? super T>> Romdd<T> branch(final Romdd<Boolean> condition, final Romdd<T> consequent, final Romdd<T> alternative) {
     final class Brancher extends RomddCacher<T> {
       Romdd<T> branch() {
@@ -512,6 +518,10 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
       return rvPtr[0];
     }    
     public Stack<String> getName() { return getAlphabet().name; }
+    
+    public T eval(Query q) {
+      return children.get(q.getChoice(varId)).eval(q);
+    }
   }
 
   public static class Terminal<T extends Comparable<? super T>> extends Romdd<T> {
@@ -520,6 +530,8 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
     public Terminal(T output) {
       this.output = output;
     }
+    
+    public T eval(Query q) { return output; }
     
     public boolean isTerminal() { return true; }
     Alphabet getAlphabet() { return null; }
