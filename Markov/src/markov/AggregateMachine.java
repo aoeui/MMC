@@ -27,6 +27,17 @@ public class AggregateMachine<T extends Probability<T>> implements Iterable<Aggr
     this.labelsReferenced = Stack.<Integer>makeStack(references);
   }
   
+  public ResultTree applyStationary(Dictionary dict, double[] stationary) {
+    if (stationary.length != states.size()) throw new RuntimeException();
+    
+    ResultTree rv = ResultTree.create(dict, labels);
+    int i = 0;
+    for (AggregateState<T> state : states) {
+      rv.increment(state.getValueStack(), stationary[i++]);
+    }
+    return rv;
+  }
+  
   public boolean providesFor(AggregateMachine<?> machine) {
     for (int label : machine.labelsReferenced) {
       if (labels.contains(label)) return true;

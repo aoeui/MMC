@@ -1,5 +1,7 @@
 package test;
 
+import java.util.ArrayList;
+
 import Jama.EigenvalueDecomposition;
 import Jama.Matrix;
 
@@ -8,17 +10,22 @@ import markov.AggregateNet;
 import markov.DecisionTree;
 import markov.DoubleProbability;
 import markov.Machine;
+import markov.MonteCarlo;
 import markov.Net;
 import markov.Predicate;
+import markov.ResultTree;
 import markov.State;
 import markov.SymbolicProbability;
 import markov.TransitionMatrix;
 import markov.TransitionVector;
 
+import util.Stack;
+
 public class TestAggregation2 {
   public final static int LEVELS=6;  // levels are 0...5
   public final static int PLAYERS=5;  // players are p1...pk  w/ k = PLAYERS
   public final static String COMMONS = "commons";
+  public final static int STEPS=10000000;
 
   public static DecisionTree<TransitionVector<DoubleProbability>> constructTree(int startLevel) {
     /* The structure of the decision tree is going to be like:
@@ -57,37 +64,48 @@ public class TestAggregation2 {
     builder.setProbability(Integer.toString(Math.min(LEVELS-1, nextState)), DoubleProbability.ONE);
     return new DecisionTree.Terminal<TransitionVector<DoubleProbability>>(builder.build());
   }
+  
+  public static AggregateNet<DoubleProbability> buildNet() throws Exception {
+    Net.Builder<DoubleProbability> netBuilder = Net.partialParse("Commons");
+    // create commons machine
+    Machine.Builder<DoubleProbability> commons = new Machine.Builder<DoubleProbability>(COMMONS);
+    // Commons machine will has a six states named "0" ... "5"
+    for (int i = 0; i <= 5; i++) {
+      State.Builder<DoubleProbability> builder = new State.Builder<DoubleProbability>(COMMONS, Integer.toString(i), constructTree(i));
+      builder.setLabel("level", Integer.toString(i));
+      commons.addState(builder.build());
+    }
+    netBuilder.addMachine(commons.build());
+    Net<DoubleProbability> net = netBuilder.build();
+    // System.out.println("Parsed net: \n" + net);
+    return new AggregateNet<DoubleProbability>(net, DoubleProbability.ZERO);
+  }
 
   public static void main(String[] args) {
     try {
       long begin = System.nanoTime();
 
-      Net.Builder<DoubleProbability> netBuilder = Net.partialParse("Commons");
-      // create commons machine
-      Machine.Builder<DoubleProbability> commons = new Machine.Builder<DoubleProbability>(COMMONS);
-      // Commons machine will has a six states named "0" ... "5"
-      for (int i = 0; i <= 5; i++) {
-        State.Builder<DoubleProbability> builder = new State.Builder<DoubleProbability>(COMMONS, Integer.toString(i), constructTree(i));
-        builder.setLabel("level", Integer.toString(i));
-        commons.addState(builder.build());
+      AggregateNet<DoubleProbability> aNet = buildNet();
+      System.out.println(aNet);
+    
+      for (int i = 5; i >= 1; i--) {
+        aNet = aNet.multiply(i-1, i);
+        System.out.println("\nAfter multiplying p" + i + "\n" + aNet);
+        aNet = aNet.sum("p" + i, "using").reduce(i-1);
+        System.out.println("\nAfter reducing\n" + aNet);
       }
-      netBuilder.addMachine(commons.build());
-      
-      Net<DoubleProbability> net = netBuilder.build();
-      System.out.println("Parsed net");
-      System.out.println(net);
-      AggregateNet<DoubleProbability> aNet = new AggregateNet<DoubleProbability>(net, DoubleProbability.ZERO);
-      System.out.println(aNet);
-      aNet = aNet.multiply(4, 5).multiply(3, 4).multiply(2, 3).multiply(1, 2).multiply(0, 1);
+
+      /* aNet = aNet.multiply(4, 5).multiply(3, 4).multiply(2, 3).multiply(1, 2).multiply(0, 1);
       aNet = aNet.sum("p5", "using").sum("p4", "using").sum("p3", "using").sum("p2", "using").sum("p1", "using");
-      aNet = aNet.reduce(0);
-      System.out.println(aNet);
+      aNet = aNet.reduce(0); */
+
+//       System.out.println(aNet);
       AggregateMachine<DoubleProbability> machine = aNet.getMachine(0);
       TransitionMatrix<SymbolicProbability<DoubleProbability>> prob = machine.computeTransitionMatrix();
       Matrix matrix = new Matrix(prob.N, prob.N);
       for (int i = 0; i < prob.N; i++) {
         for (int j = 0; j < prob.N; j++) {
-          matrix.set(i, j, prob.get(i,j).value.p);
+          matrix.set(j, i, prob.get(i,j).value.p);
         }
       }
       EigenvalueDecomposition eig = matrix.eig();
@@ -103,7 +121,9 @@ public class TestAggregation2 {
       for (int i = 0; i < prob.N; i++) {
         stationary[i] /= sum;
       }
-      System.out.println("\nsum = " + sum + " eigenvalue = " + eig.getRealEigenvalues()[0] + "," + eig.getImagEigenvalues()[0]);
+      System.out.println("\nsum = " + sum + " eigenvalue = " + eig.getRealEigenvalues()[0] + " + " + eig.getImagEigenvalues()[0] + "i");
+      ResultTree rTree = machine.applyStationary(aNet.dict, stationary);
+      System.out.println(rTree);
 
       double[] prod = new double[prob.N];
       for (int i = 0; i < prob.N; i++) {
@@ -115,33 +135,10 @@ public class TestAggregation2 {
         if (i != 0) System.out.print(", ");
         System.out.print(prod[i]);
       }
-      System.out.println();
-      
-/*      aNet.multiply(3, 4);
-      System.out.println("\nAfter multiply\n" + aNet);
-      aNet.sum("p4", "using");
-      System.out.println("\nAfter summing\n" + aNet);
-      aNet.reduce(3);
-      
-      aNet.multiply(2,3);
-      System.out.println("\nAfter multiply\n" + aNet);
-      aNet.sum("p3", "using");
-      System.out.println("\nAfter summing\n" + aNet);      
-      aNet.reduce(2);
-      System.out.println("\nAfter reducing\n" + aNet);
-      
-      aNet.multiply(1, 2);
-      System.out.println("\nAfter final multiply\n" + aNet);      
-      aNet.sum("p2","using");
-      aNet.reduce(1);
-      System.out.println("\nAfter reducing\n" + aNet);
-      
-      aNet.multiply(0, 1);
-      System.out.println("\nAfter final multiply\n" + aNet);
-      aNet.sum("p1", "using");
-      aNet.reduce(0);
-      System.out.println("\nAfter reducing\n" + aNet); */
-      
+
+      System.out.println("\nTrying Monte Carlo: ");
+      runMonteCarlo();
+            
       double elapsed = ((double)(System.nanoTime()-begin))/1e9;
       System.out.println("\nTime taken = " + elapsed);
     } catch (Exception e) {
@@ -149,5 +146,14 @@ public class TestAggregation2 {
       System.exit(-1);
     }
     System.exit(0);
+  }
+  
+  public static void runMonteCarlo() throws Exception {
+    AggregateNet<DoubleProbability> net = buildNet();
+    MonteCarlo mc = new MonteCarlo(net);
+    ArrayList<Stack<String>> names = new ArrayList<Stack<String>>();
+    names.add(Stack.makeName(COMMONS, "level"));
+    ResultTree rv = mc.runQuery(STEPS, names);
+    System.out.println(rv.toCountString(STEPS));
   }
 }

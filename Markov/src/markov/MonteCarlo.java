@@ -1,6 +1,6 @@
 package markov;
 
-import java.util.HashMap;
+import java.util.List;
 import java.util.Random;
 
 import util.Stack;
@@ -28,17 +28,17 @@ public class MonteCarlo {
     }
   }
 
-  public RunResult runQuery(int runLength, Stack<String> ... names) {
+  public ResultTree runQuery(int runLength, List<Stack<String>> names) {
     Stack<Alphabet> alphas = Stack.<Alphabet>emptyInstance();
-    for (int i = names.length-1; i >= 0 ; i--) {
-      alphas = alphas.push(net.dict.getAlpha(names[i]));
+    for (int i = names.size()-1; i >= 0 ; i--) {
+      alphas = alphas.push(net.dict.getAlpha(names.get(i)));
     }
     Stack<Var> varStack = Stack.<Var>emptyInstance();
-    for (int i = 0; i < names.length; i++) {
-      int varId = net.dict.getId(names[i]);      
+    for (int i = 0; i < names.size(); i++) {
+      int varId = net.dict.getId(names.get(i));      
       varStack = varStack.push(new Var(net.machineProviding(varId), varId));
     }
-    RunResult rv = RunResult.create(alphas);
+    ResultTree rv = ResultTree.create(alphas);
     int[] state = new int[net.size()];
     for (int i = 0; i < state.length; i++) {
       state[i] = rng.nextInt(net.getMachine(i).getNumStates());
@@ -48,9 +48,9 @@ public class MonteCarlo {
       // update the run result
       Stack<String> result = Stack.<String>emptyInstance();
       for (Var var : varStack) {
-        result.push(net.getMachine(var.machineNum).getState(state[var.machineNum]).getValue(var.varId));
+        result = result.push(net.getMachine(var.machineNum).getState(state[var.machineNum]).getValue(var.varId));
       }
-      rv.increment(result);
+      rv.increment(result, (double)1/(double)runLength);
     }
     return rv;
   }
@@ -87,52 +87,5 @@ public class MonteCarlo {
       }
     } while (!found);
     return count;
-  }
-  
-  // This is a tree structure, similar to a Romdd.
-  public abstract static class RunResult {
-    public static RunResult create(Stack<Alphabet> alphas) {
-      return new Node(alphas);
-    }
-    public abstract void increment(Stack<String> choices);
-    public abstract void accept(Visitor v);
-    
-    public static class Node extends RunResult {
-      public final Alphabet alpha;
-      HashMap<String, RunResult> children;
-      
-      public Node(Stack<Alphabet> alphas) {
-        if (alphas.isEmpty()) throw new RuntimeException();
-        
-        alpha = alphas.head();
-        Stack<Alphabet> tail = alphas.tail();
-        for (int i = 0; i < alpha.size(); i++) {
-          children.put(alpha.get(i), tail.isEmpty() ? new Terminal() : new Node(tail));
-        }
-      }
-      
-      public void accept(Visitor v) { v.visitNode(this); }
-      
-      public void increment(Stack<String> choices) {
-        // this can throw Null if choices is not according to the initial alphabet stack
-        children.get(choices.head()).increment(choices.tail());
-      }
-    }
-    
-    public static class Terminal extends RunResult {
-      public int count;
-      
-      public void increment(Stack<String> choices) {
-        if (!choices.isEmpty()) throw new RuntimeException();
-        count++;
-      }
-      
-      public void accept(Visitor v) { v.visitTerminal(this); }
-    }
-  }
-  
-  public static interface Visitor {
-    public void visitNode(RunResult.Node node);
-    public void visitTerminal(RunResult.Terminal term);
   }
 }

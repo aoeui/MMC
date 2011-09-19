@@ -51,6 +51,10 @@ public class AggregateState<T extends Probability<T>> {
     return Stack.<Integer>makeStack(labelVector.keySet());
   }
   
+  public Stack<String> getValueStack() {
+    return Stack.<String>makeStack(getLabelValueIterator());
+  }
+  
   public Iterator<String> getLabelValueIterator() {
     return new UnmodifiableIterator<String>(labelVector.values().iterator());
   }
