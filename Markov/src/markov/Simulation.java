@@ -38,7 +38,7 @@ public class Simulation {
 
       Net.Builder<DoubleProbability> netBuild=new Net.Builder<DoubleProbability>();
       Machine<DoubleProbability> dischargeModel=constructDischargeModel(numOfPatient,net);
-      Machine<DoubleProbability> arrivalModel=constructArrivalModel(numOfPatient, new DoubleProbability(1,24));
+      Machine<DoubleProbability> arrivalModel=constructArrivalModel(numOfPatient, new DoubleProbability(1,4));
       
       Iterator<Machine<DoubleProbability>> itr=net.iterator();
       while(itr.hasNext()){
@@ -130,21 +130,11 @@ public class Simulation {
       //get combinedState and return them in accu
       constructStateList(stateArray,stack,accu);
       
-      stack=null;
-      dischargeModel=null;
-      arrivalModel=null;
-      netBuild=null;
-      sortList.clear();
-      stateArray.clear();
-      tempB=null;
-      tempA=null;
-         
       TransitionMatrix.RandomBuilder<DoubleProbability> builder =new TransitionMatrix.RandomBuilder<DoubleProbability>(stateNameList.size());
       
       
       Iterator<ArrayList<State<DoubleProbability>>> itrStates=accu.iterator();
       Long[] costTable=new Long[stateNameList.keySet().size()];
-      int count=builder.rows.size();
       while(itrStates.hasNext()){
         ArrayList<State<DoubleProbability>> states=itrStates.next();
         
@@ -157,8 +147,6 @@ public class Simulation {
         costTable[stateNameList.get(combinedStateName)]= (long) sum;
         //now get probability and save it to the correct row of transition Matrix based on ordering of stateNameList
         retrieveProbability(machineName,states,net.dictionary, stateNameList, builder);
-        count--;
-//        System.out.println(count);
       }
 
       this.matrix = builder.build();
@@ -209,10 +197,12 @@ public class Simulation {
     Machine.Builder<DoubleProbability> machineBuild = new Machine.Builder<DoubleProbability>(modelName);
     State.Builder<DoubleProbability> stateBuild=new State.Builder<DoubleProbability>(modelName,"Arrival",term);
     stateBuild.setLabel("Arrival", "T");
+    stateBuild.setLabel("Cost", "0");
     State<DoubleProbability> stateA=stateBuild.build();
 
     stateBuild=new State.Builder<DoubleProbability>(modelName,"NoArrival",term);
     stateBuild.setLabel("Arrival", "F");
+    stateBuild.setLabel("Cost", "0");
     State<DoubleProbability> stateB=stateBuild.build();
     
     machineBuild.addState(stateA);
@@ -275,7 +265,7 @@ public class Simulation {
     Iterator<Integer> itrTemp=code.iterator();
 
     for(String s:stateNames){
-      Net.Builder<DoubleProbability> netUnused=new Net.Builder<DoubleProbability>();
+/*      Net.Builder<DoubleProbability> netUnused=new Net.Builder<DoubleProbability>();
       Builder<DoubleProbability> stateUnused=new State.Builder<DoubleProbability>(modelName,s,alternative);
       Machine.Builder<DoubleProbability> machineUnused = new Machine.Builder<DoubleProbability>(modelName);
       machineUnused.addState(stateUnused.build());
@@ -284,30 +274,35 @@ public class Simulation {
         netUnused.addMachine(tempItr.next());
       }
       netUnused.addMachine(machineUnused.build());
-      
-      DecisionTree<TransitionVector<DoubleProbability>> head=replaceTerminals(alternative,s,netUnused.build().dictionary); 
+      */
+      DecisionTree<TransitionVector<DoubleProbability>> head=replaceTerminals(alternative,s); 
       
       State.Builder<DoubleProbability> stateBuild=new State.Builder<DoubleProbability>(modelName,s,head);
 
       String[] machines=s.split(STATE_MULTIPLY_STRING);
       int value=0;
+      int occupancy=0;
       for (String sM:machines){
         stateBuild.setLabel(sM.substring(0, sM.indexOf("_")),sM.substring(sM.indexOf("_")+1));
-        if (sM.contains("Occupied")) value+=1000;
+        if (sM.contains("Occupied")){
+          value+=1000;
+          occupancy++;
+        }
       }
       
       stateBuild.setLabel("Cost", Integer.toString(value));
       stateBuild.setLabel("Code", itrTemp.next().toString());
+      stateBuild.setLabel("Occupancy", Integer.toString(occupancy));
       machineBuild.addState(stateBuild.build());
     }
     return machineBuild.build();
   }
 
   private static DecisionTree<TransitionVector<DoubleProbability>> replaceTerminals(
-      DecisionTree<TransitionVector<DoubleProbability>> alternative, final String s, final Dictionary dictionary) {
+      DecisionTree<TransitionVector<DoubleProbability>> alternative, final String s) {
     
     final String modelName="DischargeModel";
-    DecisionTreeVisitor dv=new DecisionTreeVisitor(s,modelName,dictionary,alternative);
+    DecisionTreeVisitor dv=new DecisionTreeVisitor(s,modelName,alternative);
     alternative.accept(dv);
     return dv.alternative;
   }
@@ -315,14 +310,12 @@ public class Simulation {
   static class DecisionTreeVisitor implements DecisionTree.Visitor<TransitionVector<DoubleProbability>>{
     String s;
     String modelName;
-    Dictionary dictionary;
     DecisionTree<TransitionVector<DoubleProbability>> alternative;
     int kickOutPatientNum;
     
-    DecisionTreeVisitor(String s,String model,Dictionary dict,DecisionTree<TransitionVector<DoubleProbability>> alternative2){
+    DecisionTreeVisitor(String s,String model,DecisionTree<TransitionVector<DoubleProbability>> alternative2){
       this.s=s;
       this.modelName=model;
-      this.dictionary=dict;
       this.alternative=alternative2;
       this.kickOutPatientNum=0;
     }
@@ -343,7 +336,7 @@ public class Simulation {
       }
       stateNum=temp;
       if (numOfEmpty==0) {
-        //kick the patient out if state is Arrival
+        //TODO kick the patient out if state is Arrival
       }else{
         DoubleProbability p=new DoubleProbability(1,numOfEmpty);
         TransitionVector.Builder<DoubleProbability> tb=new TransitionVector.Builder<DoubleProbability>(modelName);
@@ -365,8 +358,8 @@ public class Simulation {
     }
 
     public void visitBranch(DecisionTree.Branch<TransitionVector<DoubleProbability>> walker) {
-      DecisionTree<TransitionVector<DoubleProbability>> conseq = replaceTerminals(walker.consequent,s,dictionary);
-      DecisionTree<TransitionVector<DoubleProbability>> alter = replaceTerminals(walker.alternative,s,dictionary);
+      DecisionTree<TransitionVector<DoubleProbability>> conseq = replaceTerminals(walker.consequent,s);
+      DecisionTree<TransitionVector<DoubleProbability>> alter = replaceTerminals(walker.alternative,s);
       Predicate pred=walker.predicate;
       alternative=new DecisionTree.Branch<TransitionVector<DoubleProbability>>(pred, conseq, alter);
     }
