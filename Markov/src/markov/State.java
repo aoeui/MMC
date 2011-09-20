@@ -76,7 +76,7 @@ public class State<T extends Probability<T>> implements Comparable<State<?>> {
   }
   
   public void indent(Indenter indenter) {
-    indenter.print("State(" + machineName + "." + name + "): {\n").indent();
+    indenter.print("State:" + name + "\n").indent();
     indenter.print("labels: ");
     boolean isFirst = true;
     for (Map.Entry<String, String> entry : labelVector.entrySet()) {
@@ -84,11 +84,11 @@ public class State<T extends Probability<T>> implements Comparable<State<?>> {
       else {
         indenter.print(", ");
       }
-      indenter.print(entry.getKey()).print(" -> ").print(entry.getValue());
+      indenter.print(entry.getKey()).print("=").print(entry.getValue());
     }
     indenter.println();
     transitionFunction.indent(indenter);
-    indenter.deindent().print("}\n");
+    indenter.deindent();
   }
 
   public static class Builder<T extends Probability<T>> {

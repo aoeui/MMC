@@ -7,43 +7,38 @@ public abstract class Probability<T extends Probability<T>> implements
   public abstract boolean isZero();
   public abstract boolean isOne();
 
-  // public static Probability getNull() { return Null.INSTANCE; }
-
-  // Must implement equals.
-  public abstract boolean equals(Object o);
-
   public static class ProbabilityException extends RuntimeException {
-    /**
-	 * 
-	 */
 	private static final long serialVersionUID = -8215920533534041501L;
-
 	public ProbabilityException(String str) {
       super(str);
     }
 
     public ProbabilityException() { }
   }
-
-  /* public boolean isNull() { return false; }
-
-  public 
-
-  public static class Null {
-    public final static INSTANCE = new Null();
-
-    private Null() {}
-
-    public final Probability sum(Probability p) {
-    }
-
-    public final Probability product(Probability p) {
-    }
-
-    public boolean equals(Object o) {
-      return o == INSTANCE;
-    }
-
-    public final boolean isNull() { return true; }
-  } */
+  
+  @SuppressWarnings("unchecked")
+  public static <T extends Probability<T>> Romdd.Op<T> sumInstance() {
+    return Sum.INSTANCE;
+  }
+  
+  @SuppressWarnings("unchecked")
+  public static <T extends Probability<T>> Romdd.Op<T> productInstance() {
+    return Product.INSTANCE;
+  }
+  
+  private static class Sum<T extends Probability<T>> implements Romdd.Op<T> {
+    @SuppressWarnings("rawtypes")
+    private final static Sum INSTANCE = new Sum();
+    private Sum() {}
+    public T apply(T v1, T v2) { return v1.sum(v2); }
+    public boolean isDominant(T value) { return false; }
+  }
+  
+  private static class Product<T extends Probability<T>> implements Romdd.Op<T> {
+    @SuppressWarnings("rawtypes")
+    private final static Product INSTANCE = new Product();
+    private Product() {}
+    public T apply(T v1, T v2) { return v1.product(v2); }
+    public boolean isDominant(T value) { return value.isZero(); }
+  }
 }

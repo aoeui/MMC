@@ -154,7 +154,7 @@ public class TransitionVector<T extends Probability<T>>
       for (T prob : map.values()) {
         sum = (sum == null) ? prob : sum.sum(prob);
       }
-      if (!sum.isOne()) throw new RuntimeException();
+      if (!sum.isOne()) throw new RuntimeException("Transition vector does not sum to 1 " + map);
       
       return new TransitionVector<T>(machineName, map);
     }

@@ -6,12 +6,12 @@ import java.util.Comparator;
 import java.util.Formatter;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Random;
 
 import util.IndexGenerator;
 import util.MajorityVote;
+import util.Partition;
 
 public class Lumping<T extends Probability<T>> {
   TransitionMatrix<T> matrix;
@@ -113,8 +113,7 @@ public class Lumping<T extends Probability<T>> {
 	return true;
   }
 
-  public Lumping(TransitionMatrix<T> matrix,
-      List<? extends List<Integer>> partition) {
+  public Lumping(TransitionMatrix<T> matrix, Partition<Integer> partition) {
     this.matrix = matrix;
     this.N = matrix.N;
     elems = new ArrayList<Integer>(Collections.<Integer>nCopies(N, null));
@@ -122,8 +121,8 @@ public class Lumping<T extends Probability<T>> {
     stateToBlock = new int[N];
     blocks = new ArrayList<BlockInfo>();
     int idx = 0;
-    for (int i = 0; i < partition.size(); i++) {
-      List<Integer> block = partition.get(i);
+    for (int i = 0; i < partition.getNumBlocks(); i++) {
+      Partition<Integer>.Block block = partition.getBlock(i);
       blocks.add(new BlockInfo(idx, idx+block.size()-1));
       for (int j = 0; j < block.size(); j++) {
         int state = block.get(j);
@@ -192,7 +191,7 @@ public class Lumping<T extends Probability<T>> {
         // Split B1 to B1 + B2 based on candidate
         for (int i = b1.start; i < b1.border; i++) {
           int state = elems.get(i);
-          if (!w.get(state).equals(candidate)) {
+          if (w.get(state).compareTo(candidate) != 0) {
             boolean swapped = (i != b1.border-1);
             b1.mark(i);
             if (swapped) { i--; }  // need to repeat if a swap was performed
@@ -202,10 +201,10 @@ public class Lumping<T extends Probability<T>> {
         if (b1.hasMarked()) {  // b1 certainly has unmarked because of pmc
           BlockInfo b2 = b1.split();
           // sort and partition B2 based on w[s]
-          Collections.sort(elems.subList(b2.start, b2.end+1),
+          Collections.sort(elems.subList(b2.start, b2.end),
               new Comparator<Integer>() {
                 public int compare(Integer v1, Integer v2) {
-                  return w.get(elems.get(v1)).compareTo(w.get(elems.get(v2)));
+                  return w.get(v1).compareTo(w.get(v2));
                 }});
           // Since elems rearranged by sorting, need to reindex
           for (int i = b2.start; i <= b2.end; i++) {
@@ -262,7 +261,7 @@ public class Lumping<T extends Probability<T>> {
     int next = current.start+1;
     boolean found = false;
     while (next <= current.end && !found) {
-      if (w.get(elems.get(next)).equals(weight)) {
+      if (w.get(elems.get(next)).compareTo(weight) == 0) {
         next++;
       } else {
         found = true;
@@ -280,6 +279,17 @@ public class Lumping<T extends Probability<T>> {
 
   public void runLumping() {
     runLumping(new Random(0));
+  }
+  
+  public Partition<Integer> getPartition() {
+    final int[] category = new int[elems.size()];
+    for (int blockNum = 0; blockNum < blocks.size(); blockNum++) {
+      BlockInfo b = blocks.get(blockNum);
+      for (int i = b.start; i <= b.end; i++) {
+        category[elems.get(i)] = blockNum;
+      }
+    }
+    return Partition.createFromCategories(category);
   }
 
   public String toString() {

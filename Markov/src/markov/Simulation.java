@@ -25,7 +25,7 @@ public class Simulation {
   
   public TreeMap<String,Integer> headlist;
   public TransitionMatrix<DoubleProbability> matrix;
-  private final String STATE_MULTIPLY_STRING="::";
+  public final static String STATE_MULTIPLY_STRING="::";
   
   public static void main(String[] args) {
     System.out.println(new Simulation("xml/umlVersion4.xml"));
@@ -199,7 +199,7 @@ public class Simulation {
 
   }
 
-  private Machine<DoubleProbability> constructArrivalModel(int numOfPatient,DoubleProbability p){
+  public static Machine<DoubleProbability> constructArrivalModel(int numOfPatient,DoubleProbability p){
     final String modelName="ArrivalModel";
     TransitionVector.Builder<DoubleProbability> b=new TransitionVector.Builder<DoubleProbability>(modelName);
     b.setProbability("NoArrival", new DoubleProbability(1-p.p));
@@ -223,7 +223,7 @@ public class Simulation {
   }
   
   
-  private Machine<DoubleProbability> constructDischargeModel(int numOfPatient, Net<DoubleProbability> net) {
+  public static Machine<DoubleProbability> constructDischargeModel(int numOfPatient, Net<DoubleProbability> net) {
 
     final String modelName="DischargeModel";
     int numOfState=(int) Math.pow(2,numOfPatient);
@@ -245,7 +245,7 @@ public class Simulation {
         predArray.add(pred);
         
         String nextStateName=(stateCode!=0)? (j+"_Occupied"):(j+"_Empty");
-        stateName=(stateName.equals(""))? nextStateName : stateName+this.STATE_MULTIPLY_STRING+nextStateName;
+        stateName=(stateName.equals(""))? nextStateName : stateName+STATE_MULTIPLY_STRING+nextStateName;
         
       }
       
@@ -289,7 +289,7 @@ public class Simulation {
       
       State.Builder<DoubleProbability> stateBuild=new State.Builder<DoubleProbability>(modelName,s,head);
 
-      String[] machines=s.split(this.STATE_MULTIPLY_STRING);
+      String[] machines=s.split(STATE_MULTIPLY_STRING);
       int value=0;
       for (String sM:machines){
         stateBuild.setLabel(sM.substring(0, sM.indexOf("_")),sM.substring(sM.indexOf("_")+1));
@@ -303,7 +303,7 @@ public class Simulation {
     return machineBuild.build();
   }
 
-  private DecisionTree<TransitionVector<DoubleProbability>> replaceTerminals(
+  private static DecisionTree<TransitionVector<DoubleProbability>> replaceTerminals(
       DecisionTree<TransitionVector<DoubleProbability>> alternative, final String s, final Dictionary dictionary) {
     
     final String modelName="DischargeModel";
@@ -312,7 +312,7 @@ public class Simulation {
     return dv.alternative;
   }
   
-  class DecisionTreeVisitor implements DecisionTree.Visitor<TransitionVector<DoubleProbability>>{
+  static class DecisionTreeVisitor implements DecisionTree.Visitor<TransitionVector<DoubleProbability>>{
     String s;
     String modelName;
     Dictionary dictionary;

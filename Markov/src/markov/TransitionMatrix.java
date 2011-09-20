@@ -5,12 +5,12 @@ import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
 
-
 /**
 * This class provides transition matrices with states indexed
 * from 0 to N-1.
 */
 public class TransitionMatrix<T extends Probability<T>> {
+  public final static String SEPARATOR = ", ";
   public final int N;
   private final ArrayList<T> data;
 
@@ -25,6 +25,37 @@ public class TransitionMatrix<T extends Probability<T>> {
   
   public static <T extends Probability<T>> Builder<T> create(int n) {
     return new Builder<T>(n);
+  }
+  
+  public String toString() {
+    int[] widths = new int[N];
+    String[][] strings = new String[N][];
+    for (int i = 0; i < N; i++) {
+      strings[i] = new String[N];
+    }
+    // Two passes needed. First one calculates the column widths.
+    for (int row = 0; row < N; row++) {
+      for (int col = 0; col < N; col++) {
+        strings[row][col] = get(row, col).toString();
+        widths[col] = Math.max(widths[col], strings[row][col].length());
+      }
+    }
+    StringBuilder builder = new StringBuilder();
+    for (int row = 0; row < N; row++) {
+      if (row != 0) builder.append('\n');
+      builder.append("[ ");
+      for (int col = 0; col < N; col++) {
+        builder.append(strings[row][col]);
+        if (col < N-1) {
+          builder.append(SEPARATOR);
+        }
+        for (int i = 0; i < (widths[col] - strings[row][col].length()); i++) {
+          builder.append(' ');
+        }
+      }
+      builder.append(" ]");
+    }
+    return builder.toString();
   }
 
   public static class BuildException extends RuntimeException {
@@ -44,15 +75,19 @@ public class TransitionMatrix<T extends Probability<T>> {
 
     public TransitionMatrix<T> build() {
       if (rows.size() != N) {
-        throw new BuildException("Wrong number of rows n = "
-            + N + " != " + rows.size());
+        throw new BuildException("Wrong number of rows n = " + N + " != " + rows.size());
       }
       for (int i = 0; i < N; i++) {
         ArrayList<T> row = rows.get(i);
         if (row.size() != N) {
-          throw new BuildException("Row " + i + " has size "
-              + row.size() + " != " + N);
+          throw new BuildException("Row " + i + " has size " + row.size() + " != " + N);
         }
+        // Check that the row elements sum to 1.
+        T prob = row.get(0);
+        for (int dest = 1; dest < N; dest++) {
+          prob = prob.sum(row.get(dest));
+        }
+        if (!prob.isOne()) throw new BuildException("Probabilities of row " + i + " don't sum to 1: " + prob);
       }
       ArrayList<T> data = new ArrayList<T>();
       for (ArrayList<T> row : rows) {
@@ -99,7 +134,6 @@ public class TransitionMatrix<T extends Probability<T>> {
       super(n);
     }
     
-
     public void addRow(T... row) {
       if (rows.size() >= N) {
         throw new BuildException(
@@ -124,17 +158,5 @@ public class TransitionMatrix<T extends Probability<T>> {
 
     /** Returns the current number of rows in the builder. */
     public int getRows() { return rows.size(); }
-  }
-  
-  public String toString(){
-    StringBuilder builder = new StringBuilder();
-    for (int i=0; i<this.N;i++){
-      builder.append('[');
-      for (int j=0;j<this.N-1;j++){
-        builder.append(' ').append(get(i,j)).append(',');
-      }
-      builder.append(' ').append(get(i, N-1)).append("]\n");
-    }
-    return builder.toString();
   }
 }

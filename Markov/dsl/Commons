@@ -1,0 +1,58 @@
+// Machine: commons
+//   State: 1  labels: level=1
+
+Machine: p1
+  State: using  labels: using=1
+    if      commons::level=0 p[resting]=1.0, p[using]=0.
+    else if commons::level=1 p[resting]=0.8, p[using]=0.2
+    else if commons::level=2 p[resting]=0.6, p[using]=0.4
+    else if commons::level=3 p[resting]=0.4, p[using]=0.6
+    else if commons::level=4 p[resting]=0.2, p[using]=0.8
+    else   // commons::level=5
+      p[resting]=0,   p[using]=1
+  State: resting  labels: using=0
+    p[resting]=0.5, p[using]=0.5   // when resting, p1 doesn't know the state of commons
+
+Machine: p2
+  State: using  labels: using=1
+    if      commons::level=0 p[resting]=1.0, p[using]=0.
+    else if commons::level=1 p[resting]=0.8, p[using]=0.2
+    else if commons::level=2 p[resting]=0.6, p[using]=0.4
+    else if commons::level=3 p[resting]=0.4, p[using]=0.6
+    else if commons::level=4 p[resting]=0.2, p[using]=0.8
+    else p[resting]=0,   p[using]=1
+  State: resting  labels: using=0
+    p[resting]=0.5, p[using]=0.5
+
+Machine: p3
+  State: using  labels: using=1
+    if      commons::level=0 p[resting]=1.0, p[using]=0.
+    else if commons::level=1 p[resting]=0.8, p[using]=0.2
+    else if commons::level=2 p[resting]=0.6, p[using]=0.4
+    else if commons::level=3 p[resting]=0.4, p[using]=0.6
+    else if commons::level=4 p[resting]=0.2, p[using]=0.8
+    else p[resting]=0,   p[using]=1
+  State: resting  labels: using=0
+    p[resting]=0.5, p[using]=0.5
+
+Machine: p4
+  State: using  labels: using=1
+    if      commons::level=0 p[resting]=1.0, p[using]=0.
+    else if commons::level=1 p[resting]=0.8, p[using]=0.2
+    else if commons::level=2 p[resting]=0.6, p[using]=0.4
+    else if commons::level=3 p[resting]=0.4, p[using]=0.6
+    else if commons::level=4 p[resting]=0.2, p[using]=0.8
+    else p[resting]=0,   p[using]=1
+  State: resting  labels: using=0
+    p[resting]=0.5, p[using]=0.5
+
+Machine: p5
+  State: using  labels: using=1
+    if      commons::level=0 p[resting]=1.0, p[using]=0.
+    else if commons::level=1 p[resting]=0.8, p[using]=0.2
+    else if commons::level=2 p[resting]=0.6, p[using]=0.4
+    else if commons::level=3 p[resting]=0.4, p[using]=0.6
+    else if commons::level=4 p[resting]=0.2, p[using]=0.8
+    else p[resting]=0,   p[using]=1
+  State: resting  labels: using=0
+    p[resting]=0.5, p[using]=0.5

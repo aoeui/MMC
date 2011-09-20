@@ -254,7 +254,7 @@ public class Sudoku {
     }
     
     public Stack<String> getId() {
-      return Stack.<String>emptyInstance().push(Integer.toString(col)).push(Integer.toString(row));
+      return Stack.makeName(Integer.toString(row), Integer.toString(col));
     }
   }
   
@@ -335,7 +335,7 @@ public class Sudoku {
         return constraints.compareTo(Romdd.TRUE) == 0 ? this : null;
       } else {
         Partition<ValueTable> tables = getValueTable(constraints);
-        ValueTable table = tables.get(0);
+        ValueTable table = tables.getElt(0);
         for (String val : table.values) {
           Solver subSolver = new Solver(this);
           // System.out.println("Speculating");
@@ -375,7 +375,7 @@ public class Sudoku {
         //System.out.println("Computing value tables");
         Partition<ValueTable> tables = getValueTable(constraints);
         //System.out.println("Value tables computed");
-        if (tables.get(0).values.size() == 1) {
+        if (tables.getElt(0).values.size() == 1) {
           // System.out.println("Found " + tables.getBlock(0).size() +  " inferrable " + (tables.getBlock(0).size() > 1 ? "values." : "value."));
           for (ValueTable table : tables.getBlock(0)) {
             instantiate(new Entry(table.pair, table.values.iterator().next()));
@@ -469,7 +469,7 @@ public class Sudoku {
       Partition.Builder<ValueTable> builder = Partition.<ValueTable>naturalBuilder();
       for (TerminatedIterator<Pair<Integer>> it = unmarkedIterator(); it.hasNext(); ) {
         Pair<Integer> next = it.next();
-        TreeSet<String> values = tree.findChildrenReaching(Stack.<String>emptyInstance().push(Integer.toString(next.second)).push(Integer.toString(next.first)), true);
+        TreeSet<String> values = tree.findChildrenReaching(Stack.makeName(Integer.toString(next.first), Integer.toString(next.second)), true);
         // System.out.println("Possible values for " + next + " = " + values);
         ValueTable table = new ValueTable(next, values);
         builder.add(table);

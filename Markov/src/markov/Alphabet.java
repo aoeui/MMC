@@ -10,16 +10,14 @@ import util.LexicalCompare;
 import util.Stack;
 
 public class Alphabet implements Comparable<Alphabet> {
+  public final static String SCOPE = "::";
+
   public final Stack<String> name;  // every alphabet has a name
 
   private final ArrayList<String> characters;  // this is ordered, unique
   
   private Alphabet(SortedSet<? extends String> chars, String ... nameArr) {
-    Stack<String> stack = Stack.<String>emptyInstance();
-    for (int i = nameArr.length-1; i >= 0; i--) {
-      stack = stack.push(nameArr[i]);
-    }
-    this.name = stack;  // empty name is actually OK
+    this.name = Stack.makeName(nameArr);  // empty name OK
     this.characters = new ArrayList<String>(chars);
   }
   
@@ -91,7 +89,16 @@ public class Alphabet implements Comparable<Alphabet> {
   
   public String toString() {
     StringBuilder builder = new StringBuilder();
-    builder.append(name.toString("::"));
+    builder.append(name.toString(SCOPE));
+    builder.append("->{");
+    Joiner.appendJoin(builder, characters, ", ");
+    builder.append('}');
+    return builder.toString();
+  }
+  
+  String toStringCropMachineName() {
+    StringBuilder builder = new StringBuilder();
+    builder.append(name.tail().toString(SCOPE));
     builder.append("->{");
     Joiner.appendJoin(builder, characters, ", ");
     builder.append('}');

@@ -5,9 +5,12 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
+import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import util.Joiner;
 import util.LexicalCompare;
 import util.Pair;
 import util.Partition;
@@ -39,6 +42,12 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
   public static interface Mapping<T extends Comparable<? super T>, S extends Comparable<? super S>> {
     public S transform(T input);
   }
+  
+  public static interface Query {
+    public int getChoice(int varId);
+  }
+  
+  public abstract T eval(Query q);
   
   public static <T extends Comparable<? super T>> Romdd<T> branch(final Romdd<Boolean> condition, final Romdd<T> consequent, final Romdd<T> alternative) {
     final class Brancher extends RomddCacher<T> {
@@ -101,9 +110,26 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
     return new Brancher().branch();
   }
   
-  public Alphabet[] listVarNames() {
+  /** Returns a sorted array of the alphabets used by this Romdd */
+  public List<Alphabet> listVarNames() {
+    final Ptr<List<Alphabet>> rvPtr = new Ptr<List<Alphabet>>();
+    accept(new Visitor<T>() {
+      public void visitTerminal(Terminal<T> term) {
+        rvPtr.value = new ArrayList<Alphabet>();
+      }
+      public void visitNode(Node<T> node) {
+        SortedSet<Integer> vars = listVarIdx();
+        rvPtr.value = new ArrayList<Alphabet>(vars.size());
+        for (int id : vars) {
+          rvPtr.value.add(node.dict.getAlpha(id));
+        }
+      }
+    });
+    return rvPtr.value;
+  }
+  
+  public SortedSet<Integer> listVarIdx() {
     final TreeSet<Integer> rvIdx = new TreeSet<Integer>();
-    final Ptr<Dictionary> dictPtr = new Ptr<Dictionary>();
     class Lister implements Visitor<T> {
       TreeSet<Romdd<T>> visited = new TreeSet<Romdd<T>>();
       void doList(Romdd<T> romdd) {
@@ -112,7 +138,6 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
       public void visitTerminal(Terminal<T> term) { }
       public void visitNode(Node<T> node) {
         if (visited.contains(node)) return;
-        if (dictPtr.value == null) dictPtr.value = node.dict;
         visited.add(node);
         rvIdx.add(node.varId);
         for (Romdd<T> child : node) {
@@ -121,12 +146,7 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
       }
     }
     new Lister().doList(this);
-    Alphabet[] rv = new Alphabet[rvIdx.size()];
-    int idx = 0;
-    for (int next : rvIdx) {
-      rv[idx++] = dictPtr.value.getAlpha(next);
-    }
-    return rv;
+    return rvIdx;
   }
   
   public <S extends Comparable<? super S>> Romdd<S> remap(final Mapping<T,S> mapper) { 
@@ -377,19 +397,19 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
       // This is an implementation of N-way-apply
       // We may  need to add caching for this query
       public Romdd<T> recurse(Partition<Node<T>> nodes, T weight) {
-        if (nodes.size() == 0 || ((weight != null) && operation.isDominant(weight))) {
+        if (nodes.getNumElts() == 0 || ((weight != null) && operation.isDominant(weight))) {
           if (weight == null) throw new RuntimeException();
           return checkCache(new Terminal<T>(weight));
         }
         Partition<Node<T>>.Block block = nodes.getBlock(0);  // the first block has least alpha, it gets branched first
         
         final DiffTrackingArrayList<Romdd<T>> children = new DiffTrackingArrayList<Romdd<T>>();
-        final int size = nodes.get(0).getSize();
+        final int size = nodes.getElt(0).getSize();
         for (int i = 0; i < size; i++) {
           final Ptr<T> wPtr = new Ptr<T>(weight);
           final Partition.Builder<Node<T>> builder = new Partition.Builder<Node<T>>(NodeAlphaComparator.INSTANCE);
           for (int j = block.start; j <= block.end; j++) {
-            nodes.get(j).getChild(i).accept(new Visitor<T>() {
+            nodes.getElt(j).getChild(i).accept(new Visitor<T>() {
               public void visitTerminal(Terminal<T> term) {
                 wPtr.value = wPtr.value == null ? term.output : operation.apply(wPtr.value, term.output);
               }
@@ -398,12 +418,12 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
               }
             });
           }
-          for (int j = block.end+1; j < nodes.size(); j++) {
-            builder.add(nodes.get(j));  // non-branching nodes copied over
+          for (int j = block.end+1; j < nodes.getNumElts(); j++) {
+            builder.add(nodes.getElt(j));  // non-branching nodes copied over
           }
           children.add(recurse(builder.build(), wPtr.value));
         }
-        return children.isAllSame() ? children.get(0) : checkCache(new Node<T>(nodes.get(0).dict, nodes.get(0).varId, children));
+        return children.isAllSame() ? children.get(0) : checkCache(new Node<T>(nodes.getElt(0).dict, nodes.getElt(0).varId, children));
       }
     }
     return new Summation().compute();
@@ -498,6 +518,10 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
       return rvPtr[0];
     }    
     public Stack<String> getName() { return getAlphabet().name; }
+    
+    public T eval(Query q) {
+      return children.get(q.getChoice(varId)).eval(q);
+    }
   }
 
   public static class Terminal<T extends Comparable<? super T>> extends Romdd<T> {
@@ -506,6 +530,8 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
     public Terminal(T output) {
       this.output = output;
     }
+    
+    public T eval(Query q) { return output; }
     
     public boolean isTerminal() { return true; }
     Alphabet getAlphabet() { return null; }
@@ -530,6 +556,35 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
     }
     
     public String toString() { return output.toString(); }
+  }
+  
+  public String toString() {
+    final StringBuilder builder = new StringBuilder();
+    final TreeSet<Romdd<T>> visited = new TreeSet<Romdd<T>>();
+    final TreeSet<String> varNames = new TreeSet<String>();
+    final TreeSet<T> vals = new TreeSet<T>();
+    class Stringifier {
+      void recurse(Romdd<T> romdd) {
+        romdd.accept(new Visitor<T>() {
+          public void visitTerminal(Terminal<T> term) {
+            vals.add(term.output);
+          }
+          public void visitNode(Node<T> node) {
+            if (visited.contains(node)) return;
+            visited.add(node);
+            
+            varNames.add(node.dict.getAlpha(node.varId).name.toString(Alphabet.SCOPE));
+            for (Romdd<T> child : node) {
+              recurse(child);
+            }
+          }
+        });
+      }
+    }
+    new Stringifier().recurse(this);
+    builder.append('(').append(Joiner.join(varNames, " X ")).append(") -> {");
+    builder.append(Joiner.join(vals)).append('}');
+    return builder.toString();
   }
 
   public static interface Visitor<T extends Comparable<? super T>> {

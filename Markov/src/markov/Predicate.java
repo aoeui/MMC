@@ -9,6 +9,7 @@ import util.Stack;
 import util.UnmodifiableIterator;
 
 public abstract class Predicate {
+  public final static String SCOPE="::";
   protected abstract String computeString();
   
   public abstract Romdd<Boolean> toRomdd(Dictionary dict);
@@ -215,7 +216,7 @@ public abstract class Predicate {
     }
     
     protected String computeString() {
-      return name.toString("::") + "=" + value;
+      return name.toString(SCOPE) + "=" + value;
     }
     
     public int compareTo(Atom other) {

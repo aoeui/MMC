@@ -1,34 +1,41 @@
 package markov;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.TreeSet;
 
+import org.antlr.runtime.ANTLRFileStream;
+import org.antlr.runtime.CommonTokenStream;
+import org.antlr.runtime.RecognitionException;
+
+import dsl.NetLexer;
+import dsl.NetParser;
+
 import util.Indenter;
 import util.TerminatedIterator;
 import util.UnmodifiableIterator;
-
 import util.Stack;
 
 public class Net<T extends Probability<T>> implements Iterable<Machine<T>> {
   public final int N;
 
-  private HashMap<String,Machine<T>> machineTable;
+  private LinkedHashMap<String,Machine<T>> machineTable;
 
   public final Dictionary dictionary;
 
   private ArrayList<String> idxToMachine;
-  private HashMap<String,Integer> machineToIdx;  // giving a machine an index
+  private LinkedHashMap<String,Integer> machineToIdx;  // giving a machine an index
   
   private ArrayList<ArrayList<Boolean>> connectivity;  // describes machine topology
   
   private Net(Collection<Machine<T>> machines) {
-    this.machineTable = new HashMap<String,Machine<T>>();
+    this.machineTable = new LinkedHashMap<String,Machine<T>>();
     
     Dictionary.Builder dBuilder = new Dictionary.Builder();
     for (Machine<T> m : machines) {
@@ -44,7 +51,7 @@ public class Net<T extends Probability<T>> implements Iterable<Machine<T>> {
     this.N = machineTable.size();
     idxToMachine = new ArrayList<String>(machineTable.keySet());
     Collections.sort(idxToMachine);
-    machineToIdx = new HashMap<String,Integer>();
+    machineToIdx = new LinkedHashMap<String,Integer>();
     for (int i = 0; i < N; i++) {
       machineToIdx.put(idxToMachine.get(i), i);
     }
@@ -96,10 +103,10 @@ public class Net<T extends Probability<T>> implements Iterable<Machine<T>> {
   }
   
   public static class Builder<T extends Probability<T>> {
-    HashMap<String, Machine<T>> machines;
+    LinkedHashMap<String, Machine<T>> machines;
     
     public Builder() {
-      machines = new HashMap<String,Machine<T>>();
+      machines = new LinkedHashMap<String,Machine<T>>();
     }
     
     public void addMachine(Machine<T> m) {
@@ -110,7 +117,19 @@ public class Net<T extends Probability<T>> implements Iterable<Machine<T>> {
       return new Net<T>(machines.values());
     }
   }
+  
+  public static Net<DoubleProbability> parse(String filename) throws IOException, RecognitionException {
+    return partialParse(filename).build();
+  }
 
+  public static Net.Builder<DoubleProbability> partialParse(String filename) throws IOException, RecognitionException {
+    NetLexer lex = new NetLexer(new ANTLRFileStream(filename));
+    CommonTokenStream tokens = new CommonTokenStream(lex);
+    NetParser parser = new NetParser(tokens);
+  
+    return parser.net();
+  }
+  
   public String toString() {
     Indenter indenter = new Indenter();
     indent(indenter);
@@ -122,8 +141,8 @@ public class Net<T extends Probability<T>> implements Iterable<Machine<T>> {
       if (isFirstMachine) isFirstMachine = false;
       else indenter.println();
       indenter.print(machineTable.get(name));
-      indenter.println("dictionary:").indent().println(dictionary.print(Stack.<String>emptyInstance().push(name))).deindent();
-      indenter.print("neighbors = [");
+      indenter.print("// dictionary: ").indent().println(dictionary.print(Stack.makeName(name))).deindent();
+      indenter.print("// neighbors = [");
       boolean isFirst = true;
       for (String neighbor : getNeighbors(name)) {
         if (isFirst) isFirst = false;

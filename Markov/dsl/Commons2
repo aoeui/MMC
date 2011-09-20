@@ -1,0 +1,155 @@
+Machine:p1
+  State:resting
+    labels: using=0
+    p[resting]=0.5, p[using]=0.5
+  State:using
+    labels: using=1
+    if commons::level=0
+      p[resting]=1.0, p[using]=0.0
+    else if commons::level=1
+      p[resting]=0.8, p[using]=0.2
+    else if commons::level=2
+      p[resting]=0.6, p[using]=0.4
+    else if commons::level=3
+      p[resting]=0.4, p[using]=0.6
+    else if commons::level=4
+      p[resting]=0.2, p[using]=0.8
+    else p[resting]=0.0, p[using]=1.0
+// dictionary: using->{0, 1}
+// neighbors = [commons]
+
+Machine:p2
+  State:resting
+    labels: using=0
+    p[resting]=0.5, p[using]=0.5
+  State:using
+    labels: using=1
+    if commons::level=0
+      p[resting]=1.0, p[using]=0.0
+    else if commons::level=1
+      p[resting]=0.8, p[using]=0.2
+    else if commons::level=2
+      p[resting]=0.6, p[using]=0.4
+    else if commons::level=3
+      p[resting]=0.4, p[using]=0.6
+    else if commons::level=4
+      p[resting]=0.2, p[using]=0.8
+    else p[resting]=0.0, p[using]=1.0
+// dictionary: using->{0, 1}
+// neighbors = [commons]
+
+Machine:p3
+  State:resting
+    labels: using=0
+    p[resting]=0.5, p[using]=0.5
+  State:using
+    labels: using=1
+    if commons::level=0
+      p[resting]=1.0, p[using]=0.0
+    else if commons::level=1
+      p[resting]=0.8, p[using]=0.2
+    else if commons::level=2
+      p[resting]=0.6, p[using]=0.4
+    else if commons::level=3
+      p[resting]=0.4, p[using]=0.6
+    else if commons::level=4
+      p[resting]=0.2, p[using]=0.8
+    else p[resting]=0.0, p[using]=1.0
+// dictionary: using->{0, 1}
+// neighbors = [commons]
+
+Machine:commons
+  State:0
+    labels: level=0
+    if p1::using=1
+      p[0]=1.0
+    else if p2::using=1
+      p[0]=1.0
+    else if p3::using=1
+      p[0]=1.0
+    else p[1]=1.0
+  State:1
+    labels: level=1
+    if p1::using=1
+      if p2::using=1
+        p[0]=1.0
+      else if p3::using=1
+        p[0]=1.0
+      else p[1]=1.0
+    else if p2::using=1
+      if p3::using=1
+        p[0]=1.0
+      else p[1]=1.0
+    else if p3::using=1
+      p[1]=1.0
+    else p[2]=1.0
+  State:2
+    labels: level=2
+    if p1::using=1
+      if p2::using=1
+        if p3::using=1
+          p[0]=1.0
+        else p[1]=1.0
+      else if p3::using=1
+        p[1]=1.0
+      else p[2]=1.0
+    else if p2::using=1
+      if p3::using=1
+        p[1]=1.0
+      else p[2]=1.0
+    else if p3::using=1
+      p[2]=1.0
+    else p[3]=1.0
+  State:3
+    labels: level=3
+    if p1::using=1
+      if p2::using=1
+        if p3::using=1
+          p[1]=1.0
+        else p[2]=1.0
+      else if p3::using=1
+        p[2]=1.0
+      else p[3]=1.0
+    else if p2::using=1
+      if p3::using=1
+        p[2]=1.0
+      else p[3]=1.0
+    else if p3::using=1
+      p[3]=1.0
+    else p[4]=1.0
+  State:4
+    labels: level=4
+    if p1::using=1
+      if p2::using=1
+        if p3::using=1
+          p[2]=1.0
+        else p[3]=1.0
+      else if p3::using=1
+        p[3]=1.0
+      else p[4]=1.0
+    else if p2::using=1
+      if p3::using=1
+        p[3]=1.0
+      else p[4]=1.0
+    else if p3::using=1
+      p[4]=1.0
+    else p[5]=1.0
+  State:5
+    labels: level=5
+    if p1::using=1
+      if p2::using=1
+        if p3::using=1
+          p[3]=1.0
+        else p[4]=1.0
+      else if p3::using=1
+        p[4]=1.0
+      else p[5]=1.0
+    else if p2::using=1
+      if p3::using=1
+        p[4]=1.0
+      else p[5]=1.0
+    else if p3::using=1
+      p[5]=1.0
+    else p[5]=1.0
+// dictionary: level->{0, 1, 2, 3, 4, 5}
+// neighbors = [p1, p2, p3]
