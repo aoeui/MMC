@@ -8,7 +8,8 @@ public class DoubleProbability extends Probability<DoubleProbability> {
   public final static SumOp SUM = new SumOp();
   public final static ProdOp PROD = new ProdOp();
 
-  public final static double MARGIN = 1e-5;
+  public final static double MARGIN = 1e-9;
+  public final static double ONE_MARGIN = 1e-6;
 
   public final static DoubleProbability ZERO = new DoubleProbability(LongFraction.ZERO);
   public final static DoubleProbability ONE = new DoubleProbability(1,1);
@@ -54,7 +55,7 @@ public class DoubleProbability extends Probability<DoubleProbability> {
   }
 
   public boolean isZero() { return p < MARGIN; }
-  public boolean isOne() { return Math.abs(p - 1) < MARGIN; }
+  public boolean isOne() { return Math.abs(p - 1) < ONE_MARGIN; }
 
   public int compareTo(DoubleProbability other) {
     double diff = p - other.p;

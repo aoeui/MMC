@@ -19,6 +19,17 @@ public class TransitionVector<T extends Probability<T>>
     this.map = new TreeMap<String,T>(map);
   }
   
+  public static <T extends Probability<T>> TransitionVector<T> getSingle(String machineName, String stateName, T one) {
+    return new TransitionVector<T>(machineName, stateName, one); 
+  }
+
+  private TransitionVector(String machineName, String stateName, T one) {
+    if (!one.isOne()) throw new RuntimeException();
+    this.machineName = machineName;
+    map = new TreeMap<String,T>();
+    map.put(stateName, one);
+  }
+  
   public T getProbability(String stateName) {
     return map.get(stateName);
   }

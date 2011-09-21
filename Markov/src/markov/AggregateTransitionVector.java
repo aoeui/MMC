@@ -3,12 +3,13 @@ package markov;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 
 import util.LexicalCompare;
 import util.UnmodifiableIterator;
 
 public class AggregateTransitionVector<T extends Probability<T>> implements Comparable<AggregateTransitionVector<T>>, Iterable<T> {
-  ArrayList<T> prob;  // Be careful: null entries mean ZEROs.
+  ArrayList<T> prob;
   
   public AggregateTransitionVector(Machine<T> machine, T zeroInstance, TransitionVector<T> vector) {
     this.prob = new ArrayList<T>();
@@ -26,6 +27,15 @@ public class AggregateTransitionVector<T extends Probability<T>> implements Comp
         prob.set(i, zeroInstance);
       }
     }
+  }
+  
+  public AggregateTransitionVector<T> removeStates(Set<Integer> toRemove) {
+    ArrayList<T> rv = new ArrayList<T>();
+    for (int i = 0; i < prob.size(); i++) {
+      if (toRemove.contains(i)) continue;
+      rv.add(prob.get(i));
+    }
+    return new AggregateTransitionVector<T>(rv);
   }
   
   public AggregateTransitionVector<T> remap(int range, Map<Integer,Integer> map) {

@@ -3,7 +3,9 @@ package markov;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.SortedSet;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 import util.LexicalCompare;
 import util.Stack;
@@ -27,6 +29,24 @@ public class AggregateState<T extends Probability<T>> {
       Map.Entry<String, String> entry = entryIt.next();
       labelVector.put(dict.getId(Stack.makeName(machine.name, entry.getKey())), entry.getValue());
     }
+  }
+  
+  public AggregateState<T> removeStates(final SortedSet<Integer> toRemove) {
+    Romdd<AggregateTransitionVector<T>> transition = transitionFunction.remap(new Romdd.Mapping<AggregateTransitionVector<T>,AggregateTransitionVector<T>>() {
+      public AggregateTransitionVector<T> transform(AggregateTransitionVector<T> input) {
+        return input.removeStates(toRemove);
+      }
+    });
+    int count = 0;
+    for (int removed : toRemove) {
+      if (removed < index) count++;
+      else break;
+    }
+    return new AggregateState<T>(index-count, size-toRemove.size(), transition, labelVector);
+  }
+
+  public TreeSet<AggregateTransitionVector<T>> getPossibleTransitions() {
+    return transitionFunction.getOutputs();
   }
   
   // Range is the size of the partition used to generate the map

@@ -36,6 +36,9 @@ public class AggregateNet<T extends Probability<T>> implements Iterable<Aggregat
   
   public AggregateNet<T> multiply(int idx1, int idx2) {
     ArrayList<AggregateMachine<T>> newMachines = new ArrayList<AggregateMachine<T>>(machines);
+    AggregateMachine<T> m1 = machines.get(idx1);
+    AggregateMachine<T> m2 = machines.get(idx2);
+    System.out.println("Taking the product of two machines sizes " + m1.getNumStates() + " and " + m2.getNumStates() + " = " + m1.getNumStates()*m2.getNumStates());
     newMachines.set(idx1, machines.get(idx1).product(machines.get(idx2)));
     newMachines.remove(idx2);
     return new AggregateNet<T>(dict, newMachines);
@@ -69,7 +72,7 @@ public class AggregateNet<T extends Probability<T>> implements Iterable<Aggregat
   
   public AggregateNet<T> reduce(int machineIndex) {
     ArrayList<AggregateMachine<T>> newMachines = new ArrayList<AggregateMachine<T>>(machines);
-    newMachines.set(machineIndex, machines.get(machineIndex).reduce());
+    newMachines.set(machineIndex, machines.get(machineIndex).removeUnreachable().reduce());
     return new AggregateNet<T>(dict, newMachines);
   }
   

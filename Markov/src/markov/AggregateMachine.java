@@ -6,6 +6,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.TreeSet;
 
+import Jama.EigenvalueDecomposition;
+import Jama.Matrix;
+
 import util.Partition;
 import util.Stack;
 import util.UnmodifiableIterator;
@@ -25,6 +28,31 @@ public class AggregateMachine<T extends Probability<T>> implements Iterable<Aggr
     }
     this.labels = toLabelStack(dict, machine.name, machine.get(0).labelNameIterator());
     this.labelsReferenced = Stack.<Integer>makeStack(references);
+  }
+  
+  /* This function only works if the input machine refers to no other machines */
+  public static ResultTree query(Dictionary dict, AggregateMachine<DoubleProbability> machine) {
+    if (!machine.labelsReferenced.isEmpty()) throw new RuntimeException();
+
+    TransitionMatrix<SymbolicProbability<DoubleProbability>> prob = machine.computeTransitionMatrix();
+    Matrix matrix = new Matrix(prob.N, prob.N);
+    for (int i = 0; i < prob.N; i++) {
+      for (int j = 0; j < prob.N; j++) {
+        matrix.set(j, i, prob.get(i,j).value.p);
+      }
+    }
+    EigenvalueDecomposition eig = matrix.eig();
+    Matrix eigenVectors = eig.getV();
+    double[] stationary = new double[prob.N];
+    double sum = 0;
+    for (int i = 0; i < prob.N; i++) {
+      stationary[i] = eigenVectors.get(i, 0);
+      sum += stationary[i];
+    }
+    for (int i = 0; i < prob.N; i++) {
+      stationary[i] /= sum;
+    }
+    return machine.applyStationary(dict, stationary);
   }
   
   public ResultTree applyStationary(Dictionary dict, double[] stationary) {
@@ -74,7 +102,31 @@ public class AggregateMachine<T extends Probability<T>> implements Iterable<Aggr
     return new UnmodifiableIterator<AggregateState<T>>(states.iterator());
   }
   
+  public AggregateMachine<T> removeUnreachable() {
+    boolean[] reached = new boolean[states.size()];
+    for (AggregateState<T> state : this) {
+      for (AggregateTransitionVector<T> vect : state.getPossibleTransitions()) {
+        for (int i = 0; i < states.size(); i++) {
+          if (!vect.get(i).isZero()) {
+            reached[i] = true;
+          }
+        }
+      }
+    }
+    TreeSet<Integer> toRemove = new TreeSet<Integer>();
+    for (int i = 0; i < states.size(); i++) {
+      if (!reached[i]) toRemove.add(i);
+    }
+    ArrayList<AggregateState<T>> newStates = new ArrayList<AggregateState<T>>();
+    for (int i = 0; i < states.size(); i++) {
+      if (reached[i]) newStates.add(states.get(i).removeStates(toRemove));
+    }
+    System.out.println(newStates.size() + " reachable states");
+    return new AggregateMachine<T>(newStates);
+  }
+
   public AggregateMachine<T> reduce() {
+    System.out.println("Reducing machine having " + states.size() + " states");
     Partition<Integer> initialPartition = getStatePartition();
     System.out.println("input partition: " + initialPartition);
     Lumping<SymbolicProbability<T>> lumper = new Lumping<SymbolicProbability<T>>(computeTransitionMatrix(), initialPartition);
@@ -88,6 +140,7 @@ public class AggregateMachine<T extends Probability<T>> implements Iterable<Aggr
     for (int i = 0; i < partition.getNumBlocks(); i++) {
       newStates.add(states.get(partition.getBlock(i).get(0)).remap(partition.getNumBlocks(), mapping));
     }
+    System.out.println("Reduced machine has " + newStates.size() + " states");
     return new AggregateMachine<T>(newStates);
   }
   
