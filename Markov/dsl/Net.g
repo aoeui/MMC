@@ -33,7 +33,7 @@ net returns [Net.Builder<DoubleProbability> netBuilder]
 
 machine returns [Machine<DoubleProbability> mMachine]
    : 'Machine:' machineName=IDENT { Machine.Builder<DoubleProbability> builder = new Machine.Builder<DoubleProbability>($machineName.text); }
-     s1=state[$machineName.text] { builder.addState($s1.mState); } ( s2=state[$machineName.text] { builder.addState($s2.mState); } )*
+     (s1=state[$machineName.text] { builder.addState($s1.mState); })+
      { mMachine = builder.build(); }
    ;
 
