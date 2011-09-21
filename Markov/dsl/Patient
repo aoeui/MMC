@@ -18,7 +18,7 @@ Machine:p0
     p[Empty]=1
   State:Empty
     labels: Cost=0, ICP=E, condition=NA
-    if Dispatch::p0=occupied
+    if Dispatch::next=0
       p[InitLow]=1
     else
       p[Empty]=1
@@ -64,7 +64,7 @@ Machine:p1
     p[Empty]=1
   State:Empty
     labels: Cost=0, ICP=E, condition=NA
-    if Dispatch::p0=occupied
+    if Dispatch::next=1
       p[InitLow]=1
     else
       p[Empty]=1
@@ -110,7 +110,7 @@ Machine:p2
     p[Empty]=1
   State:Empty
     labels: Cost=0, ICP=E, condition=NA
-    if Dispatch::p0=occupied
+    if Dispatch::next=2
       p[InitLow]=1
     else
       p[Empty]=1
@@ -135,9 +135,3 @@ Machine:p2
     else if p2Lung::Condition=B
       p[Dead]=0.0600000, p[Discharge]=0.390000, p[High]=0.0600000, p[Low]=0.490000
     else p[Dead]=0.0500000, p[Discharge]=0.400000, p[High]=0.0500000, p[Low]=0.500000
-
-Machine:arrival
-  State:1 labels: arriving=1
-    p[0] = 0.8, p[1] = 0.2
-  State:0 labels: arriving=0
-    p[0] = 0.8, p[1] = 0.2
