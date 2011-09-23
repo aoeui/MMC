@@ -25,7 +25,7 @@ import markov.DecisionTree.Terminal;
 import parser.XmlParser;
 import util.Stack;
 
-public class TestICU {
+public class TestICU1 {
   public final static String PATIENT_MODEL_FILENAME = "xml/umlVersion4.xml";
   public final static int NUM_PATIENTS = 3;
   public final static int STEPS=10000000;
