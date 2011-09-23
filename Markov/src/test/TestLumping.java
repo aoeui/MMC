@@ -13,7 +13,7 @@ public class TestLumping {
   public static void main(String[] args) {
 
     TransitionMatrix.Builder<DoubleProbability> mBuilder =
-        TransitionMatrix.<DoubleProbability>create(8);
+        TransitionMatrix.<DoubleProbability>create(8, DoubleProbability.ZERO);
 
     mBuilder.addRow(ZERO, ZERO, ZERO, ONE, ZERO, ZERO, ZERO, ZERO);
     mBuilder.addRow(ZERO, ZERO, ONE, ZERO, ZERO, ZERO, ZERO, ZERO);

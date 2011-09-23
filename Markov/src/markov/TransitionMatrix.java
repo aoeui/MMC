@@ -1,8 +1,7 @@
 package markov;
 
-
-import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -12,32 +11,31 @@ import java.util.List;
 public class TransitionMatrix<T extends Probability<T>> {
   public final static String SEPARATOR = ", ";
   public final int N;
-  private final ArrayList<T> data;
+  private final ArrayList<HashMap<Integer,T>> data;
+  
+  public final T zeroInstance;
 
-  TransitionMatrix(int n, ArrayList<T> input) {
+  TransitionMatrix(int n, ArrayList<HashMap<Integer,T>> input, T zero) {
     this.N = n;
     this.data = input;
+    this.zeroInstance = zero;
   }
 
   public T get(int row, int col) {
-    return data.get(row*N + col);
+    T rv = data.get(row).get(col);
+    return rv == null ? zeroInstance : rv;
   }
   
-  public static <T extends Probability<T>> Builder<T> create(int n) {
-    return new Builder<T>(n);
+  public static <T extends Probability<T>> Builder<T> create(int n, T zeroInstance) {
+    return new Builder<T>(n, zeroInstance);
   }
   
   public String toString() {
     int[] widths = new int[N];
-    String[][] strings = new String[N][];
-    for (int i = 0; i < N; i++) {
-      strings[i] = new String[N];
-    }
     // Two passes needed. First one calculates the column widths.
     for (int row = 0; row < N; row++) {
       for (int col = 0; col < N; col++) {
-        strings[row][col] = get(row, col).toString();
-        widths[col] = Math.max(widths[col], strings[row][col].length());
+        widths[col] = Math.max(widths[col], get(row,col).toString().length());
       }
     }
     StringBuilder builder = new StringBuilder();
@@ -45,11 +43,12 @@ public class TransitionMatrix<T extends Probability<T>> {
       if (row != 0) builder.append('\n');
       builder.append("[ ");
       for (int col = 0; col < N; col++) {
-        builder.append(strings[row][col]);
+        String str = get(row,col).toString();
+        builder.append(str);
         if (col < N-1) {
           builder.append(SEPARATOR);
         }
-        for (int i = 0; i < (widths[col] - strings[row][col].length()); i++) {
+        for (int i = 0; i < (widths[col] - str.length()); i++) {
           builder.append(' ');
         }
       }
@@ -66,11 +65,13 @@ public class TransitionMatrix<T extends Probability<T>> {
 
   static class AbstractBuilder<T extends Probability<T>> {
     public final int N;
-    ArrayList<ArrayList<T>> rows;
+    ArrayList<HashMap<Integer,T>> rows;
+    final T zeroInstance;
 
-    public AbstractBuilder(int n) {
+    public AbstractBuilder(int n, T zeroInstance) {
       this.N = n;
-      rows = new ArrayList<ArrayList<T>>();
+      rows = new ArrayList<HashMap<Integer,T>>();
+      this.zeroInstance = zeroInstance;
     }
 
     public TransitionMatrix<T> build() {
@@ -78,28 +79,21 @@ public class TransitionMatrix<T extends Probability<T>> {
         throw new BuildException("Wrong number of rows n = " + N + " != " + rows.size());
       }
       for (int i = 0; i < N; i++) {
-        ArrayList<T> row = rows.get(i);
-        if (row.size() != N) {
-          throw new BuildException("Row " + i + " has size " + row.size() + " != " + N);
-        }
+        HashMap<Integer,T> row = rows.get(i);
         // Check that the row elements sum to 1.
-        T prob = row.get(0);
-        for (int dest = 1; dest < N; dest++) {
-          prob = prob.sum(row.get(dest));
+        T accu = zeroInstance;
+        for (T prob : row.values()) {
+          accu = accu.sum(prob);
         }
-        if (!prob.isOne()) throw new BuildException("Probabilities of row " + i + " don't sum to 1: " + prob);
+        if (!accu.isOne()) throw new BuildException("Probabilities of row " + i + " don't sum to 1: " + accu);
       }
-      ArrayList<T> data = new ArrayList<T>();
-      for (ArrayList<T> row : rows) {
-        data.addAll(row);
-      }
-      return new TransitionMatrix<T>(N, data);
+      return new TransitionMatrix<T>(N, rows, zeroInstance);
     }
   }
   
   public static class RandomBuilder<T extends Probability<T>> extends AbstractBuilder<T> {
-    public RandomBuilder(int n) {
-      super(n);
+    public RandomBuilder(int n, T zeroInstance) {
+      super(n, zeroInstance);
       for (int i = 0; i < N; i++) {
         rows.add(null);
       }
@@ -113,8 +107,12 @@ public class TransitionMatrix<T extends Probability<T>> {
         throw new BuildException("Wrong number of elements in row.");
       }
       if (rows.get(rowNum)!=null) rows.remove(rowNum);
-      rows.set(rowNum, new ArrayList<T>(Arrays.asList(row)));
-      
+      HashMap<Integer, T> newRow = new HashMap<Integer,T>();
+      for (int i = 0; i < row.length; i++) {
+        if (row[i].isZero()) continue;
+        newRow.put(i, row[i]);
+      }
+      rows.set(rowNum, newRow);
     }
 
     public void set(int rowNum, List<T> row){
@@ -125,13 +123,18 @@ public class TransitionMatrix<T extends Probability<T>> {
         throw new BuildException("Wrong number of elements in row.");
       }
       if (rows.get(rowNum)!=null) rows.remove(rowNum);
-      rows.set(rowNum, new ArrayList<T>(row));
+      HashMap<Integer, T> newRow = new HashMap<Integer,T>();
+      for (int i = 0; i < row.size(); i++) {
+        if (row.get(i).isZero()) continue;
+        newRow.put(i, row.get(i));
+      }
+      rows.set(rowNum, newRow);
     }
   }
 
   public static class Builder<T extends Probability<T>> extends AbstractBuilder<T> {
-    public Builder(int n) {
-      super(n);
+    public Builder(int n, T zeroInstance) {
+      super(n, zeroInstance);
     }
     
     public void addRow(T... row) {
@@ -142,7 +145,12 @@ public class TransitionMatrix<T extends Probability<T>> {
       if (row.length != N) {
         throw new BuildException("Wrong number of elements in row.");
       }
-      rows.add(new ArrayList<T>(Arrays.asList(row)));
+      HashMap<Integer, T> newRow = new HashMap<Integer,T>();
+      for (int i = 0; i < row.length; i++) {
+        if (row[i].isZero()) continue;
+        newRow.put(i, row[i]);
+      }
+      rows.add(newRow);
     }
 
     public void addRow(List<T> row) {
@@ -153,7 +161,12 @@ public class TransitionMatrix<T extends Probability<T>> {
       if (row.size() != N) {
         throw new BuildException("Wrong number of elements in row.");
       }
-      rows.add(new ArrayList<T>(row));
+      HashMap<Integer, T> newRow = new HashMap<Integer,T>();
+      for (int i = 0; i < row.size(); i++) {
+        if (row.get(i).isZero()) continue;
+        newRow.put(i, row.get(i));
+      }
+      rows.add(newRow);
     }
 
     /** Returns the current number of rows in the builder. */
