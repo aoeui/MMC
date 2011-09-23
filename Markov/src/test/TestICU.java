@@ -67,7 +67,7 @@ public class TestICU {
   }
 
   public static void main(String[] args) throws Exception {
-    Net.Builder<DoubleProbability> netBuilder = Net.partialParse("Patient");
+    Net.Builder<DoubleProbability> netBuilder = Net.partialParse("dsl/Patient");
     netBuilder.addMachine(computeDispatch());
     
     Net<DoubleProbability> net = netBuilder.build();
