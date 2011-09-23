@@ -110,7 +110,28 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
     return new Brancher().branch();
   }
   
+  public TreeSet<T> getOutputs() {
+    final TreeSet<T> rv = new TreeSet<T>();
+    class Impl implements Visitor<T> {
+      TreeSet<Romdd<T>> visited = new TreeSet<Romdd<T>>(); 
+      public void visitTerminal(Terminal<T> term) {
+        rv.add(term.output);
+      }
+      public void visitNode(Node<T> node) {
+        if (visited.contains(node)) return;
+        visited.add(node);
+        for (Romdd<T> child : node) {
+          child.accept(this);
+        }
+      }
+    }
+    accept(new Impl());
+    return rv;
+  }
+  
   /** Returns a sorted array of the alphabets used by this Romdd */
+  /* It is more complicated than necessary because we need to get a dictionary from the top node if it exists. */
+  /* Terminal has no dictionary so that constants can be declared with no knowledge of the domain. */
   public List<Alphabet> listVarNames() {
     final Ptr<List<Alphabet>> rvPtr = new Ptr<List<Alphabet>>();
     accept(new Visitor<T>() {
@@ -132,20 +153,17 @@ public abstract class Romdd<T extends Comparable<? super T>> implements Comparab
     final TreeSet<Integer> rvIdx = new TreeSet<Integer>();
     class Lister implements Visitor<T> {
       TreeSet<Romdd<T>> visited = new TreeSet<Romdd<T>>();
-      void doList(Romdd<T> romdd) {
-        romdd.accept(this);
-      }
       public void visitTerminal(Terminal<T> term) { }
       public void visitNode(Node<T> node) {
         if (visited.contains(node)) return;
         visited.add(node);
         rvIdx.add(node.varId);
         for (Romdd<T> child : node) {
-          doList(child);
+          child.accept(this);
         }
       }
     }
-    new Lister().doList(this);
+    accept(new Lister());
     return rvIdx;
   }
   

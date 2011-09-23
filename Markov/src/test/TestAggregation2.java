@@ -2,9 +2,6 @@ package test;
 
 import java.util.ArrayList;
 
-import Jama.EigenvalueDecomposition;
-import Jama.Matrix;
-
 import markov.AggregateMachine;
 import markov.AggregateNet;
 import markov.DecisionTree;
@@ -15,8 +12,6 @@ import markov.Net;
 import markov.Predicate;
 import markov.ResultTree;
 import markov.State;
-import markov.SymbolicProbability;
-import markov.TransitionMatrix;
 import markov.TransitionVector;
 
 import util.Stack;
@@ -101,31 +96,9 @@ public class TestAggregation2 {
 
 //       System.out.println(aNet);
       AggregateMachine<DoubleProbability> machine = aNet.getMachine(0);
-      TransitionMatrix<SymbolicProbability<DoubleProbability>> prob = machine.computeTransitionMatrix();
-      Matrix matrix = new Matrix(prob.N, prob.N);
-      for (int i = 0; i < prob.N; i++) {
-        for (int j = 0; j < prob.N; j++) {
-          matrix.set(j, i, prob.get(i,j).value.p);
-        }
-      }
-      EigenvalueDecomposition eig = matrix.eig();
-      Matrix eigenVectors = eig.getV();
-      double[] stationary = new double[prob.N];
-      double sum = 0;
-      for (int i = 0; i < prob.N; i++) {
-        stationary[i] = eigenVectors.get(i, 0);
-        if (i != 0) System.out.print(", ");
-        System.out.print(stationary[i]);
-        sum += stationary[i];
-      }
-      for (int i = 0; i < prob.N; i++) {
-        stationary[i] /= sum;
-      }
-      System.out.println("\nsum = " + sum + " eigenvalue = " + eig.getRealEigenvalues()[0] + " + " + eig.getImagEigenvalues()[0] + "i");
-      ResultTree rTree = machine.applyStationary(aNet.dict, stationary);
-      System.out.println(rTree);
+      System.out.println(AggregateMachine.query(aNet.dict, machine));
 
-      double[] prod = new double[prob.N];
+      /* double[] prod = new double[prob.N];
       for (int i = 0; i < prob.N; i++) {
         double rowSum = 0;
         for (int j = 0; j < prob.N; j++) {
@@ -134,7 +107,7 @@ public class TestAggregation2 {
         prod[i] = rowSum;
         if (i != 0) System.out.print(", ");
         System.out.print(prod[i]);
-      }
+      } */
 
       System.out.println("\nTrying Monte Carlo: ");
       runMonteCarlo();

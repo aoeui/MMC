@@ -1,4 +1,4 @@
-Machine:Patient0:Lung
+Machine:p0Lung
   State:Bad
     labels: Condition=B, Cost=7000
     p[Bad]=0.550000, p[Fine]=0.150000, p[Severe]=0.300000
@@ -8,10 +8,8 @@ Machine:Patient0:Lung
   State:Severe
     labels: Condition=S, Cost=10000
     p[Bad]=0.450000, p[Fine]=0.0500000, p[Severe]=0.500000
-// dictionary: Condition->{B, F, S}, Cost->{10000, 4000, 7000}
-// neighbors = []
 
-Machine:Patient0:ICP
+Machine:p0
   State:Dead
     labels: Cost=25000, ICP=D, condition=NA
     p[Empty]=1.00000
@@ -20,30 +18,120 @@ Machine:Patient0:ICP
     p[Empty]=1
   State:Empty
     labels: Cost=0, ICP=E, condition=NA
-    if Dispatch::p0=arrive
+    if Dispatch::next=0
       p[InitLow]=1
     else
       p[Empty]=1
   State:High
     labels: Cost=20000, ICP=B, condition=B
-    if Patient0:Lung::Condition=S
+    if p0Lung::Condition=S
       p[Dead]=0.180000, p[High]=0.520000, p[Low]=0.300000
-    else if Patient0:Lung::Condition=B
+    else if p0Lung::Condition=B
       p[Dead]=0.160000, p[High]=0.510000, p[Low]=0.330000
     else p[Dead]=0.150000, p[High]=0.500000, p[Low]=0.350000
   State:InitLow
     labels: Cost=10000, ICP=A, condition=G
-    if Patient0:Lung::Condition=S
-      p[Dead]=0.0600000, p[Exit]=0.200000, p[High]=0.140000, p[InitLow]=0.600000
-    else if Patient0:Lung::Condition=B
+    if p0Lung::Condition=S
+      p[Dead]=0.0600000, p[Discharge]=0.200000, p[High]=0.140000, p[InitLow]=0.600000
+    else if p0Lung::Condition=B
       p[Dead]=0.0600000, p[Discharge]=0.200000, p[High]=0.120000, p[InitLow]=0.620000
     else p[Dead]=0.0500000, p[Discharge]=0.200000, p[High]=0.100000, p[InitLow]=0.650000
   State:Low
     labels: Cost=6000, ICP=C, condition=G
-    if Patient0:Lung::Condition=S
+    if p0Lung::Condition=S
       p[Dead]=0.0700000, p[Discharge]=0.370000, p[High]=0.0800000, p[Low]=0.480000
-    else if Patient0:Lung::Condition=B
+    else if p0Lung::Condition=B
       p[Dead]=0.0600000, p[Discharge]=0.390000, p[High]=0.0600000, p[Low]=0.490000
     else p[Dead]=0.0500000, p[Discharge]=0.400000, p[High]=0.0500000, p[Low]=0.500000
-// dictionary: Cost->{10000, 20000, 25000, 3000, 6000}, ICP->{A, B, C, D, E}, Patient->{B, G, NA}
-// neighbors = [Patient0:Lung]
+
+Machine:p1Lung
+  State:Bad
+    labels: Condition=B, Cost=7000
+    p[Bad]=0.550000, p[Fine]=0.150000, p[Severe]=0.300000
+  State:Fine
+    labels: Condition=F, Cost=4000
+    p[Bad]=0.150000, p[Fine]=0.800000, p[Severe]=0.0500000
+  State:Severe
+    labels: Condition=S, Cost=10000
+    p[Bad]=0.450000, p[Fine]=0.0500000, p[Severe]=0.500000
+
+Machine:p1
+  State:Dead
+    labels: Cost=25000, ICP=D, condition=NA
+    p[Empty]=1.00000
+  State:Discharge
+    labels: Cost=3000, ICP=discharge, condition=NA
+    p[Empty]=1
+  State:Empty
+    labels: Cost=0, ICP=E, condition=NA
+    if Dispatch::next=1
+      p[InitLow]=1
+    else
+      p[Empty]=1
+  State:High
+    labels: Cost=20000, ICP=B, condition=B
+    if p1Lung::Condition=S
+      p[Dead]=0.180000, p[High]=0.520000, p[Low]=0.300000
+    else if p1Lung::Condition=B
+      p[Dead]=0.160000, p[High]=0.510000, p[Low]=0.330000
+    else p[Dead]=0.150000, p[High]=0.500000, p[Low]=0.350000
+  State:InitLow
+    labels: Cost=10000, ICP=A, condition=G
+    if p1Lung::Condition=S
+      p[Dead]=0.0600000, p[Discharge]=0.200000, p[High]=0.140000, p[InitLow]=0.600000
+    else if p1Lung::Condition=B
+      p[Dead]=0.0600000, p[Discharge]=0.200000, p[High]=0.120000, p[InitLow]=0.620000
+    else p[Dead]=0.0500000, p[Discharge]=0.200000, p[High]=0.100000, p[InitLow]=0.650000
+  State:Low
+    labels: Cost=6000, ICP=C, condition=G
+    if p1Lung::Condition=S
+      p[Dead]=0.0700000, p[Discharge]=0.370000, p[High]=0.0800000, p[Low]=0.480000
+    else if p1Lung::Condition=B
+      p[Dead]=0.0600000, p[Discharge]=0.390000, p[High]=0.0600000, p[Low]=0.490000
+    else p[Dead]=0.0500000, p[Discharge]=0.400000, p[High]=0.0500000, p[Low]=0.500000
+
+Machine:p2Lung
+  State:Bad
+    labels: Condition=B, Cost=7000
+    p[Bad]=0.550000, p[Fine]=0.150000, p[Severe]=0.300000
+  State:Fine
+    labels: Condition=F, Cost=4000
+    p[Bad]=0.150000, p[Fine]=0.800000, p[Severe]=0.0500000
+  State:Severe
+    labels: Condition=S, Cost=10000
+    p[Bad]=0.450000, p[Fine]=0.0500000, p[Severe]=0.500000
+
+Machine:p2
+  State:Dead
+    labels: Cost=25000, ICP=D, condition=NA
+    p[Empty]=1.00000
+  State:Discharge
+    labels: Cost=3000, ICP=discharge, condition=NA
+    p[Empty]=1
+  State:Empty
+    labels: Cost=0, ICP=E, condition=NA
+    if Dispatch::next=2
+      p[InitLow]=1
+    else
+      p[Empty]=1
+  State:High
+    labels: Cost=20000, ICP=B, condition=B
+    if p2Lung::Condition=S
+      p[Dead]=0.180000, p[High]=0.520000, p[Low]=0.300000
+    else if p2Lung::Condition=B
+      p[Dead]=0.160000, p[High]=0.510000, p[Low]=0.330000
+    else p[Dead]=0.150000, p[High]=0.500000, p[Low]=0.350000
+  State:InitLow
+    labels: Cost=10000, ICP=A, condition=G
+    if p2Lung::Condition=S
+      p[Dead]=0.0600000, p[Discharge]=0.200000, p[High]=0.140000, p[InitLow]=0.600000
+    else if p2Lung::Condition=B
+      p[Dead]=0.0600000, p[Discharge]=0.200000, p[High]=0.120000, p[InitLow]=0.620000
+    else p[Dead]=0.0500000, p[Discharge]=0.200000, p[High]=0.100000, p[InitLow]=0.650000
+  State:Low
+    labels: Cost=6000, ICP=C, condition=G
+    if p2Lung::Condition=S
+      p[Dead]=0.0700000, p[Discharge]=0.370000, p[High]=0.0800000, p[Low]=0.480000
+    else if p2Lung::Condition=B
+      p[Dead]=0.0600000, p[Discharge]=0.390000, p[High]=0.0600000, p[Low]=0.490000
+    else p[Dead]=0.0500000, p[Discharge]=0.400000, p[High]=0.0500000, p[Low]=0.500000
