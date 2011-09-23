@@ -130,7 +130,7 @@ public class Simulation {
       //get combinedState and return them in accu
       constructStateList(stateArray,stack,accu);
       
-      TransitionMatrix.RandomBuilder<DoubleProbability> builder =new TransitionMatrix.RandomBuilder<DoubleProbability>(stateNameList.size());
+      TransitionMatrix.RandomBuilder<DoubleProbability> builder =new TransitionMatrix.RandomBuilder<DoubleProbability>(stateNameList.size(), DoubleProbability.ZERO);
       
       
       Iterator<ArrayList<State<DoubleProbability>>> itrStates=accu.iterator();
