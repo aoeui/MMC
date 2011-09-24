@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<uml:Model xmi:version="2.1" xmlns:xmi="http://schema.omg.org/spec/XMI/2.1" xmlns:uml="http://www.eclipse.org/uml2/3.0.0/UML" xmi:id="_M5vmANP4EeCv278JbrRjcg" name="model">
+  <packagedElement xmi:type="uml:Activity" xmi:id="_ZTnMcNRKEeCR3pl-M5027g" name="MPatient:ICP">
+    <node xmi:type="uml:OpaqueAction" xmi:id="_CeH7ENRNEeCR3pl-M5027g" name="InitLow" outgoing="_nbzHwNRNEeCR3pl-M5027g _obC-QNRNEeCR3pl-M5027g _phxVwNRNEeCR3pl-M5027g _tcF2QNRNEeCR3pl-M5027g _Pyl6cNRQEeCR3pl-M5027g" incoming="_Pyl6cNRQEeCR3pl-M5027g _Mq-ukOY-EeCdLPaHUkRhkQ">
+      <body>labelCost=10000;&#xA;labelPatient=G;&#xA;labelICP=A;</body>
+      <body>p[InitLow]=65/100, p[High]=1/10, p[Dead]=5/100, p[Discharge]=2/10</body>
+    </node>
+    <node xmi:type="uml:OpaqueAction" xmi:id="_H_1QINRNEeCR3pl-M5027g" name="High" outgoing="_vx2zwNRNEeCR3pl-M5027g _widKQNRNEeCR3pl-M5027g _KnUvcNRQEeCR3pl-M5027g" incoming="_obC-QNRNEeCR3pl-M5027g _pZGQANRPEeCR3pl-M5027g _KnUvcNRQEeCR3pl-M5027g">
+      <body>labelCost=20000;&#xA;labelPatient=B;&#xA;labelICP=B;</body>
+      <body>p[High]=5/10, p[Low]=35/100, p[Dead]=15/100</body>
+    </node>
+    <node xmi:type="uml:OpaqueAction" xmi:id="_MBxbkNRNEeCR3pl-M5027g" name="Discharge" outgoing="_d1o-cNRQEeCR3pl-M5027g _xX8bMOY9EeCdLPaHUkRhkQ" incoming="_phxVwNRNEeCR3pl-M5027g _A2GtANRQEeCR3pl-M5027g _d1o-cNRQEeCR3pl-M5027g">
+      <body>labelCost=3000;&#xA;labelPatient=G;&#xA;labelICP=discharge;</body>
+      <body>p[Empty]=1</body>
+    </node>
+    <node xmi:type="uml:OpaqueAction" xmi:id="_NmtZENRNEeCR3pl-M5027g" name="Dead" outgoing="_YXwZcNRQEeCR3pl-M5027g _w1sCsOY9EeCdLPaHUkRhkQ" incoming="_tcF2QNRNEeCR3pl-M5027g _widKQNRNEeCR3pl-M5027g __K1eANRPEeCR3pl-M5027g _YXwZcNRQEeCR3pl-M5027g">
+      <body>labelCost=25000;&#xA;labelPatient=NA;&#xA;labelICP=D;</body>
+      <body>p[Empty]=1</body>
+    </node>
+    <node xmi:type="uml:OpaqueAction" xmi:id="_hpSWkNRNEeCR3pl-M5027g" name="Low" outgoing="_pZGQANRPEeCR3pl-M5027g __K1eANRPEeCR3pl-M5027g _A2GtANRQEeCR3pl-M5027g _iFseYNRQEeCR3pl-M5027g" incoming="_nbzHwNRNEeCR3pl-M5027g _vx2zwNRNEeCR3pl-M5027g _iFseYNRQEeCR3pl-M5027g">
+      <body>labelCost=6000;&#xA;labelPatient=G;&#xA;labelICP=C;</body>
+      <body>p[High]=5/100, p[Low]=5/10, p[Dead]=5/100, p[Discharge]=4/10</body>
+    </node>
+    <node xmi:type="uml:OpaqueAction" xmi:id="_vHvTIOY9EeCdLPaHUkRhkQ" name="Empty" outgoing="_0AoUsOY9EeCdLPaHUkRhkQ _KjPmAOY-EeCdLPaHUkRhkQ _Mq-ukOY-EeCdLPaHUkRhkQ" incoming="_w1sCsOY9EeCdLPaHUkRhkQ _xX8bMOY9EeCdLPaHUkRhkQ _0AoUsOY9EeCdLPaHUkRhkQ _KjPmAOY-EeCdLPaHUkRhkQ">
+      <body>labelCost=0;&#xA;labelICP=E;&#xA;labelPatient=NA;</body>
+      <body>if MDispatch.next=1 then&#xA;  p[InitLow]=1&#xA;else&#xA;  p[Empty]=1&#xA;end if</body>
+    </node>
+    <edge xmi:type="uml:ControlFlow" xmi:id="_nbzHwNRNEeCR3pl-M5027g" name="" source="_CeH7ENRNEeCR3pl-M5027g" target="_hpSWkNRNEeCR3pl-M5027g"/>
+    <edge xmi:type="uml:ControlFlow" xmi:id="_obC-QNRNEeCR3pl-M5027g" name="" source="_CeH7ENRNEeCR3pl-M5027g" target="_H_1QINRNEeCR3pl-M5027g"/>
+    <edge xmi:type="uml:ControlFlow" xmi:id="_phxVwNRNEeCR3pl-M5027g" name="" source="_CeH7ENRNEeCR3pl-M5027g" target="_MBxbkNRNEeCR3pl-M5027g"/>
+    <edge xmi:type="uml:ControlFlow" xmi:id="_tcF2QNRNEeCR3pl-M5027g" name="" source="_CeH7ENRNEeCR3pl-M5027g" target="_NmtZENRNEeCR3pl-M5027g"/>
+    <edge xmi:type="uml:ControlFlow" xmi:id="_vx2zwNRNEeCR3pl-M5027g" name="" source="_H_1QINRNEeCR3pl-M5027g" target="_hpSWkNRNEeCR3pl-M5027g"/>
+    <edge xmi:type="uml:ControlFlow" xmi:id="_widKQNRNEeCR3pl-M5027g" name="" source="_H_1QINRNEeCR3pl-M5027g" target="_NmtZENRNEeCR3pl-M5027g"/>
+    <edge xmi:type="uml:ControlFlow" xmi:id="_pZGQANRPEeCR3pl-M5027g" name="" source="_hpSWkNRNEeCR3pl-M5027g" target="_H_1QINRNEeCR3pl-M5027g"/>
+    <edge xmi:type="uml:ControlFlow" xmi:id="__K1eANRPEeCR3pl-M5027g" name="" source="_hpSWkNRNEeCR3pl-M5027g" target="_NmtZENRNEeCR3pl-M5027g"/>
+    <edge xmi:type="uml:ControlFlow" xmi:id="_A2GtANRQEeCR3pl-M5027g" name="" source="_hpSWkNRNEeCR3pl-M5027g" target="_MBxbkNRNEeCR3pl-M5027g"/>
+    <edge xmi:type="uml:ControlFlow" xmi:id="_KnUvcNRQEeCR3pl-M5027g" name="" source="_H_1QINRNEeCR3pl-M5027g" target="_H_1QINRNEeCR3pl-M5027g"/>
+    <edge xmi:type="uml:ControlFlow" xmi:id="_Pyl6cNRQEeCR3pl-M5027g" name="" source="_CeH7ENRNEeCR3pl-M5027g" target="_CeH7ENRNEeCR3pl-M5027g"/>
+    <edge xmi:type="uml:ControlFlow" xmi:id="_YXwZcNRQEeCR3pl-M5027g" name="" source="_NmtZENRNEeCR3pl-M5027g" target="_NmtZENRNEeCR3pl-M5027g"/>
+    <edge xmi:type="uml:ControlFlow" xmi:id="_d1o-cNRQEeCR3pl-M5027g" name="" source="_MBxbkNRNEeCR3pl-M5027g" target="_MBxbkNRNEeCR3pl-M5027g"/>
+    <edge xmi:type="uml:ControlFlow" xmi:id="_iFseYNRQEeCR3pl-M5027g" name="" source="_hpSWkNRNEeCR3pl-M5027g" target="_hpSWkNRNEeCR3pl-M5027g"/>
+    <edge xmi:type="uml:ControlFlow" xmi:id="_w1sCsOY9EeCdLPaHUkRhkQ" name="ControlFlow1" source="_NmtZENRNEeCR3pl-M5027g" target="_vHvTIOY9EeCdLPaHUkRhkQ"/>
+    <edge xmi:type="uml:ControlFlow" xmi:id="_xX8bMOY9EeCdLPaHUkRhkQ" name="ControlFlow2" source="_MBxbkNRNEeCR3pl-M5027g" target="_vHvTIOY9EeCdLPaHUkRhkQ"/>
+    <edge xmi:type="uml:ControlFlow" xmi:id="_0AoUsOY9EeCdLPaHUkRhkQ" name="ControlFlow3" source="_vHvTIOY9EeCdLPaHUkRhkQ" target="_vHvTIOY9EeCdLPaHUkRhkQ"/>
+    <edge xmi:type="uml:ControlFlow" xmi:id="_KjPmAOY-EeCdLPaHUkRhkQ" name="ControlFlow4" source="_vHvTIOY9EeCdLPaHUkRhkQ" target="_vHvTIOY9EeCdLPaHUkRhkQ"/>
+    <edge xmi:type="uml:ControlFlow" xmi:id="_Mq-ukOY-EeCdLPaHUkRhkQ" name="ControlFlow5" source="_vHvTIOY9EeCdLPaHUkRhkQ" target="_CeH7ENRNEeCR3pl-M5027g"/>
+  </packagedElement>
+</uml:Model>
