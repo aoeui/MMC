@@ -67,7 +67,7 @@ public class TestICU {
   }
 
   public static void main(String[] args) throws Exception {
-    Net.Builder<DoubleProbability> netBuilder = Net.partialParse("dsl/Patient");
+    Net.Builder<DoubleProbability> netBuilder = Net.partialParse("Patient");
     netBuilder.addMachine(computeDispatch());
     
     Net<DoubleProbability> net = netBuilder.build();
@@ -75,6 +75,7 @@ public class TestICU {
     AggregateNet<DoubleProbability> origNet = new AggregateNet<DoubleProbability>(net, DoubleProbability.ZERO);
     System.out.println(origNet);
 
+    System.out.println("\nRunning Monte Carlo");
     MonteCarlo mc = new MonteCarlo(origNet);
     ArrayList<Stack<String>> names = new ArrayList<Stack<String>>();
     names.add(Stack.makeName("Dispatch", "next"));
@@ -82,7 +83,12 @@ public class TestICU {
     System.out.println(rv.toCountString(10000000));
 
     AggregateNet<DoubleProbability> aNet = origNet;
-    aNet = aNet.multiply(5, 4).sum("p2Lung","Condition").sum("p2Lung","Cost").reduce(4);
+    aNet = aNet.multiply(6, 5).multiply(5,4).multiply(4,3).multiply(3, 2).multiply(2, 1).multiply(1, 0);
+    aNet = aNet.sum("p2Lung","Condition").sum("p2Lung","Cost").sum("p1Lung","Condition").sum("p1Lung","Cost").sum("p0Lung","Condition").sum("p0Lung","Cost");
+    aNet = aNet.sum("p2","ICP").sum("p2","condition").sum("p2","Cost").sum("p1","ICP").sum("p1","condition").sum("p1","Cost").sum("p0","ICP").sum("p0","condition").sum("p0","Cost");
+    aNet = aNet.reduce(0);
+    
+    /* aNet = aNet.multiply(5, 4).sum("p2Lung","Condition").sum("p2Lung","Cost").reduce(4);
     aNet = aNet.multiply(3, 2).sum("p1Lung","Condition").sum("p1Lung","Cost").reduce(2);
     aNet = aNet.multiply(1, 0).sum("p0Lung","Condition").sum("p0Lung","Cost").reduce(0);
     System.out.println("\nAfter multiplying lung\n" + aNet);
@@ -92,7 +98,7 @@ public class TestICU {
     aNet = aNet.multiply(2, 1).sum("p1","ICP").sum("p1","condition").sum("p1","Cost").reduce(1);
     // System.out.println("After second multiplication\n" + aNet);
     aNet = aNet.multiply(1, 0).sum("p0","ICP").sum("p0","condition").sum("p0","Cost").reduce(0);
-    // System.out.println("After second multiplication\n" + aNet);
+    // System.out.println("After second multiplication\n" + aNet); */
     
     System.out.println(AggregateMachine.query(aNet.dict, aNet.getMachine(0)));
     

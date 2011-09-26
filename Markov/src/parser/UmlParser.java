@@ -78,7 +78,75 @@ public class UmlParser {
     }
   }*/
   
+  
+/*  public static void decisionTreeParser2(String decisionTree, String outputFile) throws IOException {
+    FileWriter fstream = new FileWriter(outputFile);
+    BufferedWriter outFile = new BufferedWriter(fstream);
+    StringWriter out=new StringWriter();
+    out.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
     
+    out.write("<state><decisionTree>");
+    if(decisionTree.contains("if")){
+      out.write("<branch>");
+      int startIfIdx=decisionTree.indexOf("if");
+      int ifNum=1,elseNum=1;
+      int endBranchIndex=findEndOfBranchIdx(decisionTree,ifNum, startIfIdx);
+      int elseIndex=findElseIdx(decisionTree,elseNum,startIfIdx);
+      
+      int startBranchIndex=decisionTree.indexOf("then");
+      String predicate=decisionTree.substring(2,startBranchIndex);
+      out.write("<predicate>");
+      parsePredicate(predicate,out);
+      out.write("</predicate>");
+//      System.out.println("Predicate: "+predicate+ " "+decisionTree.substring(startBranchIndex+4, endBranchIndex));
+      
+      out.write("<consequent>");
+      String consequent=decisionTree.substring(startBranchIndex+4,elseIndex);
+      
+      if (consequent.contains("if")){
+        out.write("<decisionTree>");
+        consequent=consequent.substring(consequent.indexOf("if"));
+        parseDecisionTree(consequent,out);
+        out.write("</decisionTree>");
+      }else{
+        out.write("<decisionTree>");
+        out.write(consequent);
+        out.write("</decisionTree>");
+      }
+      out.write("</consequent>");
+      
+      out.write("<alternative>");
+      String alternative=decisionTree.substring(elseIndex+4, endBranchIndex);
+      
+      if (alternative.contains("if")){
+        out.write("<decisionTree>");
+        alternative=alternative.substring(alternative.indexOf("if"));
+        parseDecisionTree(alternative,out);
+        out.write("</decisionTree>");
+      }else{
+        out.write("<decisionTree>");
+        out.write("<probability>");
+        parseProbability(alternative,out);
+        out.write("</probability>");
+        out.write("</decisionTree>");
+      }
+      out.write("</alternative>");
+      
+      out.write("</branch>");
+    }else{
+      out.write("<probability>");
+      out.write(decisionTree);
+      out.write("</probability>");
+    }
+    
+    out.write("</decisionTree></state>");  
+    
+    outFile.write(out.toString());
+    
+  }*/
+  
+  
+  
   public static String decisionTreeXslParser(String input) throws IOException{
     StringWriter out=new StringWriter();
     parseDecisionTree(input,out);
@@ -149,18 +217,18 @@ public class UmlParser {
   }
   
   private static void parseProbability(String probability, StringWriter out) throws IOException {
-    String[] temp=probability.split("p\\[");
+    String[] temp=probability.split("p");
     for (int i=0;i<temp.length;i++){
-      if(temp[i].contains("]")){
+      if(temp[i].contains("[")){
         out.write("<stateName>");
-        int idx1=0;
+        int idx1=temp[i].indexOf('[');
         int idx2=temp[i].indexOf(']');
         int idx3=temp[i].indexOf('=');
         int idx4=temp[i].indexOf('/');
         int idxTmp=(temp[i].indexOf(',')==-1)? temp[i].length():temp[i].indexOf(',');
         int idxTmp2=(temp[i].indexOf('\n')==-1)? temp[i].length():temp[i].indexOf('\n');
         int idx5=Math.min(idxTmp,idxTmp2);
-        out.write(temp[i].substring(idx1, idx2));
+        out.write(temp[i].substring(idx1+1, idx2));
         out.write("</stateName>");
         out.write("<pValue>");
         int den=(idx4!=-1)? Integer.parseInt(temp[i].substring(idx4+1,idx5)):1;
@@ -259,7 +327,7 @@ public class UmlParser {
       int idx2=predicate.indexOf('.');
       int idx3=predicate.indexOf('=');
       int idx4=(predicate.lastIndexOf(' ')>0)? predicate.lastIndexOf(' '):predicate.length();
-      out.write("<atom machineName=\""+predicate.substring(idx1+1,idx2)+"\">");
+      out.write("<atom machineName=\""+predicate.substring(idx1,idx2)+"\">");
       out.write("<labelPair name=\""+predicate.substring(idx2+1,idx3)+"\">");
       out.write("<instance>"+predicate.substring(idx3+1,idx4)+"</instance>");
       out.write("</labelPair></atom>");

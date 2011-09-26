@@ -1,11 +1,9 @@
 package parser;
 
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.Iterator;
 import markov.Machine;
 import markov.Net;
-import markov.Net.Builder;
 import markov.Predicate;
 import markov.DoubleProbability;
 import markov.State;
@@ -13,90 +11,33 @@ import markov.TransitionVector;
 import markov.DecisionTree;
 
 import org.w3c.dom.*;
-
 import javax.xml.parsers.*;
 
 
 public class XmlParser {
-  
-      public Net<DoubleProbability> net;
-      private static int NUM_PATIENTS;
-      public final static double P_ARRIVAL = 0.2;
 
       public static void main (String args[]) {
-          XmlParser temp = new XmlParser("xml/umlVersion6.xml",2);
-          System.out.println(temp.net.toString());
+          System.out.println(new XmlParser());
       }
       
       
       public XmlParser() {
         
-        Net<DoubleProbability> net = XmlInput("xml/umlVersion5.xml",1);
+        Net<DoubleProbability> net = XmlInput("xml/umlVersion3.xml");
         System.out.println(net.toString());
        
       }
       
-      public XmlParser(String fileName, int numOfPatient){
-        XmlParser.NUM_PATIENTS=numOfPatient;
-        Net.Builder<DoubleProbability> netBuild=new Net.Builder<DoubleProbability>();
-        netBuild = XmlPartialParse(fileName,numOfPatient,netBuild);
-        //TODO need make compute dispatch in the parser so that numOfPatient is the same
-        netBuild.addMachine(computeDispatch());
-        net=netBuild.build();
-      }
-      public static DecisionTree<TransitionVector<DoubleProbability>> computeTree(int state, BitSet bedState, int nextBit) {
-        if (nextBit >= NUM_PATIENTS) return nextState(bedState);
-        
-        if (nextBit == state) {
-          BitSet set = (BitSet)bedState.clone();
-          set.set(nextBit);
-          return computeTree(state, set, nextBit+1);
-        }
-        Predicate pred = new Predicate.Atom("Patient" + nextBit + ":ICP", "Patient", "NA");
-        BitSet unset = (BitSet)bedState.clone();
-        unset.clear(nextBit);
-        BitSet set = (BitSet)bedState.clone();
-        set.set(nextBit);
-        return new DecisionTree.Branch<TransitionVector<DoubleProbability>>(pred, computeTree(state, unset, nextBit+1), computeTree(state, set, nextBit+1));
-      }
-      
-      public static DecisionTree<TransitionVector<DoubleProbability>> nextState(BitSet set) {
-        TransitionVector.Builder<DoubleProbability> builder = new TransitionVector.Builder<DoubleProbability>("Dispatch");
-        if (set.cardinality() < NUM_PATIENTS) {
-          builder.setProbability("None", new DoubleProbability(1-P_ARRIVAL));
-          for (int i = 0; i < NUM_PATIENTS; i++) {
-            if (!set.get(i)) {
-              builder.setProbability(Integer.toString(i), new DoubleProbability(P_ARRIVAL/(NUM_PATIENTS-set.cardinality())));
-            }
-          }
-        } else {
-          builder.setProbability("None", DoubleProbability.ONE);
-        }
-        return new DecisionTree.Terminal<TransitionVector<DoubleProbability>>(builder.build());
-      }
-      
-      public static Machine<DoubleProbability> computeDispatch() {
-        Machine.Builder<DoubleProbability> builder = new Machine.Builder<DoubleProbability>("Dispatch");
-        State.Builder<DoubleProbability> sBuilder = new State.Builder<DoubleProbability>("Dispatch", "None", computeTree(-1, new BitSet(), 0));
-        sBuilder.setLabel("next", "none");
-        builder.addState(sBuilder.build());
-        for (int i = 0; i < NUM_PATIENTS; i++) {
-          sBuilder =  new State.Builder<DoubleProbability>("Dispatch", Integer.toString(i), computeTree(i, new BitSet(), 0));
-          sBuilder.setLabel("next", Integer.toString(i));
-          builder.addState(sBuilder.build());
-        }
-        return builder.build();
-      }
-
       /****** This method can be used in other class to retrieve machines **********/
       public static Net<DoubleProbability> XmlInput(String fileName){
         return XmlInput(fileName,1);
       }
-      public static Net.Builder<DoubleProbability> XmlPartialParse(String fileName, int numOfPatient,Net.Builder<DoubleProbability> netBuild){
-        
+      public static Net<DoubleProbability> XmlInput(String fileName, int numOfPatient) {
         try {
           
-
+          Net.Builder<DoubleProbability> netBuild=new Net.Builder<DoubleProbability>();
+          
+          
           //Read in XML file
           DocumentBuilderFactory dbfac = DocumentBuilderFactory.newInstance();
           DocumentBuilder docBuilder = dbfac.newDocumentBuilder();
@@ -159,26 +100,107 @@ public class XmlParser {
                                                              
             }
           }
-          return netBuild;
+            Net<DoubleProbability> net=netBuild.build();
+            
+            return net;
           
         } catch (Exception e) {
           e.printStackTrace();
-        }        
-        return null;
-      }
-      
-      /*******This one will not be able to do net Build after adding discharge in*******/
-      public static Net<DoubleProbability> XmlInput(String fileName, int numOfPatient) {
-        Net.Builder<DoubleProbability> netBuild=new Net.Builder<DoubleProbability>();
-        netBuild=XmlPartialParse(fileName,numOfPatient,netBuild);
-        if(netBuild==null){
-          System.err.println("NetBuild Null");
-          return null;
-        }else{
-          return netBuild.build();
         }
+        
+        return null;
 
-      }
+    }
+      
+/*      public static DecisionTree<String> decisionTreeParser2(String xmlFileName){
+        
+        DocumentBuilderFactory dbfac = DocumentBuilderFactory.newInstance();
+        DocumentBuilder docBuilder;
+        try {
+          docBuilder = dbfac.newDocumentBuilder();
+          Document doc = docBuilder.parse(xmlFileName);
+          doc.getDocumentElement().normalize();
+          
+//        System.out.println("Root element :" + doc.getDocumentElement().getNodeName());
+          Element stateXml = (Element)doc.getElementsByTagName("state").item(0);
+          
+          DecisionTree<String> out=getDecisionTreeInfo2(stateXml);
+          return out;
+          
+        } catch (Exception e) {
+          e.printStackTrace();
+        }
+        
+        return null;
+
+      }*/
+      
+      
+
+/*      private static DecisionTree<String> getDecisionTreeInfo2(Element parent){
+        
+        Element decisionTreeXml=null;
+        //if DecisionTree is under state use the 4th item of childNodes 
+        if (parent.getNodeName().equals("state")){
+          decisionTreeXml=(Element)parent.getChildNodes().item(1);
+//          System.out.println(parent.getNodeName()+": DecisionTree: "+ decisionTreeXml.getChildNodes().item(0).getNodeName()+ ": ");
+
+        }//else if DecisionTree is under consequent or alternative use 2nd item of childNodes
+        else if(parent.getNodeName().equals("consequent")||parent.getNodeName().equals("alternative")){
+         decisionTreeXml=(Element)parent.getChildNodes().item(0);
+//         System.out.println("  "+parent.getNodeName()+": DecisionTree: "+ decisionTreeXml.getChildNodes().item(0).getNodeName()+ ": ");
+
+        }
+        
+        if (decisionTreeXml==null){
+          System.err.println("DecisionTree parent is not valid");
+        }
+        
+        
+        
+        if (decisionTreeXml.getChildNodes().item(0).getNodeName().equals("branch")){
+          Element predicateXml=(Element) decisionTreeXml.getChildNodes().item(0).getChildNodes().item(0);
+//        System.out.println("  "+predicateXml.getNodeName()+": ");
+            
+          //get atom or ... info from predicate
+          Predicate predicate=null;
+          predicate=getInfoFromPredicate(predicateXml,predicate);
+          
+          if (predicate==null){
+            System.err.println("!!Predicate not parsed!");
+          }
+          
+          DecisionTree<String> consequent=null;
+          DecisionTree<String> alternative=null;         
+          Element consequentXml = (Element) decisionTreeXml.getChildNodes().item(0).getChildNodes().item(1);
+          consequent = getDecisionTreeInfo2 (consequentXml);
+          if (decisionTreeXml.getChildNodes().item(0).getChildNodes().getLength()<3){
+            System.err.println("!Missing consequence or alternative");
+          } //no alternative
+          else {
+            Element alternativeXml = (Element) decisionTreeXml.getChildNodes().item(0).getChildNodes().item(2);
+            alternative=getDecisionTreeInfo2(alternativeXml);
+          }
+          if (consequent==null || alternative==null)
+            System.err.println("!Consequence or alternative not parsed!");
+          
+          DecisionTree.Branch<String> branch=new DecisionTree.Branch<String>(predicate,consequent,alternative);
+          
+          return branch;  
+        }
+        else if(decisionTreeXml.getChildNodes().item(0).getNodeName().equals("probability")){  
+          Element probabilityXml = (Element)decisionTreeXml.getChildNodes().item(0);
+          String temp = probabilityXml.getNodeValue();
+          DecisionTree.Terminal<String> terminal= new DecisionTree.Terminal<String>(temp);
+          return terminal;
+          
+        }else{
+          return null;
+        }
+        
+       
+      }*/
+      
       
       private static DecisionTree<TransitionVector<DoubleProbability>> getDecisionTreeInfo(String machineName, Element parent, int patientNum){
         
@@ -270,10 +292,9 @@ public class XmlParser {
           Element atomLabelVector=(Element) atomXml.getChildNodes().item(0);
 //          System.out.println("      atom labelVector: [" + atomLabelVector.getAttribute("name")+":"+atomLabelVector.getChildNodes().item(0).getChildNodes().item(0).getNodeValue()+"]");
           // create atom
-          String machineNameTemp[]=atomXml.getAttribute("machineName").split(":");
-          machineNameTemp[0]=machineNameTemp[0].substring(1);
-          String machineName=(machineNameTemp.length==2) ? machineNameTemp[0]+patientNum+":"+machineNameTemp[1] : atomXml.getAttribute("machineName");
-          Predicate.Atom atom=new Predicate.Atom(machineName, atomLabelVector.getAttribute("name"), atomLabelVector.getChildNodes().item(0).getChildNodes().item(0).getNodeValue());
+          String machineName[]=atomXml.getAttribute("machineName").split(":");
+          machineName[0]=machineName[0].substring(1);
+          Predicate.Atom atom=new Predicate.Atom(machineName[0]+patientNum+":"+machineName[1], atomLabelVector.getAttribute("name"), atomLabelVector.getChildNodes().item(0).getChildNodes().item(0).getNodeValue());
           Predicate output=(Predicate)atom;
 
           return output;
@@ -332,6 +353,7 @@ public class XmlParser {
         }
        
       }
+
 
 
 }

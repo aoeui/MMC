@@ -9,7 +9,7 @@ public class DoubleProbability extends Probability<DoubleProbability> {
   public final static ProdOp PROD = new ProdOp();
 
   public final static double MARGIN = 1e-9;
-  public final static double ONE_MARGIN = 1e-6;
+  public final static double ONE_MARGIN = 1e-8;
 
   public final static DoubleProbability ZERO = new DoubleProbability(LongFraction.ZERO);
   public final static DoubleProbability ONE = new DoubleProbability(1,1);
