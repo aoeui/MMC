@@ -1,15 +1,9 @@
 package test;
 
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
-
-import com.jmatio.io.MatFileWriter;
-import com.jmatio.types.MLArray;
-import com.jmatio.types.MLCell;
-import com.jmatio.types.MLChar;
-import com.jmatio.types.MLDouble;
-
 
 import markov.AggregateMachine;
 import markov.AggregateNet;
@@ -25,13 +19,13 @@ import util.Stack;
 
 public class TestICU1 {
   public final static String PATIENT_MODEL_FILENAME = "xml/umlVersion6.xml";
-  public final static int NUM_PATIENTS = 4;
+  public final static int NUM_PATIENTS = 6;
   public final static int STEPS=10000000;
   
 
   public static void main(String[] args) {
     Net<DoubleProbability> net= (new XmlParser(PATIENT_MODEL_FILENAME,NUM_PATIENTS)).net;
-
+    System.out.println(net);
     Stack<String> stack= Stack.<String>emptyInstance();
     
     Iterator<Machine<DoubleProbability>> itr=net.iterator();
@@ -57,14 +51,28 @@ public class TestICU1 {
 
     AggregateMachine<DoubleProbability> machine = aNet.getMachine(0);
     TransitionMatrix<SymbolicProbability<DoubleProbability>> prob = machine.computeTransitionMatrix();
-    double[][] matrix = new double[prob.N][prob.N];
-    for (int i = 0; i < prob.N; i++) {
-      for (int j = 0; j < prob.N; j++) {
-        matrix[i][j]=prob.get(i,j).value.p;
+
+    try {
+      FileWriter fOut=new FileWriter("matOut.txt");
+      for (int i=0;i<aNet.getMachine(0).getNumStates();i++){
+        fOut.write(aNet.getMachine(0).getState(i).getValueStack().head()+"\t");
       }
+      fOut.write("\n");
+      for (int i = 0; i < prob.N; i++) {
+        for (int j = 0; j < prob.N; j++) {
+          if (!prob.get(i,j).value.isZero()){
+            fOut.write((i+1)+"\t"+(j+1)+"\t"+Double.toString(prob.get(i,j).value.p)+"\n");
+          }
+        }
+      }
+      fOut.close();
+    } catch (IOException e1) {
+      // TODO Auto-generated catch block
+      e1.printStackTrace();
     }
 
-    MLDouble mldouble=new MLDouble("pTransition",matrix);
+
+/*    MLDouble mldouble=new MLDouble("pTransition",sparseMatrix,1);
     String[] heads=new String[aNet.getMachine(0).getNumStates()];
     for (int i=0;i<aNet.getMachine(0).getNumStates();i++){
       heads[i]=aNet.getMachine(0).getState(i).getValueStack().head();
@@ -81,12 +89,12 @@ public class TestICU1 {
     ArrayList<MLArray> list = new ArrayList<MLArray>();
     list.add( mldouble );
     list.add( mlcell );
-    
+
     try {
-      new MatFileWriter( "mat_file.mat", list );
+      new MatFileWriter( "mat_file.mat", list);
     } catch (IOException e) {
       e.printStackTrace();
-    }
+    }*/
     
 /*    Matrix matrix = new Matrix(prob.N, prob.N);
     for (int i = 0; i < prob.N; i++) {

@@ -10,7 +10,7 @@
       <body>p[High]=5/10, p[Low]=35/100, p[Dead]=15/100</body>
     </node>
     <node xmi:type="uml:OpaqueAction" xmi:id="_MBxbkNRNEeCR3pl-M5027g" name="Discharge" outgoing="_d1o-cNRQEeCR3pl-M5027g _xX8bMOY9EeCdLPaHUkRhkQ" incoming="_phxVwNRNEeCR3pl-M5027g _A2GtANRQEeCR3pl-M5027g _d1o-cNRQEeCR3pl-M5027g">
-      <body>labelCost=3000;&#xA;labelPatient=G;&#xA;labelICP=discharge;</body>
+      <body>labelCost=3000;&#xA;labelPatient=NA;&#xA;labelICP=discharge;</body>
       <body>p[Empty]=1</body>
     </node>
     <node xmi:type="uml:OpaqueAction" xmi:id="_NmtZENRNEeCR3pl-M5027g" name="Dead" outgoing="_YXwZcNRQEeCR3pl-M5027g _w1sCsOY9EeCdLPaHUkRhkQ" incoming="_tcF2QNRNEeCR3pl-M5027g _widKQNRNEeCR3pl-M5027g __K1eANRPEeCR3pl-M5027g _YXwZcNRQEeCR3pl-M5027g">
@@ -23,7 +23,7 @@
     </node>
     <node xmi:type="uml:OpaqueAction" xmi:id="_vHvTIOY9EeCdLPaHUkRhkQ" name="Empty" outgoing="_0AoUsOY9EeCdLPaHUkRhkQ _KjPmAOY-EeCdLPaHUkRhkQ _Mq-ukOY-EeCdLPaHUkRhkQ" incoming="_w1sCsOY9EeCdLPaHUkRhkQ _xX8bMOY9EeCdLPaHUkRhkQ _0AoUsOY9EeCdLPaHUkRhkQ _KjPmAOY-EeCdLPaHUkRhkQ">
       <body>labelCost=0;&#xA;labelICP=E;&#xA;labelPatient=NA;</body>
-      <body>if MDispatch.next=1 then&#xA;  p[InitLow]=1&#xA;else&#xA;  p[Empty]=1&#xA;end if</body>
+      <body>p[Empty]=1</body>
     </node>
     <edge xmi:type="uml:ControlFlow" xmi:id="_nbzHwNRNEeCR3pl-M5027g" name="" source="_CeH7ENRNEeCR3pl-M5027g" target="_hpSWkNRNEeCR3pl-M5027g"/>
     <edge xmi:type="uml:ControlFlow" xmi:id="_obC-QNRNEeCR3pl-M5027g" name="" source="_CeH7ENRNEeCR3pl-M5027g" target="_H_1QINRNEeCR3pl-M5027g"/>

@@ -28,13 +28,13 @@ public class XmlParser {
           System.out.println(temp.net.toString());
       }
       
-      
+/*    No longer used
       public XmlParser() {
         
         Net<DoubleProbability> net = XmlInput("xml/umlVersion5.xml",1);
         System.out.println(net.toString());
        
-      }
+      }*/
       
       public XmlParser(String fileName, int numOfPatient){
         XmlParser.NUM_PATIENTS=numOfPatient;
@@ -88,10 +88,12 @@ public class XmlParser {
         return builder.build();
       }
 
-      /****** This method can be used in other class to retrieve machines **********/
+/*    No longer used
       public static Net<DoubleProbability> XmlInput(String fileName){
         return XmlInput(fileName,1);
-      }
+      }*/
+      
+      /****** This method can be used in other class to retrieve machines **********/
       public static Net.Builder<DoubleProbability> XmlPartialParse(String fileName, int numOfPatient,Net.Builder<DoubleProbability> netBuild){
         
         try {
@@ -140,8 +142,17 @@ public class XmlParser {
             
                 //getDecisionTreeInfo  under state using 3rd under alternative or consequence use 1st of the Elements's childrenNode
                 DecisionTree<TransitionVector<DoubleProbability>> decisionTree=getDecisionTreeInfo(machineBuild.name, stateXml,patientNum);
-            
-                State.Builder<DoubleProbability> stateBuild=new State.Builder<DoubleProbability>(machineName,stateXml.getAttribute("name"),decisionTree);
+                State.Builder<DoubleProbability> stateBuild;
+                if (!stateXml.getAttribute("name").contains("Empty")){
+                  stateBuild=new State.Builder<DoubleProbability>(machineName,stateXml.getAttribute("name"),decisionTree);
+                }else{
+                  Predicate temp=new Predicate.Atom("Dispatch", "next", Integer.toString(patientNum));
+                  TransitionVector.Builder<DoubleProbability> b=new TransitionVector.Builder<DoubleProbability>(machineName);
+                  b.setProbability("InitLow", DoubleProbability.ONE);                  
+                  DecisionTree<TransitionVector<DoubleProbability>> consequent=new DecisionTree.Terminal<TransitionVector<DoubleProbability>>(b.build());
+                  decisionTree=new DecisionTree.Branch<TransitionVector<DoubleProbability>>(temp, consequent, decisionTree);
+                  stateBuild=new State.Builder<DoubleProbability>(machineName,stateXml.getAttribute("name"),decisionTree);
+                }
                 
                 for (int temp=0; temp<labels.getLength();temp++)
                 {
