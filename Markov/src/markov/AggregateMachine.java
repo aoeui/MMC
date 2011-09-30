@@ -109,27 +109,37 @@ public class AggregateMachine<T extends Probability<T>> implements Iterable<Aggr
   }
   
   public AggregateMachine<T> removeUnreachable() {
-    boolean[] reached = new boolean[states.size()];
-    for (AggregateState<T> state : this) {
-      for (AggregateTransitionVector<T> vect : state.getPossibleTransitions()) {
-        for (int i = 0; i < states.size(); i++) {
-          if (!vect.get(i).isZero()) {
+    boolean converged = false;
+    ArrayList<AggregateState<T>> stateVect = states;
+    do {
+      boolean[] reached = new boolean[stateVect.size()];
+      for (AggregateState<T> state : stateVect) {
+        for (AggregateTransitionVector<T> vect : state.getPossibleTransitions()) {
+          for (int i = 0; i < stateVect.size(); i++) {
+            if (vect.get(i).isZero()) continue;
+
             reached[i] = true;
           }
         }
       }
-    }
-    TreeSet<Integer> toRemove = new TreeSet<Integer>();
-    for (int i = 0; i < states.size(); i++) {
-      if (!reached[i]) toRemove.add(i);
-    }
-    ArrayList<AggregateState<T>> newStates = new ArrayList<AggregateState<T>>();
-    for (int i = 0; i < states.size(); i++) {
-      if (reached[i]) newStates.add(states.get(i).removeStates(toRemove));
-    }
-    System.out.println(newStates.size() + " reachable states");
-    return new AggregateMachine<T>(newStates, zero);
+      TreeSet<Integer> toRemove = new TreeSet<Integer>();
+      for (int i = 0; i < stateVect.size(); i++) {
+        if (!reached[i]) toRemove.add(i);
+      }
+      if (toRemove.size() == 0) {
+        converged = true;
+      } else {
+        ArrayList<AggregateState<T>> newStates = new ArrayList<AggregateState<T>>();
+        for (int i = 0; i < stateVect.size(); i++) {
+          if (reached[i]) newStates.add(stateVect.get(i).removeStates(toRemove));
+        }
+        stateVect = newStates;
+      }
+    } while (!converged);
+    System.out.println(stateVect.size() + " reachable states");
+    return new AggregateMachine<T>(stateVect, zero);
   }
+
 
   public AggregateMachine<T> reduce() {
     System.out.println("Reducing machine having " + states.size() + " states");

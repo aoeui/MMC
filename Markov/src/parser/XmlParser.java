@@ -5,7 +5,6 @@ import java.util.BitSet;
 import java.util.Iterator;
 import markov.Machine;
 import markov.Net;
-import markov.Net.Builder;
 import markov.Predicate;
 import markov.DoubleProbability;
 import markov.State;
