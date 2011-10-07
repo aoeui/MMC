@@ -2,6 +2,7 @@ package markov;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.Map;
 
 import util.Stack;
 import util.UnmodifiableIterator;
@@ -20,6 +21,21 @@ public class AggregateNet<T extends Probability<T>> implements Iterable<Aggregat
     for (Machine<T> machine : net) {
       machines.add(new AggregateMachine<T>(dict, zeroInstance, machine));
     }
+  }
+  
+  /* Used to merge values of a particular variable we no longer wish to distinguish.
+   * Does not operate on transition vectors as that would involve changing the Romdd.
+   * Call only when the label is no longer referenced */
+  public AggregateNet<T> relabel(int varId, Map<String,String> map) {
+    for (int i = 0; i < machines.size(); i++) {
+      AggregateMachine<T> machine = machines.get(i);
+      if (machine.labelsReferenced.contains(varId)) throw new RuntimeException(); // cannot sum a variable that is still referenced
+    }
+    ArrayList<AggregateMachine<T>> newMachines = new ArrayList<AggregateMachine<T>>();
+    for (AggregateMachine<T> machine : machines) {
+      newMachines.add(machine.relabel(varId, map));
+    }
+    return new AggregateNet<T>(dict, newMachines);
   }
   
   private AggregateNet(Dictionary dict, ArrayList<AggregateMachine<T>> machines) {

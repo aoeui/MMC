@@ -61,7 +61,7 @@ public class TestAggregation2 {
   }
   
   public static AggregateNet<DoubleProbability> buildNet() throws Exception {
-    Net.Builder<DoubleProbability> netBuilder = Net.partialParse("Commons");
+    Net.Builder<DoubleProbability> netBuilder = Net.partialParse("dsl/Commons");
     // create commons machine
     Machine.Builder<DoubleProbability> commons = new Machine.Builder<DoubleProbability>(COMMONS);
     // Commons machine will has a six states named "0" ... "5"

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.TreeSet;
 
 import Jama.EigenvalueDecomposition;
@@ -17,6 +18,7 @@ public class AggregateMachine<T extends Probability<T>> implements Iterable<Aggr
   private ArrayList<AggregateState<T>> states;
   public final Stack<Integer> labels;
   public final Stack<Integer> labelsReferenced;
+  public final Stack<Integer> labelsDropped;
   
   public final T zero;
   
@@ -30,7 +32,18 @@ public class AggregateMachine<T extends Probability<T>> implements Iterable<Aggr
     }
     this.labels = toLabelStack(dict, machine.name, machine.get(0).labelNameIterator());
     this.labelsReferenced = Stack.<Integer>makeStack(references);
+    this.labelsDropped = Stack.<Integer>emptyInstance();
     this.zero = zeroInstance;
+  }
+  
+  public AggregateMachine<T> relabel(int varId, Map<String,String> map) {
+    if (!labels.contains(varId)) return this;
+
+    ArrayList<AggregateState<T>> newStates = new ArrayList<AggregateState<T>>();
+    for (AggregateState<T> state : states) {
+      newStates.add(state.relabel(varId, map));
+    }
+    return new AggregateMachine<T>(newStates, zero);
   }
   
   /* This function only works if the input machine refers to no other machines */
@@ -84,10 +97,11 @@ public class AggregateMachine<T extends Probability<T>> implements Iterable<Aggr
     return toLabelStack(dict, machineName, it).push(nextVal);
   }
   
-  private AggregateMachine(ArrayList<AggregateState<T>> states, Stack<Integer> labels, Stack<Integer> labelsReferenced, T zero) {
+  private AggregateMachine(ArrayList<AggregateState<T>> states, Stack<Integer> labels, Stack<Integer> labelsReferenced, Stack<Integer> labelsDropped, T zero) {
     this.states = states;
     this.labels = labels;
     this.labelsReferenced = labelsReferenced;
+    this.labelsDropped = labelsDropped;
     this.zero = zero;
   }
   
@@ -99,6 +113,7 @@ public class AggregateMachine<T extends Probability<T>> implements Iterable<Aggr
     }
     this.labels = states.get(0).getLabelNames();
     this.labelsReferenced = Stack.<Integer>makeStack(references);
+    this.labelsDropped = states.get(0).getDroppedLabelNames();
     this.zero = zero;
   }
   
@@ -144,7 +159,7 @@ public class AggregateMachine<T extends Probability<T>> implements Iterable<Aggr
   public AggregateMachine<T> reduce() {
     System.out.println("Reducing machine having " + states.size() + " states");
     Partition<Integer> initialPartition = getStatePartition();
-    System.out.println("input partition: " + initialPartition);
+    System.out.println("input partition(" + initialPartition.getNumBlocks() + "): " + initialPartition);
     Lumping<SymbolicProbability<T>> lumper = new Lumping<SymbolicProbability<T>>(computeTransitionMatrix(), initialPartition);
     lumper.runLumping();
 
@@ -175,7 +190,7 @@ public class AggregateMachine<T extends Probability<T>> implements Iterable<Aggr
     for (int i = 0; i < states.size(); i++) {
       newStates.add(states.get(i).drop(varId));
     }
-    return new AggregateMachine<T>(newStates, labels.remove(varId), labelsReferenced, zero);
+    return new AggregateMachine<T>(newStates, labels.remove(varId), labelsReferenced, labelsDropped.push(varId), zero);
   }
   
   public AggregateMachine<T> product(AggregateMachine<T> machine) {

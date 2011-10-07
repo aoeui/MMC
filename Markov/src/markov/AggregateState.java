@@ -17,7 +17,8 @@ public class AggregateState<T extends Probability<T>> {
 
   public final Romdd<AggregateTransitionVector<T>> transitionFunction;
 
-  private TreeMap<Integer,String> labelVector;
+  private final TreeMap<Integer,String> labelVector;
+  private final TreeMap<Integer,Stack<String>> droppedLabels;
 
   public AggregateState(Dictionary dict, T zeroInstance, Machine<T> machine, int idx) {
     this.index = idx;
@@ -29,6 +30,7 @@ public class AggregateState<T extends Probability<T>> {
       Map.Entry<String, String> entry = entryIt.next();
       labelVector.put(dict.getId(Stack.makeName(machine.name, entry.getKey())), entry.getValue());
     }
+    droppedLabels = new TreeMap<Integer,Stack<String>>();
   }
   
   public AggregateState<T> removeStates(final SortedSet<Integer> toRemove) {
@@ -42,7 +44,7 @@ public class AggregateState<T extends Probability<T>> {
       if (removed < index) count++;
       else break;
     }
-    return new AggregateState<T>(index-count, size-toRemove.size(), transition, labelVector);
+    return new AggregateState<T>(index-count, size-toRemove.size(), transition, labelVector, droppedLabels);
   }
 
   public TreeSet<AggregateTransitionVector<T>> getPossibleTransitions() {
@@ -56,7 +58,18 @@ public class AggregateState<T extends Probability<T>> {
         return input.remap(range, map);
       }
     }
-    return new AggregateState<T>(map.get(index), range, transitionFunction.remap(new VectorMapper()), labelVector);
+    return new AggregateState<T>(map.get(index), range, transitionFunction.remap(new VectorMapper()), labelVector, droppedLabels);
+  }
+  
+  public AggregateState<T> relabel(int var, final Map<String,String> map) {
+    String val = labelVector.get(var);
+    if (val == null) return this;
+    String newVal = map.get(val);
+    if (newVal == null || newVal.equals(val)) return this;
+    
+    TreeMap<Integer,String> newLabels = new TreeMap<Integer,String>(labelVector);
+    newLabels.put(var, newVal);
+    return new AggregateState<T>(index, size, transitionFunction, newLabels, droppedLabels);
   }
   
   public Romdd<AggregateTransitionVector<T>> applyRestrictions(Romdd<AggregateTransitionVector<T>> input) {
@@ -69,6 +82,10 @@ public class AggregateState<T extends Probability<T>> {
   
   public Stack<Integer> getLabelNames() {
     return Stack.<Integer>makeStack(labelVector.keySet());
+  }
+  
+  public Stack<Integer> getDroppedLabelNames() {
+    return Stack.<Integer>makeStack(droppedLabels.keySet());
   }
   
   public Stack<String> getValueStack() {
@@ -85,15 +102,22 @@ public class AggregateState<T extends Probability<T>> {
   
   public AggregateState<T> drop(int varId) {
     TreeMap<Integer,String> newLabelVector = new TreeMap<Integer,String>(labelVector);
-    newLabelVector.remove(varId);
-    return new AggregateState<T>(index, size, transitionFunction, newLabelVector);
+    String str = newLabelVector.remove(varId);
+    if (str == null) return this;
+    TreeMap<Integer,Stack<String>> newDroppedVector = new TreeMap<Integer,Stack<String>>(droppedLabels);
+    Stack<String> currentVal = newDroppedVector.get(varId);
+    if (currentVal == null) currentVal = Stack.<String>emptyInstance();
+    newDroppedVector.put(varId, currentVal.push(str));
+    
+    return new AggregateState<T>(index, size, transitionFunction, newLabelVector, newDroppedVector);
   }
   
-  private AggregateState(int index, int size, Romdd<AggregateTransitionVector<T>> transitionFunction, TreeMap<Integer,String> labelVector) {
+  private AggregateState(int index, int size, Romdd<AggregateTransitionVector<T>> transitionFunction, TreeMap<Integer,String> labelVector, TreeMap<Integer,Stack<String>> dropped) {
     this.index = index;
     this.size = size;
     this.transitionFunction = transitionFunction;
     this.labelVector = labelVector;
+    this.droppedLabels = dropped;
   }
   
   // This combines two states from different aggregate machines.
@@ -110,7 +134,17 @@ public class AggregateState<T extends Probability<T>> {
     Romdd<AggregateTransitionVector<T>> result = Romdd.<AggregateTransitionVector<T>>apply(new MultiplyVectors<T>(), left, right);
     TreeMap<Integer,String> newLabelVector = new TreeMap<Integer,String>(labelVector);
     newLabelVector.putAll(state.labelVector);
-    return new AggregateState<T>(index*state.size + state.index, size*state.size, result, newLabelVector);
+    TreeMap<Integer,Stack<String>> newDropped = new TreeMap<Integer,Stack<String>>(droppedLabels);
+    for (Map.Entry<Integer, Stack<String>> entry : state.droppedLabels.entrySet()) {
+      Stack<String> current = newDropped.get(entry.getKey());
+      if (current == null) {
+        newDropped.put(entry.getKey(), entry.getValue());
+      } else {
+        newDropped.put(entry.getKey(), current.concat(entry.getValue()));
+      }
+    }
+    newDropped.putAll(state.droppedLabels);
+    return new AggregateState<T>(index*state.size + state.index, size*state.size, result, newLabelVector, newDropped);
   }
   
   // Does not output information about the transition vector, which is more complex
@@ -122,6 +156,17 @@ public class AggregateState<T extends Probability<T>> {
       if (isFirst) isFirst = false;
       else builder.append(", ");
       builder.append(dict.getAlpha(entry.getKey()).name.toString(Alphabet.SCOPE)).append("=").append(entry.getValue());
+    }
+    builder.append('\n');
+    for (int i = 0; i < Integer.toString(index).length()+2; i++) {
+      builder.append(' ');
+    }
+    builder.append(" - ");
+    isFirst = true;
+    for (Map.Entry<Integer, Stack<String>> entry : droppedLabels.entrySet()) {
+      if (isFirst) isFirst = false;
+      else builder.append(", ");
+      builder.append(dict.getAlpha(entry.getKey()).name.toString(Alphabet.SCOPE)).append("=").append(entry.getValue().toString("|"));
     }
     return builder.toString();
   }

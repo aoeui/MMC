@@ -12,6 +12,14 @@ public abstract class Stack<T> implements Iterable<T> {
     return new Element<T>(elt, this);
   }
   
+  public Stack<T> concat(Stack<T> stack) {
+    Stack<T> rv = this;
+    for (T elt : stack) {
+      rv = rv.push(elt);
+    }
+    return rv;
+  }
+  
   public abstract T head();
   public abstract Stack<T> tail();
   public abstract boolean contains(T elt);

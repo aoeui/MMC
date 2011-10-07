@@ -3,12 +3,11 @@ package test;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.HashMap;
 
 import markov.AggregateMachine;
 import markov.AggregateNet;
 import markov.DoubleProbability;
-import markov.Machine;
 import markov.MonteCarlo;
 import markov.Net;
 import markov.ResultTree;
@@ -19,34 +18,42 @@ import util.Stack;
 
 public class TestICU1 {
   public final static String PATIENT_MODEL_FILENAME = "xml/umlVersion6.xml";
-  public final static int NUM_PATIENTS = 6;
+  public final static int NUM_PATIENTS = 2;
   public final static int STEPS=10000000;
   
 
   public static void main(String[] args) {
     Net<DoubleProbability> net= (new XmlParser(PATIENT_MODEL_FILENAME,NUM_PATIENTS)).net;
+
     System.out.println(net);
-    Stack<String> stack= Stack.<String>emptyInstance();
-    
-    Iterator<Machine<DoubleProbability>> itr=net.iterator();
-    while(itr.hasNext()){
-      stack=stack.push(itr.next().name);
-    }
-    AggregateNet<DoubleProbability> aNet=new AggregateNet<DoubleProbability>(net, DoubleProbability.ZERO);
+    final int nextLabel = net.dictionary.getId(Stack.makeName("Dispatch", "next"));
+
+    AggregateNet<DoubleProbability> aNetOrig=new AggregateNet<DoubleProbability>(net, DoubleProbability.ZERO);
+    AggregateNet<DoubleProbability> aNet=aNetOrig;
 
     System.out.println(aNet);
   
     for (int i = aNet.size()-1; i >= 1; i--) {
       aNet = aNet.multiply(i-1, i);
-      System.out.println("\nAfter multiplying p" + i);
-      if(stack.head().contains("Dispatch")){
-        aNet = aNet.reduce(i-1);
-      }else if (stack.head().contains("ICP")){
-        aNet = aNet.sum(stack.head(),"ICP").sum(stack.head(),"Patient").sum(stack.head(),"Cost").reduce(i-1);
-      }else{
-        aNet = aNet.sum(stack.head(),"Cost").reduce(i-1);
+      System.out.println("\nAfter multiplying p" + (i-1));
+      
+      AggregateMachine<?> machine = aNet.getMachine(aNet.size()-1);
+      for (Integer val : machine.labels) {
+        if (val != nextLabel) {
+          aNet = aNet.sum(val);
+          System.out.println("Summing out label " + aNet.dict.getName(val));
+        }
       }
-      stack=stack.tail();
+      /* if (i == 1) {
+        HashMap<String,String> relabel = new HashMap<String,String>();
+        for (int patientNum = 0; patientNum < NUM_PATIENTS; patientNum++) {
+          relabel.put(Integer.toString(patientNum), "0");
+        }
+        aNet = aNet.relabel(nextLabel, relabel);
+      } */
+      aNet = aNet.reduce(i-1);
+      
+      System.out.println(aNet);
     }
 
     AggregateMachine<DoubleProbability> machine = aNet.getMachine(0);
@@ -67,7 +74,6 @@ public class TestICU1 {
       }
       fOut.close();
     } catch (IOException e1) {
-      // TODO Auto-generated catch block
       e1.printStackTrace();
     }
 
@@ -132,14 +138,14 @@ public class TestICU1 {
 
     System.out.println("\nTrying Monte Carlo: ");
     try {
-      runMonteCarlo(net);
+      runMonteCarlo(aNetOrig);
+      runMonteCarlo(aNet);
     } catch (Exception e) {
       e.printStackTrace();
     }
     
   }
-  public static void runMonteCarlo(Net<DoubleProbability> netIn) throws Exception {
-    AggregateNet<DoubleProbability> net = new AggregateNet<DoubleProbability>(netIn, DoubleProbability.ZERO);
+  public static void runMonteCarlo(AggregateNet<DoubleProbability> net) throws Exception {
     MonteCarlo mc = new MonteCarlo(net);
     ArrayList<Stack<String>> names = new ArrayList<Stack<String>>();
     names.add(Stack.makeName("Dispatch", "next"));
