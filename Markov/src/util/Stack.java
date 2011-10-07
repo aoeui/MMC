@@ -20,6 +20,15 @@ public abstract class Stack<T> implements Iterable<T> {
     return rv;
   }
   
+  public Stack<T> addUnique(Stack<T> stack) {
+    Stack<T> rv = this;
+    for (T elt : stack) {
+      if (rv.contains(elt)) continue;
+      rv = rv.push(elt);
+    }
+    return rv;
+  }
+  
   public abstract T head();
   public abstract Stack<T> tail();
   public abstract boolean contains(T elt);

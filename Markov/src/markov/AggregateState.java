@@ -52,13 +52,29 @@ public class AggregateState<T extends Probability<T>> {
   }
   
   // Range is the size of the partition used to generate the map
-  public AggregateState<T> remap(final int range, final Map<Integer,Integer> map) {
+  public AggregateState<T> remap(AggregateMachine<T> machine, final int range, final Map<Integer,Integer> map) {
     class VectorMapper implements Romdd.Mapping<AggregateTransitionVector<T>, AggregateTransitionVector<T>> {
       public AggregateTransitionVector<T> transform(AggregateTransitionVector<T> input) {
         return input.remap(range, map);
       }
     }
-    return new AggregateState<T>(map.get(index), range, transitionFunction.remap(new VectorMapper()), labelVector, droppedLabels);
+    int newIdx = map.get(index);
+    TreeMap<Integer,Stack<String>> newDropped = new TreeMap<Integer,Stack<String>>(droppedLabels);
+    for (Map.Entry<Integer, Integer> entry : map.entrySet()) {
+      if (entry.getValue() == newIdx) {
+        int mergedStateIdx = entry.getKey();
+        if (mergedStateIdx == index) continue;
+        AggregateState<T> mergedIn = machine.getState(mergedStateIdx);
+        for (Map.Entry<Integer, Stack<String>> labels : mergedIn.droppedLabels.entrySet()) {
+          Stack<String> currentValue = newDropped.get(labels.getKey());
+          if (currentValue == null) {
+            currentValue = Stack.<String>emptyInstance();
+          }
+          newDropped.put(labels.getKey(), currentValue.addUnique(labels.getValue()));
+        }
+      }
+    }
+    return new AggregateState<T>(map.get(index), range, transitionFunction.remap(new VectorMapper()), labelVector, newDropped);
   }
   
   public AggregateState<T> relabel(int var, final Map<String,String> map) {
@@ -140,7 +156,7 @@ public class AggregateState<T extends Probability<T>> {
       if (current == null) {
         newDropped.put(entry.getKey(), entry.getValue());
       } else {
-        newDropped.put(entry.getKey(), current.concat(entry.getValue()));
+        newDropped.put(entry.getKey(), current.addUnique(entry.getValue()));
       }
     }
     newDropped.putAll(state.droppedLabels);
@@ -157,16 +173,18 @@ public class AggregateState<T extends Probability<T>> {
       else builder.append(", ");
       builder.append(dict.getAlpha(entry.getKey()).name.toString(Alphabet.SCOPE)).append("=").append(entry.getValue());
     }
-    builder.append('\n');
-    for (int i = 0; i < Integer.toString(index).length()+2; i++) {
-      builder.append(' ');
-    }
-    builder.append(" - ");
-    isFirst = true;
-    for (Map.Entry<Integer, Stack<String>> entry : droppedLabels.entrySet()) {
-      if (isFirst) isFirst = false;
-      else builder.append(", ");
-      builder.append(dict.getAlpha(entry.getKey()).name.toString(Alphabet.SCOPE)).append("=").append(entry.getValue().toString("|"));
+    if (!droppedLabels.isEmpty()) {
+      builder.append('\n');
+      for (int i = 0; i < Integer.toString(index).length()+2; i++) {
+        builder.append(' ');
+      }
+      builder.append(" - ");
+      isFirst = true;
+      for (Map.Entry<Integer, Stack<String>> entry : droppedLabels.entrySet()) {
+        if (isFirst) isFirst = false;
+        else builder.append(", ");
+        builder.append(dict.getAlpha(entry.getKey()).name.toString(Alphabet.SCOPE)).append("=").append(entry.getValue().toString("|"));
+      }
     }
     return builder.toString();
   }

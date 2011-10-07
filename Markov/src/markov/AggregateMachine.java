@@ -169,7 +169,7 @@ public class AggregateMachine<T extends Probability<T>> implements Iterable<Aggr
     ArrayList<AggregateState<T>> newStates = new ArrayList<AggregateState<T>>(partition.getNumBlocks());
     HashMap<Integer,Integer> mapping = partitionToMap(partition);
     for (int i = 0; i < partition.getNumBlocks(); i++) {
-      newStates.add(states.get(partition.getBlock(i).get(0)).remap(partition.getNumBlocks(), mapping));
+      newStates.add(states.get(partition.getBlock(i).get(0)).remap(this,partition.getNumBlocks(), mapping));
     }
     System.out.println("Reduced machine has " + newStates.size() + " states");
     return new AggregateMachine<T>(newStates, zero);

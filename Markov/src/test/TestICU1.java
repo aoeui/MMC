@@ -44,13 +44,13 @@ public class TestICU1 {
           System.out.println("Summing out label " + aNet.dict.getName(val));
         }
       }
-      /* if (i == 1) {
+      if (i == 1) {
         HashMap<String,String> relabel = new HashMap<String,String>();
         for (int patientNum = 0; patientNum < NUM_PATIENTS; patientNum++) {
           relabel.put(Integer.toString(patientNum), "0");
         }
         aNet = aNet.relabel(nextLabel, relabel);
-      } */
+      }
       aNet = aNet.reduce(i-1);
       
       System.out.println(aNet);
