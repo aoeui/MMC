@@ -183,7 +183,7 @@ public class Lumping<T extends Probability<T>> {
           b1 = b.split();
         } else {
           b1 = b;
-          b1.border = b1.end+1;
+          b1.border = b1.end+1;  // unmarks all elements of b
         }
         assert(verifyStateToIdx());
         // do possible majority candidate on w[s] for s in B1
@@ -201,7 +201,7 @@ public class Lumping<T extends Probability<T>> {
         if (b1.hasMarked()) {  // b1 certainly has unmarked because of pmc
           BlockInfo b2 = b1.split();
           // sort and partition B2 based on w[s]
-          Collections.sort(elems.subList(b2.start, b2.end),
+          Collections.sort(elems.subList(b2.start, b2.end+1),
               new Comparator<Integer>() {
                 public int compare(Integer v1, Integer v2) {
                   return w.get(v1).compareTo(w.get(v2));

@@ -18,7 +18,7 @@ import util.Stack;
 
 public class TestICU1 {
   public final static String PATIENT_MODEL_FILENAME = "xml/umlVersion6.xml";
-  public final static int NUM_PATIENTS = 2;
+  public final static int NUM_PATIENTS = 6;
   public final static int STEPS=10000000;
   
 
@@ -53,7 +53,7 @@ public class TestICU1 {
       }
       aNet = aNet.reduce(i-1);
       
-      System.out.println(aNet);
+      // System.out.println(aNet);
     }
 
     AggregateMachine<DoubleProbability> machine = aNet.getMachine(0);
