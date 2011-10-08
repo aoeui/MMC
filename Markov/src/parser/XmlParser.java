@@ -77,11 +77,19 @@ public class XmlParser {
       public static Machine<DoubleProbability> computeDispatch() {
         Machine.Builder<DoubleProbability> builder = new Machine.Builder<DoubleProbability>("Dispatch");
         State.Builder<DoubleProbability> sBuilder = new State.Builder<DoubleProbability>("Dispatch", "None", computeTree(-1, new BitSet(), 0));
-        sBuilder.setLabel("next", "none");
+        // sBuilder.setLabel("next", "none");
+        for (int i = 0; i < NUM_PATIENTS; i++) {
+          sBuilder.setLabel("p" + i + "arriving", Integer.toString(0));
+        }
+        sBuilder.setLabel("arriving", "0");
         builder.addState(sBuilder.build());
         for (int i = 0; i < NUM_PATIENTS; i++) {
           sBuilder =  new State.Builder<DoubleProbability>("Dispatch", Integer.toString(i), computeTree(i, new BitSet(), 0));
-          sBuilder.setLabel("next", Integer.toString(i));
+          // sBuilder.setLabel("next", Integer.toString(i));
+          sBuilder.setLabel("arriving", "1");
+          for (int j = 0; j < NUM_PATIENTS; j++) {
+            sBuilder.setLabel("p" + j + "arriving", i==j ? "1" : "0");
+          }
           builder.addState(sBuilder.build());
         }
         return builder.build();
@@ -145,7 +153,7 @@ public class XmlParser {
                 if (!stateXml.getAttribute("name").contains("Empty")){
                   stateBuild=new State.Builder<DoubleProbability>(machineName,stateXml.getAttribute("name"),decisionTree);
                 }else{
-                  Predicate temp=new Predicate.Atom("Dispatch", "next", Integer.toString(patientNum));
+                  Predicate temp=new Predicate.Atom("Dispatch", "p" + patientNum + "arriving", "1");
                   TransitionVector.Builder<DoubleProbability> b=new TransitionVector.Builder<DoubleProbability>(machineName);
                   b.setProbability("InitLow", DoubleProbability.ONE);                  
                   DecisionTree<TransitionVector<DoubleProbability>> consequent=new DecisionTree.Terminal<TransitionVector<DoubleProbability>>(b.build());

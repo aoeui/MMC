@@ -4,6 +4,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 import markov.AggregateMachine;
 import markov.AggregateNet;
@@ -26,7 +28,8 @@ public class TestICU1 {
     Net<DoubleProbability> net= (new XmlParser(PATIENT_MODEL_FILENAME,NUM_PATIENTS)).net;
 
     System.out.println(net);
-    final int nextLabel = net.dictionary.getId(Stack.makeName("Dispatch", "next"));
+    final int nextLabel = net.dictionary.getId(Stack.makeName("Dispatch", "arriving"));
+    Pattern arrivePattern = Pattern.compile("p(\\d+)arriving");
 
     AggregateNet<DoubleProbability> aNetOrig=new AggregateNet<DoubleProbability>(net, DoubleProbability.ZERO);
     AggregateNet<DoubleProbability> aNet=aNetOrig;
@@ -39,17 +42,16 @@ public class TestICU1 {
       
       AggregateMachine<?> machine = aNet.getMachine(aNet.size()-1);
       for (Integer val : machine.labels) {
-        if (val != nextLabel) {
-          aNet = aNet.sum(val);
-          System.out.println("Summing out label " + aNet.dict.getName(val));
+        String name = aNet.dict.getName(val).tail().head();
+        if (name.equals("arriving")) continue;
+        
+        Matcher match = arrivePattern.matcher(name);
+        if (match.matches()) {
+          int label = Integer.parseInt(match.group(1));
+          if (label < i-1) continue;
         }
-      }
-      if (i == 1) {
-        HashMap<String,String> relabel = new HashMap<String,String>();
-        for (int patientNum = 0; patientNum < NUM_PATIENTS; patientNum++) {
-          relabel.put(Integer.toString(patientNum), "0");
-        }
-        aNet = aNet.relabel(nextLabel, relabel);
+        System.out.println("Summing out label " + aNet.dict.getName(val));
+        aNet = aNet.sum(val);        
       }
       aNet = aNet.reduce(i-1);
       
@@ -148,7 +150,7 @@ public class TestICU1 {
   public static void runMonteCarlo(AggregateNet<DoubleProbability> net) throws Exception {
     MonteCarlo mc = new MonteCarlo(net);
     ArrayList<Stack<String>> names = new ArrayList<Stack<String>>();
-    names.add(Stack.makeName("Dispatch", "next"));
+    names.add(Stack.makeName("Dispatch", "arriving"));
     ResultTree rv = mc.runQuery(STEPS, names);
     System.out.println(rv.toCountString(STEPS));
   }
