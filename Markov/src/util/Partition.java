@@ -135,10 +135,6 @@ public class Partition<T> implements Iterable<Partition<T>.Block> {
       isBuilt = true;
       
       Collections.sort(elements, comparator);
-      for (int i = 0; i < elements.size()-1; i++) {
-        int comp = comparator.compare(elements.get(i), elements.get(i+1));
-        if (comp > 0) throw new RuntimeException();
-      }
       return new Partition<T>(comparator, elements);
     }
     
