@@ -215,7 +215,8 @@ public class AggregateState<T extends Probability<T>> {
   private static class StateComparator implements Comparator<AggregateState<?>> {
     // Assume this is called on states from the same machine.
     public int compare(AggregateState<?> o1, AggregateState<?> o2) {
-      return LexicalCompare.compare(o1.getLabelValueIterator(), o2.getLabelValueIterator());
+      int rv = LexicalCompare.compare(o1.getLabelValueIterator(), o2.getLabelValueIterator());
+      return rv;
     }
   }
 }

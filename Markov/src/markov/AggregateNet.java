@@ -88,7 +88,8 @@ public class AggregateNet<T extends Probability<T>> implements Iterable<Aggregat
   
   public AggregateNet<T> reduce(int machineIndex) {
     ArrayList<AggregateMachine<T>> newMachines = new ArrayList<AggregateMachine<T>>(machines);
-    newMachines.set(machineIndex, machines.get(machineIndex).removeUnreachable().reduce());
+    AggregateMachine<T> reachable = machines.get(machineIndex).removeUnreachable();
+    newMachines.set(machineIndex, reachable.reduce());
     return new AggregateNet<T>(dict, newMachines);
   }
   

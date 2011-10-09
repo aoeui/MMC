@@ -47,6 +47,7 @@ public class AggregateMachine<T extends Probability<T>> implements Iterable<Aggr
   }
   
   /* This function only works if the input machine refers to no other machines */
+  /* It is a static function for typing reasons T=DoubleProbability */
   public static ResultTree query(Dictionary dict, AggregateMachine<DoubleProbability> machine) {
     if (!machine.labelsReferenced.isEmpty()) throw new RuntimeException();
 

@@ -31,6 +31,8 @@ public class LexicalCompare {
         rv = a.compareTo(b);
       }
     }
+    if (rv != 0) return rv;
+
     if (aIt.hasNext()) {
       rv = 1;
     } else if (bIt.hasNext()) {

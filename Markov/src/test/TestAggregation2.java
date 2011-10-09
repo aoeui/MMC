@@ -20,7 +20,7 @@ public class TestAggregation2 {
   public final static int LEVELS=6;  // levels are 0...5
   public final static int PLAYERS=5;  // players are p1...pk  w/ k = PLAYERS
   public final static String COMMONS = "commons";
-  public final static int STEPS=10000000;
+  public final static int STEPS=1000000;
 
   public static DecisionTree<TransitionVector<DoubleProbability>> constructTree(int startLevel) {
     /* The structure of the decision tree is going to be like:
@@ -72,7 +72,7 @@ public class TestAggregation2 {
     }
     netBuilder.addMachine(commons.build());
     Net<DoubleProbability> net = netBuilder.build();
-    // System.out.println("Parsed net: \n" + net);
+    System.out.println("Parsed net: \n" + net);
     return new AggregateNet<DoubleProbability>(net, DoubleProbability.ZERO);
   }
 
@@ -85,10 +85,12 @@ public class TestAggregation2 {
     
       for (int i = 5; i >= 1; i--) {
         aNet = aNet.multiply(i-1, i);
-        System.out.println("\nAfter multiplying p" + i + "\n" + aNet);
+        // System.out.println("\nAfter multiplying p" + i + "\n" + aNet);
         aNet = aNet.sum("p" + i, "using").reduce(i-1);
-        System.out.println("\nAfter reducing\n" + aNet);
+        // System.out.println("\nAfter reducing\n" + aNet);
       }
+      
+      System.out.println(aNet);
 
       /* aNet = aNet.multiply(4, 5).multiply(3, 4).multiply(2, 3).multiply(1, 2).multiply(0, 1);
       aNet = aNet.sum("p5", "using").sum("p4", "using").sum("p3", "using").sum("p2", "using").sum("p1", "using");
