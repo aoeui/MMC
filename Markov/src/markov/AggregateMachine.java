@@ -4,17 +4,21 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Future;
 
 import Jama.EigenvalueDecomposition;
 import Jama.Matrix;
 
+import util.Multi;
 import util.Partition;
 import util.Stack;
 import util.UnmodifiableIterator;
 
-public class AggregateMachine<T extends Probability<T>> implements Iterable<AggregateState<T>> { 
+public class AggregateMachine<T extends Probability<T>> implements Iterable<AggregateState<T>> {
   private ArrayList<AggregateState<T>> states;
   public final Stack<Integer> labels;
   public final Stack<Integer> labelsReferenced;
@@ -217,16 +221,37 @@ public class AggregateMachine<T extends Probability<T>> implements Iterable<Aggr
   }
   
   public TransitionMatrix<SymbolicProbability<T>> computeTransitionMatrix() {
-    TransitionMatrix.Builder<SymbolicProbability<T>> builder = new TransitionMatrix.Builder<SymbolicProbability<T>>(states.size(), new SymbolicProbability<T>(zero));
+    final SymbolicProbability<T> symZero = new SymbolicProbability<T>(zero);
+    final TransitionMatrix.Builder<SymbolicProbability<T>> builder = new TransitionMatrix.Builder<SymbolicProbability<T>>(states.size(), symZero);
+ 
+    ArrayList<Callable<ArrayList<SymbolicProbability<T>>>> tasks = new ArrayList<Callable<ArrayList<SymbolicProbability<T>>>>(); 
     for (int src = 0; src < states.size(); src++) {
-      Romdd<AggregateTransitionVector<T>> srcVector = states.get(src).transitionFunction;
-      ArrayList<SymbolicProbability<T>> row = new ArrayList<SymbolicProbability<T>>();
-      for (int dest = 0; dest < states.size(); dest++) {
-        row.add(new SymbolicProbability<T>(srcVector, dest));
-      }
-      builder.addRow(row);
+      final int rowNum = src;
+      tasks.add(new Callable<ArrayList<SymbolicProbability<T>>>() {
+        public ArrayList<SymbolicProbability<T>> call() {
+          Romdd<AggregateTransitionVector<T>> srcVector = states.get(rowNum).transitionFunction;
+          ArrayList<SymbolicProbability<T>> row = new ArrayList<SymbolicProbability<T>>();
+          // Check summation here in parallel instead of in builder
+          SymbolicProbability<T> sum = symZero;
+          for (int dest = 0; dest < states.size(); dest++) {
+            SymbolicProbability<T> newProb = new SymbolicProbability<T>(srcVector, dest);
+            sum = sum.sum(newProb);
+            row.add(newProb);
+          }
+          if (!sum.isOne()) throw new RuntimeException();
+          return row;
+        }
+      });
     }
-    return builder.build();
+    try {
+      List<Future<ArrayList<SymbolicProbability<T>>>> result = Multi.SERVICE.invokeAll(tasks);
+      for (int src = 0; src < states.size(); src++) {
+        builder.addRow(result.get(src).get());
+      }
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+    return builder.buildNoCheck();
   }
   
   public String toString(Dictionary dict) {

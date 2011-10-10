@@ -1,6 +1,7 @@
 package markov;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
@@ -15,9 +16,9 @@ public class TransitionMatrix<T extends Probability<T>> {
   
   public final T zeroInstance;
 
-  TransitionMatrix(int n, ArrayList<HashMap<Integer,T>> input, T zero) {
+  TransitionMatrix(int n, List<HashMap<Integer,T>> input, T zero) {
     this.N = n;
-    this.data = input;
+    this.data = new ArrayList<HashMap<Integer,T>>(input);
     this.zeroInstance = zero;
   }
 
@@ -65,12 +66,12 @@ public class TransitionMatrix<T extends Probability<T>> {
 
   static class AbstractBuilder<T extends Probability<T>> {
     public final int N;
-    ArrayList<HashMap<Integer,T>> rows;
+    List<HashMap<Integer,T>> rows;
     final T zeroInstance;
 
     public AbstractBuilder(int n, T zeroInstance) {
       this.N = n;
-      rows = new ArrayList<HashMap<Integer,T>>();
+      rows = Collections.synchronizedList(new ArrayList<HashMap<Integer,T>>());
       this.zeroInstance = zeroInstance;
     }
 
@@ -89,8 +90,16 @@ public class TransitionMatrix<T extends Probability<T>> {
       }
       return new TransitionMatrix<T>(N, rows, zeroInstance);
     }
+    
+    public TransitionMatrix<T> buildNoCheck() {
+      if (rows.size() != N) {
+        throw new BuildException("Wrong number of rows n = " + N + " != " + rows.size());
+      }
+      return new TransitionMatrix<T>(N, rows, zeroInstance);
+    }
   }
   
+  // This is multithread safe.
   public static class RandomBuilder<T extends Probability<T>> extends AbstractBuilder<T> {
     public RandomBuilder(int n, T zeroInstance) {
       super(n, zeroInstance);
@@ -106,7 +115,6 @@ public class TransitionMatrix<T extends Probability<T>> {
       if (row.length != N) {
         throw new BuildException("Wrong number of elements in row.");
       }
-      if (rows.get(rowNum)!=null) rows.remove(rowNum);
       HashMap<Integer, T> newRow = new HashMap<Integer,T>();
       for (int i = 0; i < row.length; i++) {
         if (row[i].isZero()) continue;
@@ -122,7 +130,6 @@ public class TransitionMatrix<T extends Probability<T>> {
       if (row.size() != N) {
         throw new BuildException("Wrong number of elements in row.");
       }
-      if (rows.get(rowNum)!=null) rows.remove(rowNum);
       HashMap<Integer, T> newRow = new HashMap<Integer,T>();
       for (int i = 0; i < row.size(); i++) {
         if (row.get(i).isZero()) continue;
