@@ -1,5 +1,6 @@
 package markov;
 
+import java.util.BitSet;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Map;
@@ -45,6 +46,17 @@ public class AggregateState<T extends Probability<T>> {
       else break;
     }
     return new AggregateState<T>(index-count, size-toRemove.size(), transition, labelVector, droppedLabels);
+  }
+  
+  public BitSet getPossibleNext() {
+    BitSet rv = new BitSet(size);
+    for (AggregateTransitionVector<T> vect : getPossibleTransitions()) {
+      Iterator<Integer> it = vect.nextIterator();
+      while (it.hasNext()) {
+        rv.set(it.next());
+      }
+    }
+    return rv;
   }
 
   public TreeSet<AggregateTransitionVector<T>> getPossibleTransitions() {

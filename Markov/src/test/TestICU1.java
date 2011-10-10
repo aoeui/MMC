@@ -23,6 +23,8 @@ public class TestICU1 {
   public final static int STEPS=10000000;  
 
   public static void main(String[] args) {
+    long begin = System.nanoTime();
+
     Net<DoubleProbability> net= (new XmlParser(PATIENT_MODEL_FILENAME,NUM_PATIENTS)).net;
 
     System.out.println(net);
@@ -77,6 +79,8 @@ public class TestICU1 {
     } catch (IOException e1) {
       e1.printStackTrace();
     }
+    double elapsed = ((double)(System.nanoTime()-begin))/1e9;
+    System.out.println("Time taken = " + elapsed);
     System.exit(0);
 
 /*     System.out.println("\nTrying Monte Carlo: ");

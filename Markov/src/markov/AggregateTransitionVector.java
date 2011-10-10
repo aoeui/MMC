@@ -67,6 +67,10 @@ public class AggregateTransitionVector<T extends Probability<T>> implements Comp
     }
     return new AggregateTransitionVector<T>(prod, zero, size*vect.size);
   }
+  
+  public Iterator<Integer> nextIterator() {
+    return new util.UnmodifiableIterator<Integer>(prob.keySet().iterator());
+  }
 
   public T get(int idx) {
     T rv = prob.get(idx);

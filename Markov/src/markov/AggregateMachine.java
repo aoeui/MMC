@@ -1,6 +1,7 @@
 package markov;
 
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -129,26 +130,20 @@ public class AggregateMachine<T extends Probability<T>> implements Iterable<Aggr
     boolean converged = false;
     ArrayList<AggregateState<T>> stateVect = states;
     do {
-      boolean[] reached = new boolean[stateVect.size()];
-      for (AggregateState<T> state : stateVect) {
-        for (AggregateTransitionVector<T> vect : state.getPossibleTransitions()) {
-          for (int i = 0; i < stateVect.size(); i++) {
-            if (vect.get(i).isZero()) continue;
-
-            reached[i] = true;
-          }
-        }
+      BitSet reached = stateVect.get(0).getPossibleNext();
+      for (int i = 1; i < stateVect.size(); i++) {
+        reached.or(stateVect.get(i).getPossibleNext());
       }
       TreeSet<Integer> toRemove = new TreeSet<Integer>();
       for (int i = 0; i < stateVect.size(); i++) {
-        if (!reached[i]) toRemove.add(i);
+        if (!reached.get(i)) toRemove.add(i);
       }
       if (toRemove.size() == 0) {
         converged = true;
       } else {
         ArrayList<AggregateState<T>> newStates = new ArrayList<AggregateState<T>>();
         for (int i = 0; i < stateVect.size(); i++) {
-          if (reached[i]) newStates.add(stateVect.get(i).removeStates(toRemove));
+          if (reached.get(i)) newStates.add(stateVect.get(i).removeStates(toRemove));
         }
         stateVect = newStates;
       }
@@ -157,12 +152,14 @@ public class AggregateMachine<T extends Probability<T>> implements Iterable<Aggr
     return new AggregateMachine<T>(stateVect, zero);
   }
 
-
   public AggregateMachine<T> reduce() {
     System.out.println("Reducing machine having " + states.size() + " states");
     Partition<Integer> initialPartition = getStatePartition();
     System.out.println("input partition(" + initialPartition.getNumBlocks() + "): " + initialPartition);
-    Lumping<SymbolicProbability<T>> lumper = new Lumping<SymbolicProbability<T>>(computeTransitionMatrix(), initialPartition);
+    System.out.println("Computing transition matrix");
+    TransitionMatrix<SymbolicProbability<T>> matrix = computeTransitionMatrix();
+    System.out.println("Done. Now, running lumping.");
+    Lumping<SymbolicProbability<T>> lumper = new Lumping<SymbolicProbability<T>>(matrix, initialPartition);
     lumper.runLumping();
 
     Partition<Integer> partition = lumper.getPartition();    
@@ -226,14 +223,20 @@ public class AggregateMachine<T extends Probability<T>> implements Iterable<Aggr
       final int rowNum = src;
       tasks.add(new Runnable() {
         public void run() {
+          AggregateState<T> srcState = states.get(rowNum);
+          BitSet reached = srcState.getPossibleNext();
           Romdd<AggregateTransitionVector<T>> srcVector = states.get(rowNum).transitionFunction;
           ArrayList<SymbolicProbability<T>> row = new ArrayList<SymbolicProbability<T>>();
           // Check summation here in parallel instead of in builder
           SymbolicProbability<T> sum = symZero;
           for (int dest = 0; dest < states.size(); dest++) {
-            SymbolicProbability<T> newProb = new SymbolicProbability<T>(srcVector, dest);
-            sum = sum.sum(newProb);
-            row.add(newProb);
+            if (reached.get(dest)) {
+              SymbolicProbability<T> newProb = new SymbolicProbability<T>(srcVector, dest);
+              sum = sum.sum(newProb);
+              row.add(newProb);
+            } else {
+              row.add(symZero);
+            }
           }
           if (!sum.isOne()) throw new RuntimeException();
           builder.set(rowNum, row);
