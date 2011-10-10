@@ -4,11 +4,8 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Future;
 
 import Jama.EigenvalueDecomposition;
 import Jama.Matrix;
@@ -222,13 +219,13 @@ public class AggregateMachine<T extends Probability<T>> implements Iterable<Aggr
   
   public TransitionMatrix<SymbolicProbability<T>> computeTransitionMatrix() {
     final SymbolicProbability<T> symZero = new SymbolicProbability<T>(zero);
-    final TransitionMatrix.Builder<SymbolicProbability<T>> builder = new TransitionMatrix.Builder<SymbolicProbability<T>>(states.size(), symZero);
+    final TransitionMatrix.RandomBuilder<SymbolicProbability<T>> builder = new TransitionMatrix.RandomBuilder<SymbolicProbability<T>>(states.size(), symZero);
  
-    ArrayList<Callable<ArrayList<SymbolicProbability<T>>>> tasks = new ArrayList<Callable<ArrayList<SymbolicProbability<T>>>>(); 
+    ArrayList<Runnable> tasks = new ArrayList<Runnable>(); 
     for (int src = 0; src < states.size(); src++) {
       final int rowNum = src;
-      tasks.add(new Callable<ArrayList<SymbolicProbability<T>>>() {
-        public ArrayList<SymbolicProbability<T>> call() {
+      tasks.add(new Runnable() {
+        public void run() {
           Romdd<AggregateTransitionVector<T>> srcVector = states.get(rowNum).transitionFunction;
           ArrayList<SymbolicProbability<T>> row = new ArrayList<SymbolicProbability<T>>();
           // Check summation here in parallel instead of in builder
@@ -239,18 +236,11 @@ public class AggregateMachine<T extends Probability<T>> implements Iterable<Aggr
             row.add(newProb);
           }
           if (!sum.isOne()) throw new RuntimeException();
-          return row;
+          builder.set(rowNum, row);
         }
       });
     }
-    try {
-      List<Future<ArrayList<SymbolicProbability<T>>>> result = Multi.SERVICE.invokeAll(tasks);
-      for (int src = 0; src < states.size(); src++) {
-        builder.addRow(result.get(src).get());
-      }
-    } catch (Exception e) {
-      throw new RuntimeException(e);
-    }
+    Multi.runAll(tasks);
     return builder.buildNoCheck();
   }
   
