@@ -189,7 +189,7 @@ public class Simulation {
   public static Machine<DoubleProbability> constructArrivalModel(int numOfPatient,DoubleProbability p){
     final String modelName="ArrivalModel";
     TransitionVector.Builder<DoubleProbability> b=new TransitionVector.Builder<DoubleProbability>(modelName);
-    b.setProbability("NoArrival", new DoubleProbability(1-p.p));
+    b.setProbability("NoArrival", new DoubleProbability(1-p.doubleValue()));
     b.setProbability("Arrival", p);
     TransitionVector<DoubleProbability> pVector=b.build();
     DecisionTree.Terminal<TransitionVector<DoubleProbability>> term= new DecisionTree.Terminal<TransitionVector<DoubleProbability>>(pVector);
@@ -372,7 +372,7 @@ public class Simulation {
     
     for (int i=0;i<this.matrix.N;i++){
       for (int j=0;j<this.matrix.N;j++){
-        out[i][j]= this.matrix.get(i, j).p;
+        out[i][j]= this.matrix.get(i, j).doubleValue();
       }
     }
     return out;

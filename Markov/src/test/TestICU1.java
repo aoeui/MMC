@@ -19,7 +19,7 @@ import util.Stack;
 
 public class TestICU1 {
   public final static String PATIENT_MODEL_FILENAME = "xml/umlVersion6.xml";
-  public final static int NUM_PATIENTS = 9;
+  public final static int NUM_PATIENTS = 12;
   public final static int STEPS=10000000;  
 
   public static void main(String[] args) {
@@ -71,7 +71,7 @@ public class TestICU1 {
       for (int i = 0; i < prob.N; i++) {
         for (int j = 0; j < prob.N; j++) {
           if (!prob.get(i,j).value.isZero()){
-            fOut.write((i+1)+"\t"+(j+1)+"\t"+Double.toString(prob.get(i,j).value.p)+"\n");
+            fOut.write((i+1)+"\t"+(j+1)+"\t"+Double.toString(prob.get(i,j).value.doubleValue())+"\n");
           }
         }
       }

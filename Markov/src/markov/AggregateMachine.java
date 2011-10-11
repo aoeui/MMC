@@ -58,7 +58,7 @@ public class AggregateMachine<T extends Probability<T>> implements Iterable<Aggr
     Matrix matrix = new Matrix(prob.N, prob.N);
     for (int i = 0; i < prob.N; i++) {
       for (int j = 0; j < prob.N; j++) {
-        matrix.set(j, i, prob.get(i,j).value.p);
+        matrix.set(j, i, prob.get(i,j).value.doubleValue());
       }
     }
     EigenvalueDecomposition eig = matrix.eig();
@@ -238,7 +238,7 @@ public class AggregateMachine<T extends Probability<T>> implements Iterable<Aggr
               row.add(symZero);
             }
           }
-          if (!sum.isOne()) throw new RuntimeException();
+          if (!sum.isOne()) throw new RuntimeException(sum + " is not one");
           builder.set(rowNum, row);
         }
       });

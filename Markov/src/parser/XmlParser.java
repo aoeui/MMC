@@ -20,7 +20,9 @@ public class XmlParser {
   
       public Net<DoubleProbability> net;
       private static int NUM_PATIENTS;
-      public final static double P_ARRIVAL = 0.2;
+      public final static int ARRIVAL_NUM = 2;
+      public final static int ARRIVAL_DEN = 5;
+      public final static DoubleProbability P_ARRIVAL = new DoubleProbability(ARRIVAL_NUM, ARRIVAL_DEN);
 
       public static void main (String args[]) {
           XmlParser temp = new XmlParser("xml/umlVersion6.xml",2);
@@ -62,10 +64,10 @@ public class XmlParser {
       public static DecisionTree<TransitionVector<DoubleProbability>> nextState(BitSet set) {
         TransitionVector.Builder<DoubleProbability> builder = new TransitionVector.Builder<DoubleProbability>("Dispatch");
         if (set.cardinality() < NUM_PATIENTS) {
-          builder.setProbability("None", new DoubleProbability(1-P_ARRIVAL));
+          builder.setProbability("None", DoubleProbability.ONE.subtract(P_ARRIVAL));
           for (int i = 0; i < NUM_PATIENTS; i++) {
             if (!set.get(i)) {
-              builder.setProbability(Integer.toString(i), new DoubleProbability(P_ARRIVAL/(NUM_PATIENTS-set.cardinality())));
+              builder.setProbability(Integer.toString(i), new DoubleProbability(ARRIVAL_NUM, ARRIVAL_DEN*(NUM_PATIENTS-set.cardinality())));
             }
           }
         } else {

@@ -79,7 +79,7 @@ public class MonteCarlo {
     boolean found = false; 
     double sum = 0;
     do {
-      sum += vector.get(count).p;
+      sum += vector.get(count).doubleValue();
       if (sum < samp) {
         count++;
       } else {
