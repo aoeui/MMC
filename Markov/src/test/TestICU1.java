@@ -19,7 +19,7 @@ import util.Stack;
 
 public class TestICU1 {
   public final static String PATIENT_MODEL_FILENAME = "xml/umlVersion6.xml";
-  public final static int NUM_PATIENTS = 12;
+  public final static int NUM_PATIENTS = 8;
   public final static int STEPS=10000000;  
 
   public static void main(String[] args) {

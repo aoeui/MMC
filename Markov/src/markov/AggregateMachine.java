@@ -2,9 +2,11 @@ package markov;
 
 import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
 
@@ -17,7 +19,7 @@ import util.Stack;
 import util.UnmodifiableIterator;
 
 public class AggregateMachine<T extends Probability<T>> implements Iterable<AggregateState<T>> {
-  private ArrayList<AggregateState<T>> states;
+  private List<AggregateState<T>> states;
   public final Stack<Integer> labels;
   public final Stack<Integer> labelsReferenced;
   public final Stack<Integer> labelsDropped;
@@ -100,7 +102,7 @@ public class AggregateMachine<T extends Probability<T>> implements Iterable<Aggr
     return toLabelStack(dict, machineName, it).push(nextVal);
   }
   
-  private AggregateMachine(ArrayList<AggregateState<T>> states, Stack<Integer> labels, Stack<Integer> labelsReferenced, Stack<Integer> labelsDropped, T zero) {
+  private AggregateMachine(List<AggregateState<T>> states, Stack<Integer> labels, Stack<Integer> labelsReferenced, Stack<Integer> labelsDropped, T zero) {
     this.states = states;
     this.labels = labels;
     this.labelsReferenced = labelsReferenced;
@@ -108,7 +110,7 @@ public class AggregateMachine<T extends Probability<T>> implements Iterable<Aggr
     this.zero = zero;
   }
   
-  private AggregateMachine(ArrayList<AggregateState<T>> states, T zero) {
+  private AggregateMachine(List<AggregateState<T>> states, T zero) {
     this.states = states;
     TreeSet<Integer> references = new TreeSet<Integer>();
     for (AggregateState<T> state : states) {
@@ -128,23 +130,52 @@ public class AggregateMachine<T extends Probability<T>> implements Iterable<Aggr
   
   public AggregateMachine<T> removeUnreachable() {
     boolean converged = false;
-    ArrayList<AggregateState<T>> stateVect = states;
+    List<AggregateState<T>> stateVect = states;
     do {
-      BitSet reached = stateVect.get(0).getPossibleNext();
-      for (int i = 1; i < stateVect.size(); i++) {
-        reached.or(stateVect.get(i).getPossibleNext());
-      }
-      TreeSet<Integer> toRemove = new TreeSet<Integer>();
+      final BitSet reached = new BitSet();
+      final List<AggregateState<T>> currentStates = stateVect;
+      new Multi() {
+        public void init() {
+          for (int i = 0; i < currentStates.size(); i++) {
+            final int nextIdx = i;
+            submit(new Runnable() {
+              public void run() {
+                BitSet nextReached = currentStates.get(nextIdx).getPossibleNext();
+                synchronized (reached) {
+                  reached.or(nextReached);
+                }                
+              }
+            });
+          }
+        }
+      }.run();
+      final TreeSet<Integer> toRemove = new TreeSet<Integer>();
       for (int i = 0; i < stateVect.size(); i++) {
         if (!reached.get(i)) toRemove.add(i);
       }
       if (toRemove.size() == 0) {
         converged = true;
       } else {
-        ArrayList<AggregateState<T>> newStates = new ArrayList<AggregateState<T>>();
-        for (int i = 0; i < stateVect.size(); i++) {
-          if (reached.get(i)) newStates.add(stateVect.get(i).removeStates(toRemove));
+        final ArrayList<AggregateState<T>> newStates = new ArrayList<AggregateState<T>>(stateVect.size()-toRemove.size());
+        for (int i = 0; i < stateVect.size()-toRemove.size(); i++) {
+          newStates.add(null);
         }
+        new Multi() {
+          public void init() {
+            for (int i = 0; i < currentStates.size(); i++) {
+              if (!reached.get(i)) continue;
+              final int idx = i;
+              submit(new Runnable() {
+                public void run() {
+                  AggregateState<T> state = currentStates.get(idx).removeStates(toRemove);
+                  synchronized (newStates) {
+                    newStates.set(state.index, state);
+                  }
+                }
+              });
+            }
+          }
+        }.run();
         stateVect = newStates;
       }
     } while (!converged);
@@ -192,14 +223,27 @@ public class AggregateMachine<T extends Probability<T>> implements Iterable<Aggr
     return new AggregateMachine<T>(newStates, labels.remove(varId), labelsReferenced, labelsDropped.push(varId), zero);
   }
   
-  public AggregateMachine<T> product(AggregateMachine<T> machine) {
-    ArrayList<AggregateState<T>> newStates = new ArrayList<AggregateState<T>>(getNumStates() * machine.getNumStates());
-    for (int i = 0; i < getNumStates(); i++) {
-      for (int j = 0; j < machine.getNumStates(); j++) {
-        newStates.add(states.get(i).combine(machine.getState(j)));
-      }
+  public AggregateMachine<T> product(final AggregateMachine<T> machine) {
+    final List<AggregateState<T>> newStates = Collections.synchronizedList(new ArrayList<AggregateState<T>>(getNumStates() * machine.getNumStates()));
+    for (int i = 0; i < getNumStates() * machine.getNumStates(); i++) {
+      newStates.add(null);
     }
-    return new AggregateMachine<T>(newStates, zero);
+    new Multi() {
+      public void init() {
+        for (int i = 0; i < getNumStates(); i++) {
+          final int idx1 = i;
+          for (int j = 0; j < machine.getNumStates(); j++) {
+            final int idx2 = j;
+            submit(new Runnable() {
+              public void run() {                
+                newStates.set(idx1*machine.getNumStates() + idx2, states.get(idx1).combine(machine.getState(idx2)));
+              }
+            });
+          }
+        }
+      }
+    }.run();
+    return new AggregateMachine<T>(new ArrayList<AggregateState<T>>(newStates), zero);
   }
   
   public Partition<Integer> getStatePartition() {
@@ -218,32 +262,34 @@ public class AggregateMachine<T extends Probability<T>> implements Iterable<Aggr
     final SymbolicProbability<T> symZero = new SymbolicProbability<T>(zero);
     final TransitionMatrix.RandomBuilder<SymbolicProbability<T>> builder = new TransitionMatrix.RandomBuilder<SymbolicProbability<T>>(states.size(), symZero);
  
-    ArrayList<Runnable> tasks = new ArrayList<Runnable>(); 
-    for (int src = 0; src < states.size(); src++) {
-      final int rowNum = src;
-      tasks.add(new Runnable() {
-        public void run() {
-          AggregateState<T> srcState = states.get(rowNum);
-          BitSet reached = srcState.getPossibleNext();
-          Romdd<AggregateTransitionVector<T>> srcVector = states.get(rowNum).transitionFunction;
-          ArrayList<SymbolicProbability<T>> row = new ArrayList<SymbolicProbability<T>>();
-          // Check summation here in parallel instead of in builder
-          SymbolicProbability<T> sum = symZero;
-          for (int dest = 0; dest < states.size(); dest++) {
-            if (reached.get(dest)) {
-              SymbolicProbability<T> newProb = new SymbolicProbability<T>(srcVector, dest);
-              sum = sum.sum(newProb);
-              row.add(newProb);
-            } else {
-              row.add(symZero);
+    new Multi() {
+      public void init() {
+        for (int src = 0; src < states.size(); src++) {
+          final int rowNum = src;
+          submit(new Runnable() {
+            public void run() {
+              AggregateState<T> srcState = states.get(rowNum);
+              BitSet reached = srcState.getPossibleNext();
+              Romdd<AggregateTransitionVector<T>> srcVector = states.get(rowNum).transitionFunction;
+              ArrayList<SymbolicProbability<T>> row = new ArrayList<SymbolicProbability<T>>();
+              // Check summation here in parallel instead of in builder
+              SymbolicProbability<T> sum = symZero;
+              for (int dest = 0; dest < states.size(); dest++) {
+                if (reached.get(dest)) {
+                  SymbolicProbability<T> newProb = new SymbolicProbability<T>(srcVector, dest);
+                  sum = sum.sum(newProb);
+                  row.add(newProb);
+                } else {
+                  row.add(symZero);
+                }
+              }
+              if (!sum.isOne()) throw new RuntimeException(sum + " is not one");
+              builder.set(rowNum, row);
             }
-          }
-          if (!sum.isOne()) throw new RuntimeException(sum + " is not one");
-          builder.set(rowNum, row);
+          });
         }
-      });
-    }
-    Multi.runAll(tasks);
+      }
+    }.run();
     return builder.buildNoCheck();
   }
   
