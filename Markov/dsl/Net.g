@@ -105,8 +105,8 @@ probabilityVector [String machineName] returns [TransitionVector<DoubleProbabili
 
 probability returns [String stateName, DoubleProbability fp]
     : 'p[' nextState=IDENT ']' { $stateName = $nextState.text; } '='
-    // (( num=IDENT '/' den=IDENT { $fp = new DoubleProbability(Long.parseLong($num.text), Long.parseLong($den.text)); } )
-    doub=IDENT {$fp = new DoubleProbability(Double.parseDouble($doub.text)); }
+    ( num=IDENT '/' den=IDENT { $fp = new DoubleProbability(Long.parseLong($num.text), Long.parseLong($den.text)); } )
+    // doub=IDENT {$fp = new DoubleProbability(Double.parseDouble($doub.text)); }
     ;
 
 IDENT : (ALPHA|DIGIT|'_'|'.')+;

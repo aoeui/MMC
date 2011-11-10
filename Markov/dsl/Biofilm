@@ -1,0 +1,216 @@
+Machine: Nutrient
+  State: low labels: level=low
+    p[low] = 1/2, p[high]=1/2
+  State: high labels: level=high
+    p[low] = 1/2, p[high]=1/2
+
+Machine: ShearStress
+  State: low labels: level=low
+    p[low] = 1/2, p[high]=1/2
+  State: high labels: level=high
+    p[low] = 1/2, p[high]=1/2
+
+Machine: Film0
+  State: little labels: level=little
+    if (Nutrient::level=low /\ ShearStress::level=low) \/ (Nutrient::level=high /\ ShearStress::level=high)
+      if   Film1::level=little       p[little] = 4/5, p[moderate] = 1/5
+      else if Film1::level=moderate  p[little] = 1/2, p[moderate] = 1/2
+      else                           p[little] = 1/5, p[moderate] = 4/5
+    else if Nutrient::level=high /\ ShearStress::level=low  // growth
+      if      Film1::level=little    p[little] = 1/2, p[moderate] = 1/2
+      else if Film1::level=moderate  p[little] = 1/5, p[moderate] = 4/5
+      else                           p[little] = 1/10, p[moderate] = 9/10
+    else  // nutrient low shear high // inhibit
+      if      Film1::level=little    p[little] = 9/10, p[moderate] = 1/10
+      else if Film1::level=moderate  p[little] = 4/5, p[moderate] = 1/5
+      else                           p[little] = 7/10, p[moderate] = 3/10
+  State: moderate labels: level=moderate
+    if (Nutrient::level=low /\ ShearStress::level=low) \/ (Nutrient::level=high /\ ShearStress::level=high)
+      if   Film1::level=little       p[little] = 3/5, p[moderate] = 3/10, p[large] = 1/10 
+      else if Film1::level=moderate  p[little] = 3/10, p[moderate] = 2/5, p[large] = 3/10
+      else                           p[little] = 1/5, p[moderate] = 3/10, p[large] = 1/2
+    else if Nutrient::level=high /\ ShearStress::level=low  // growth
+      if   Film1::level=little       p[little] = 3/10, p[moderate] = 2/5, p[large] = 3/10 
+      else if Film1::level=moderate  p[little] = 1/5, p[moderate] = 2/5, p[large] = 2/5 
+      else                           p[little] = 1/10, p[moderate] = 3/10, p[large] = 3/5
+    else  // nutrient low shear high // inhibit
+      if   Film1::level=little       p[little] = 1/2, p[moderate] = 2/5, p[large] = 1/10 
+      else if Film1::level=moderate  p[little] = 3/10, p[moderate] = 1/2, p[large] = 1/5
+      else                           p[little] = 1/5, p[moderate] = 1/2, p[large] = 3/10
+  State: large labels: level=large
+    if (Nutrient::level=low /\ ShearStress::level=low) \/ (Nutrient::level=high /\ ShearStress::level=high)
+      if   Film1::level=little       p[moderate] = 4/5, p[large] = 1/5 
+      else if Film1::level=moderate  p[moderate] = 3/5, p[large] = 2/5
+      else                           p[moderate] = 3/10, p[large] = 7/10
+    else if Nutrient::level=high /\ ShearStress::level=low  // growth
+      if   Film1::level=little       p[moderate] = 3/5, p[large] = 2/5 
+      else if Film1::level=moderate  p[moderate] = 3/10, p[large] = 7/10
+      else                           p[moderate] = 1/10, p[large] = 9/10
+    else  // nutrient low shear high // inhibit
+      if   Film1::level=little       p[moderate] = 9/10, p[large] = 1/10 
+      else if Film1::level=moderate  p[moderate] = 3/5, p[large] = 2/5
+      else                           p[moderate] = 1/2, p[large] = 1/2
+
+Machine: Film1
+  State: little labels: level=little
+    if (Nutrient::level=low /\ ShearStress::level=low) \/ (Nutrient::level=high /\ ShearStress::level=high)
+      if   Film2::level=little       p[little] = 4/5, p[moderate] = 1/5
+      else if Film2::level=moderate  p[little] = 1/2, p[moderate] = 1/2
+      else                           p[little] = 1/5, p[moderate] = 4/5
+    else if Nutrient::level=high /\ ShearStress::level=low  // growth
+      if      Film2::level=little    p[little] = 1/2, p[moderate] = 1/2
+      else if Film2::level=moderate  p[little] = 1/5, p[moderate] = 4/5
+      else                           p[little] = 1/10, p[moderate] = 9/10
+    else  // nutrient low shear high // inhibit
+      if      Film2::level=little    p[little] = 9/10, p[moderate] = 1/10
+      else if Film2::level=moderate  p[little] = 4/5, p[moderate] = 1/5
+      else                           p[little] = 7/10, p[moderate] = 3/10
+  State: moderate labels: level=moderate
+    if (Nutrient::level=low /\ ShearStress::level=low) \/ (Nutrient::level=high /\ ShearStress::level=high)
+      if   Film2::level=little       p[little] = 3/5, p[moderate] = 3/10, p[large] = 1/10 
+      else if Film2::level=moderate  p[little] = 3/10, p[moderate] = 2/5, p[large] = 3/10
+      else                           p[little] = 1/5, p[moderate] = 3/10, p[large] = 1/2
+    else if Nutrient::level=high /\ ShearStress::level=low  // growth
+      if   Film2::level=little       p[little] = 3/10, p[moderate] = 2/5, p[large] = 3/10 
+      else if Film2::level=moderate  p[little] = 1/5, p[moderate] = 2/5, p[large] = 2/5 
+      else                           p[little] = 1/10, p[moderate] = 3/10, p[large] = 3/5
+    else  // nutrient low shear high // inhibit
+      if   Film2::level=little       p[little] = 1/2, p[moderate] = 2/5, p[large] = 1/10 
+      else if Film2::level=moderate  p[little] = 3/10, p[moderate] = 1/2, p[large] = 1/5
+      else                           p[little] = 1/5, p[moderate] = 1/2, p[large] = 3/10
+  State: large labels: level=large
+    if (Nutrient::level=low /\ ShearStress::level=low) \/ (Nutrient::level=high /\ ShearStress::level=high)
+      if   Film2::level=little       p[moderate] = 4/5, p[large] = 1/5 
+      else if Film2::level=moderate  p[moderate] = 3/5, p[large] = 2/5
+      else                           p[moderate] = 3/10, p[large] = 7/10
+    else if Nutrient::level=high /\ ShearStress::level=low  // growth
+      if   Film2::level=little       p[moderate] = 3/5, p[large] = 2/5 
+      else if Film2::level=moderate  p[moderate] = 3/10, p[large] = 7/10
+      else                           p[moderate] = 1/10, p[large] = 9/10
+    else  // nutrient low shear high // inhibit
+      if   Film2::level=little       p[moderate] = 9/10, p[large] = 1/10 
+      else if Film2::level=moderate  p[moderate] = 3/5, p[large] = 2/5
+      else                           p[moderate] = 1/2, p[large] = 1/2
+
+Machine: Film2
+  State: little labels: level=little
+    if (Nutrient::level=low /\ ShearStress::level=low) \/ (Nutrient::level=high /\ ShearStress::level=high)
+      if   Film3::level=little       p[little] = 4/5, p[moderate] = 1/5
+      else if Film3::level=moderate  p[little] = 1/2, p[moderate] = 1/2
+      else                           p[little] = 1/5, p[moderate] = 4/5
+    else if Nutrient::level=high /\ ShearStress::level=low  // growth
+      if      Film3::level=little    p[little] = 1/2, p[moderate] = 1/2
+      else if Film3::level=moderate  p[little] = 1/5, p[moderate] = 4/5
+      else                           p[little] = 1/10, p[moderate] = 9/10
+    else  // nutrient low shear high // inhibit
+      if      Film3::level=little    p[little] = 9/10, p[moderate] = 1/10
+      else if Film3::level=moderate  p[little] = 4/5, p[moderate] = 1/5
+      else                           p[little] = 7/10, p[moderate] = 3/10
+  State: moderate labels: level=moderate
+    if (Nutrient::level=low /\ ShearStress::level=low) \/ (Nutrient::level=high /\ ShearStress::level=high)
+      if   Film3::level=little       p[little] = 3/5, p[moderate] = 3/10, p[large] = 1/10 
+      else if Film3::level=moderate  p[little] = 3/10, p[moderate] = 2/5, p[large] = 3/10
+      else                           p[little] = 1/5, p[moderate] = 3/10, p[large] = 1/2
+    else if Nutrient::level=high /\ ShearStress::level=low  // growth
+      if   Film3::level=little       p[little] = 3/10, p[moderate] = 2/5, p[large] = 3/10 
+      else if Film3::level=moderate  p[little] = 1/5, p[moderate] = 2/5, p[large] = 2/5 
+      else                           p[little] = 1/10, p[moderate] = 3/10, p[large] = 3/5
+    else  // nutrient low shear high // inhibit
+      if   Film3::level=little       p[little] = 1/2, p[moderate] = 2/5, p[large] = 1/10 
+      else if Film3::level=moderate  p[little] = 3/10, p[moderate] = 1/2, p[large] = 1/5
+      else                           p[little] = 1/5, p[moderate] = 1/2, p[large] = 3/10
+  State: large labels: level=large
+    if (Nutrient::level=low /\ ShearStress::level=low) \/ (Nutrient::level=high /\ ShearStress::level=high)
+      if   Film3::level=little       p[moderate] = 4/5, p[large] = 1/5 
+      else if Film3::level=moderate  p[moderate] = 3/5, p[large] = 2/5
+      else                           p[moderate] = 3/10, p[large] = 7/10
+    else if Nutrient::level=high /\ ShearStress::level=low  // growth
+      if   Film3::level=little       p[moderate] = 3/5, p[large] = 2/5 
+      else if Film3::level=moderate  p[moderate] = 3/10, p[large] = 7/10
+      else                           p[moderate] = 1/10, p[large] = 9/10
+    else  // nutrient low shear high // inhibit
+      if   Film3::level=little       p[moderate] = 9/10, p[large] = 1/10 
+      else if Film3::level=moderate  p[moderate] = 3/5, p[large] = 2/5
+      else                           p[moderate] = 1/2, p[large] = 1/2
+
+Machine: Film3
+  State: little labels: level=little
+    if (Nutrient::level=low /\ ShearStress::level=low) \/ (Nutrient::level=high /\ ShearStress::level=high)
+      if   Film4::level=little       p[little] = 4/5, p[moderate] = 1/5
+      else if Film4::level=moderate  p[little] = 1/2, p[moderate] = 1/2
+      else                           p[little] = 1/5, p[moderate] = 4/5
+    else if Nutrient::level=high /\ ShearStress::level=low  // growth
+      if      Film4::level=little    p[little] = 1/2, p[moderate] = 1/2
+      else if Film4::level=moderate  p[little] = 1/5, p[moderate] = 4/5
+      else                           p[little] = 1/10, p[moderate] = 9/10
+    else  // nutrient low shear high // inhibit
+      if      Film4::level=little    p[little] = 9/10, p[moderate] = 1/10
+      else if Film4::level=moderate  p[little] = 4/5, p[moderate] = 1/5
+      else                           p[little] = 7/10, p[moderate] = 3/10
+  State: moderate labels: level=moderate
+    if (Nutrient::level=low /\ ShearStress::level=low) \/ (Nutrient::level=high /\ ShearStress::level=high)
+      if   Film4::level=little       p[little] = 3/5, p[moderate] = 3/10, p[large] = 1/10 
+      else if Film4::level=moderate  p[little] = 3/10, p[moderate] = 2/5, p[large] = 3/10
+      else                           p[little] = 1/5, p[moderate] = 3/10, p[large] = 1/2
+    else if Nutrient::level=high /\ ShearStress::level=low  // growth
+      if   Film4::level=little       p[little] = 3/10, p[moderate] = 2/5, p[large] = 3/10 
+      else if Film4::level=moderate  p[little] = 1/5, p[moderate] = 2/5, p[large] = 2/5 
+      else                           p[little] = 1/10, p[moderate] = 3/10, p[large] = 3/5
+    else  // nutrient low shear high // inhibit
+      if   Film4::level=little       p[little] = 1/2, p[moderate] = 2/5, p[large] = 1/10 
+      else if Film4::level=moderate  p[little] = 3/10, p[moderate] = 1/2, p[large] = 1/5
+      else                           p[little] = 1/5, p[moderate] = 1/2, p[large] = 3/10
+  State: large labels: level=large
+    if (Nutrient::level=low /\ ShearStress::level=low) \/ (Nutrient::level=high /\ ShearStress::level=high)
+      if   Film4::level=little       p[moderate] = 4/5, p[large] = 1/5 
+      else if Film4::level=moderate  p[moderate] = 3/5, p[large] = 2/5
+      else                           p[moderate] = 3/10, p[large] = 7/10
+    else if Nutrient::level=high /\ ShearStress::level=low  // growth
+      if   Film4::level=little       p[moderate] = 3/5, p[large] = 2/5 
+      else if Film4::level=moderate  p[moderate] = 3/10, p[large] = 7/10
+      else                           p[moderate] = 1/10, p[large] = 9/10
+    else  // nutrient low shear high // inhibit
+      if   Film4::level=little       p[moderate] = 9/10, p[large] = 1/10 
+      else if Film4::level=moderate  p[moderate] = 3/5, p[large] = 2/5
+      else                           p[moderate] = 1/2, p[large] = 1/2
+
+Machine: Film4
+  State: little labels: level=little
+    if (Nutrient::level=low /\ ShearStress::level=low) \/ (Nutrient::level=high /\ ShearStress::level=high)
+      if   Film0::level=little       p[little] = 4/5, p[moderate] = 1/5
+      else if Film0::level=moderate  p[little] = 1/2, p[moderate] = 1/2
+      else                           p[little] = 1/5, p[moderate] = 4/5
+    else if Nutrient::level=high /\ ShearStress::level=low  // growth
+      if      Film0::level=little    p[little] = 1/2, p[moderate] = 1/2
+      else if Film0::level=moderate  p[little] = 1/5, p[moderate] = 4/5
+      else                           p[little] = 1/10, p[moderate] = 9/10
+    else  // nutrient low shear high // inhibit
+      if      Film0::level=little    p[little] = 9/10, p[moderate] = 1/10
+      else if Film0::level=moderate  p[little] = 4/5, p[moderate] = 1/5
+      else                           p[little] = 7/10, p[moderate] = 3/10
+  State: moderate labels: level=moderate
+    if (Nutrient::level=low /\ ShearStress::level=low) \/ (Nutrient::level=high /\ ShearStress::level=high)
+      if   Film0::level=little       p[little] = 3/5, p[moderate] = 3/10, p[large] = 1/10 
+      else if Film0::level=moderate  p[little] = 3/10, p[moderate] = 2/5, p[large] = 3/10
+      else                           p[little] = 1/5, p[moderate] = 3/10, p[large] = 1/2
+    else if Nutrient::level=high /\ ShearStress::level=low  // growth
+      if   Film0::level=little       p[little] = 3/10, p[moderate] = 2/5, p[large] = 3/10 
+      else if Film0::level=moderate  p[little] = 1/5, p[moderate] = 2/5, p[large] = 2/5 
+      else                           p[little] = 1/10, p[moderate] = 3/10, p[large] = 3/5
+    else  // nutrient low shear high // inhibit
+      if   Film0::level=little       p[little] = 1/2, p[moderate] = 2/5, p[large] = 1/10 
+      else if Film0::level=moderate  p[little] = 3/10, p[moderate] = 1/2, p[large] = 1/5
+      else                           p[little] = 1/5, p[moderate] = 1/2, p[large] = 3/10
+  State: large labels: level=large
+    if (Nutrient::level=low /\ ShearStress::level=low) \/ (Nutrient::level=high /\ ShearStress::level=high)
+      if   Film0::level=little       p[moderate] = 4/5, p[large] = 1/5 
+      else if Film0::level=moderate  p[moderate] = 3/5, p[large] = 2/5
+      else                           p[moderate] = 3/10, p[large] = 7/10
+    else if Nutrient::level=high /\ ShearStress::level=low  // growth
+      if   Film0::level=little       p[moderate] = 3/5, p[large] = 2/5 
+      else if Film0::level=moderate  p[moderate] = 3/10, p[large] = 7/10
+      else                           p[moderate] = 1/10, p[large] = 9/10
+    else  // nutrient low shear high // inhibit
+      if   Film0::level=little       p[moderate] = 9/10, p[large] = 1/10 
+      else if Film0::level=moderate  p[moderate] = 3/5, p[large] = 2/5
+      else                           p[moderate] = 1/2, p[large] = 1/2      

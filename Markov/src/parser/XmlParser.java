@@ -20,7 +20,7 @@ public class XmlParser {
   
       public Net<DoubleProbability> net;
       private static int NUM_PATIENTS;
-      public final static int ARRIVAL_NUM = 2;
+      public final static int ARRIVAL_NUM = 4;
       public final static int ARRIVAL_DEN = 5;
       public final static DoubleProbability P_ARRIVAL = new DoubleProbability(ARRIVAL_NUM, ARRIVAL_DEN);
 

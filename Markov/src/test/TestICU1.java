@@ -19,7 +19,7 @@ import util.Stack;
 
 public class TestICU1 {
   public final static String PATIENT_MODEL_FILENAME = "xml/umlVersion6.xml";
-  public final static int NUM_PATIENTS = 8;
+  public final static int NUM_PATIENTS = 3;
   public final static int STEPS=10000000;  
 
   public static void main(String[] args) {
@@ -56,6 +56,13 @@ public class TestICU1 {
       
       // System.out.println(aNet);
     }
+/*    aNet = aNet.multiply(0,1);
+    for (Integer val : aNet.getMachine(0).labels) {
+      String name = aNet.dict.getName(val).tail().head();
+      if (name.equals("ICP")) continue;
+      aNet = aNet.sum(val);
+    }
+    aNet = aNet.reduce(0); */
 
     AggregateMachine<DoubleProbability> machine = aNet.getMachine(0);
     System.out.println("\n" + AggregateMachine.query(aNet.dict, machine));
